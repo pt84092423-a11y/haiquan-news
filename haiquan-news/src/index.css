@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 220 14% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 14% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 14% 10%;
+  --primary: 213 100% 35%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 213 30% 95%;
+  --secondary-foreground: 213 100% 25%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 210 10% 45%;
+  --accent: 213 30% 90%;
+  --accent-foreground: 213 100% 25%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 213 20% 88%;
+  --input: 213 20% 88%;
+  --ring: 213 100% 35%;
+  --radius: 0.5rem;
+  --app-font-sans: 'Roboto', 'Inter', sans-serif;
+  --app-font-serif: 'Playfair Display', Georgia, serif;
+  --app-font-mono: Menlo, monospace;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Article content styles */
+.article-content p { margin-bottom: 1rem; }
+.article-content img { width: 100%; height: auto; border-radius: 2px; margin-top: 1rem; }
+.article-content figcaption { text-align: center; font-style: italic; color: #555; font-size: 13px; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+.article-content h2 { font-size: 22px; font-weight: 700; margin: 1.5rem 0 0.75rem; color: #222; }
+.article-content h3 { font-size: 18px; font-weight: 700; margin: 1.25rem 0 0.5rem; color: #333; }
+.article-content blockquote { border-left: 4px solid #0059b2; padding-left: 1rem; margin: 1rem 0; color: #555; font-style: italic; }
+.article-content a { color: #0059b2; text-decoration: underline; }
+.article-content ul, .article-content ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+.article-content li { margin-bottom: 0.4rem; }
+
+/* Quill overrides */
+.ql-editor { min-height: 400px; font-family: 'Roboto', sans-serif !important; font-size: 15px !important; line-height: 1.7; color: #222222; }
+.ql-toolbar { background-color: #f8fafc; border-color: #e5e7eb !important; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; padding: 12px !important; }
+.ql-container { border-color: #e5e7eb !important; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; background-color: white; }
+
+/* Line clamp */
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Podcast waves */
+.podcast-waves {
+  background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, rgba(255,255,255,0.1) 2px, transparent 2px, transparent 6px);
+  background-position: center bottom;
+  background-size: 100% 40%;
+  background-repeat: no-repeat;
+}
+
+/* Print styles */
+@media print {
+  header, footer, aside, .no-print { display: none !important; }
+  .article-content { font-size: 12pt; }
+}
