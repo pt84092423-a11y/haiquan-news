@@ -13,8 +13,10 @@ interface NewspaperIssue {
 
 function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: () => void }) {
   const [page, setPage] = useState(0);
-  const pages = issue.pages.filter(Boolean);
-  const total = pages.length;
+  const contentPages = issue.pages.filter(Boolean);
+  const pages = issue.cover && !contentPages.includes(issue.cover)
+    ? [issue.cover, ...contentPages]
+    : contentPages.length > 0 ? contentPages : (issue.cover ? [issue.cover] : []);
 
   const goNext = useCallback(() => setPage(p => Math.min(p + 1, total - 1)), [total]);
   const goPrev = useCallback(() => setPage(p => Math.max(p - 1, 0)), []);
