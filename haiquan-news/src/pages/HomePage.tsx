@@ -140,6 +140,8 @@ export default function HomePage() {
 
         {/* Row 2: TIN ĐỌC NHIỀU + General + Sidebar */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-6 pb-6 border-b border-[#e1e1e1]">
+          
+          {/* CỘT TRÁI: Tin đọc nhiều */}
           <aside className="md:col-span-3">
             <SectionTitle title="TIN ĐỌC NHIỀU" className={headingStyle} />
             <ul className="flex flex-col">
@@ -147,16 +149,61 @@ export default function HomePage() {
                 ? [...Array(6)].map((_, i) => <li key={i} className="h-12 bg-gray-100 rounded animate-pulse mb-2" />)
                 : mostRead.map((p, i) => <PostCard key={p.id} post={p} variant="numbered" index={i + 1} />)
               }
+              {/* Lấp đầy cột trái: Thêm khung xám mờ nếu có quá ít bài đọc nhiều (< 5 bài) */}
+              {!loading && mostRead.length < 5 && (
+                [...Array(5 - mostRead.length)].map((_, i) => (
+                  <li key={`filler-${i}`} className="opacity-30 pointer-events-none select-none">
+                     <div className="flex gap-3 py-3 border-b border-dashed border-[#e1e1e1] items-center">
+                        <div className="font-['Playfair_Display',serif] text-[24px] text-[#aed1ef] font-black leading-none mt-1">
+                          {mostRead.length + i + 1}
+                        </div>
+                        <div className="flex flex-col gap-2 w-full">
+                          <div className="h-3.5 bg-gray-200 rounded w-full"></div>
+                          <div className="h-3.5 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                     </div>
+                  </li>
+                ))
+              )}
             </ul>
           </aside>
 
+          {/* CỘT GIỮA: Khu vực tin tức tổng hợp */}
           <div className="md:col-span-6 px-0 md:px-2 flex flex-col gap-6">
-            {loading
-              ? [...Array(4)].map((_, i) => <div key={i} className="h-28 bg-gray-100 rounded animate-pulse" />)
-              : generalPosts.map(p => <PostCard key={p.id} post={p} variant="horizontal" />)
-            }
+            {loading ? (
+              [...Array(4)].map((_, i) => <div key={i} className="h-28 bg-gray-100 rounded animate-pulse" />)
+            ) : generalPosts.length > 0 ? (
+              // Nếu có data, hiển thị bình thường
+              generalPosts.map(p => <PostCard key={p.id} post={p} variant="horizontal" />)
+            ) : (
+              // Nếu KHÔNG CÓ DATA, hiển thị một khối UI "Đang cập nhật" rất đẹp để lấp đầy
+              <div className="bg-[#f8fbff] border border-blue-100 p-8 rounded-md h-full flex flex-col justify-center items-center text-center shadow-sm">
+                <div className="w-16 h-16 bg-[#e8f0fa] rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-[#0059b2]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5L18.5 7H20M9 15h3m-3 4h6m-9-8h.01M15 15h.01M15 19h.01M9 11h.01M15 11h.01" /></svg>
+                </div>
+                <h3 className="font-serif font-bold text-[#0059b2] text-[20px] mb-2 uppercase">Tin Tức Tổng Hợp</h3>
+                <p className="text-[#555555] text-[14px] max-w-[80%] mb-8">
+                  Các diễn biến và tin tức hoạt động mới nhất sẽ được tổng hợp và hiển thị tại khu vực này.
+                </p>
+                
+                {/* Các bài viết giả (Skeleton/Placeholder) lấp đầy khoảng trống */}
+                <div className="w-full space-y-6 opacity-40">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="flex gap-4">
+                       <div className="w-1/3 aspect-[4/3] bg-blue-100/50 rounded-sm"></div>
+                       <div className="w-2/3 flex flex-col gap-2.5 justify-center">
+                         <div className="h-4 bg-gray-200 w-full rounded-sm"></div>
+                         <div className="h-4 bg-gray-200 w-4/5 rounded-sm"></div>
+                         <div className="h-3 bg-blue-50 w-1/3 rounded-sm mt-1"></div>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* CỘT PHẢI: Sidebar báo in & Website links */}
           <aside className="md:col-span-3">
             <div className="mb-8">
               <SectionTitle title="ĐỌC BÁO IN" className={headingStyle} />
