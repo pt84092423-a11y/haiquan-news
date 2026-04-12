@@ -30,11 +30,12 @@ export default function HomePage() {
         getPublishedPosts({ postType: 'podcast', limit: 4 }),
       ]);
       const posts = all || [];
-      setSpotlight(posts.slice(0, 3));
-      setNewPosts(posts.slice(0, 4));
-      const sorted = [...posts].sort((a, b) => b.view_count - a.view_count);
+   const articles = posts.filter(p => p.post_type !== 'baoin');
+      setSpotlight(articles.slice(0, 3));
+      setNewPosts(articles.slice(0, 4));
+      const sorted = [...articles].sort((a, b) => b.view_count - a.view_count);
       setMostRead(sorted.slice(0, 6));
-      setGeneralPosts(posts.slice(3, 7));
+      setGeneralPosts(articles.slice(3, 7));
       setMediaPosts((media || []).slice(0, 4));
       setPodcastPosts((podcasts || []).slice(0, 4));
       setVideoPosts((media || []).slice(0, 3));
