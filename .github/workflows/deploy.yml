@@ -19,7 +19,7 @@ jobs:
 
       - name: 📦 Install and Build
         run: |
-          cd haiquan-news/haiquan-news
+          cd haiquan-news
           npm install
           npm run build
 
@@ -29,5 +29,5 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./haiquan-news/haiquan-news/dist/
+          local-dir: ./haiquan-news/dist/
           server-dir: /htdocs/
