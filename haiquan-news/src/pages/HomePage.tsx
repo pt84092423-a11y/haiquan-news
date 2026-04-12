@@ -97,7 +97,7 @@ export default function HomePage() {
                   >&gt;</button>
                   <img src={featured.thumbnail || PLACEHOLDER} alt={featured.title} className="w-full h-auto object-cover transform transition duration-500 group-hover:scale-105" />
                 </div>
-                <h2 className="font-['Roboto',sans-serif] text-[28px] font-extrabold leading-tight text-[#222222] mb-3 group-hover:text-[#0059b2] transition-colors">
+                <h2 className="font-['Roboto',sans-serif] text-[28px] font-bold leading-tight text-[#222222] mb-3 group-hover:text-[#0059b2] transition-colors">
                   {featured.title}
                 </h2>
                 <p className="font-['Roboto',sans-serif] text-[15px] text-[#555555] leading-relaxed">
@@ -119,7 +119,7 @@ export default function HomePage() {
                   <li key={p.id}>
                     <Link href={`/bai-viet/${p.slug}`} className="flex gap-4 py-3.5 border-b border-dashed border-[#e1e1e1] group cursor-pointer items-start">
                       <div className="font-['Playfair_Display',serif] text-[40px] text-[#aed1ef] font-black leading-none mt-1">{i + 1}</div>
-                      <h4 className="font-['Roboto',sans-serif] text-[15px] font-extrabold text-[#222222] leading-snug group-hover:text-[#0059b2]">{p.title}</h4>
+                      <h4 className="font-['Roboto',sans-serif] text-[15px] font-bold text-[#222222] leading-snug group-hover:text-[#0059b2]">{p.title}</h4>
                     </Link>
                   </li>
                 ))
