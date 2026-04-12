@@ -15,7 +15,7 @@ jobs:
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20  # Đã nâng cấp lên bản 20 để hết lỗi EBADENGINE
 
       - name: 📦 Install and Build
         run: |
