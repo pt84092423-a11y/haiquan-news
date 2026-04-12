@@ -59,17 +59,20 @@ export default function HomePage() {
 
   const featured = spotlight[featuredIdx];
 
+  // Helper class để đồng bộ style tiêu đề in đậm, có chân, in hoa
+  const headingStyle = "font-serif font-bold uppercase text-[#0059b2] tracking-tight";
+
   return (
     <>
       <SEOHead />
       <div className="container mx-auto max-w-[1200px] px-4 py-6">
 
-        {/* Row 1: Tiêu điểm + Featured + Tin mới */}
+        {/* Row 1: TIÊU ĐIỂM + Featured + TIN MỚI */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6 border-b border-[#e1e1e1]">
           
           {/* Tiêu điểm */}
           <aside className="md:col-span-3">
-            <SectionTitle title="Tiêu điểm" />
+            <SectionTitle title="TIÊU ĐIỂM" className={headingStyle} />
             {loading ? (
               <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-gray-100 rounded animate-pulse" />)}</div>
             ) : spotlight.length > 0 ? (
@@ -111,7 +114,7 @@ export default function HomePage() {
 
           {/* Tin mới */}
           <aside className="md:col-span-3">
-            <SectionTitle title="Tin mới" />
+            <SectionTitle title="TIN MỚI" className={headingStyle} />
             <ul className="flex flex-col">
               {loading
                 ? [...Array(4)].map((_, i) => <li key={i} className="h-16 bg-gray-100 rounded animate-pulse mb-2" />)
@@ -135,10 +138,10 @@ export default function HomePage() {
           </a>
         </div>
 
-        {/* Row 2: Tin đọc nhiều + General + Sidebar */}
+        {/* Row 2: TIN ĐỌC NHIỀU + General + Sidebar */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-6 pb-6 border-b border-[#e1e1e1]">
           <aside className="md:col-span-3">
-            <SectionTitle title="Tin đọc nhiều" />
+            <SectionTitle title="TIN ĐỌC NHIỀU" className={headingStyle} />
             <ul className="flex flex-col">
               {loading
                 ? [...Array(6)].map((_, i) => <li key={i} className="h-12 bg-gray-100 rounded animate-pulse mb-2" />)
@@ -156,7 +159,7 @@ export default function HomePage() {
 
           <aside className="md:col-span-3">
             <div className="mb-8">
-              <SectionTitle title="Đọc báo in" />
+              <SectionTitle title="ĐỌC BÁO IN" className={headingStyle} />
               <Link href="/bao-in" className="bg-[#f2f7fb] p-4 rounded-md border border-blue-100 flex flex-col cursor-pointer group block">
                 <h4 className="font-['Roboto',sans-serif] font-bold text-[#0059b2] text-[15px] mb-1">Báo in Hải quân</h4>
                 <p className="text-[11px] text-[#555555] mb-3">Số mới nhất</p>
@@ -173,12 +176,12 @@ export default function HomePage() {
                   )}
                 </div>
                 {latestBaoIn && (
-                  <p className="text-[12px] text-[#555] mt-2 line-clamp-2">{latestBaoIn.title}</p>
+                  <p className="text-[12px] text-[#55] mt-2 line-clamp-2">{latestBaoIn.title}</p>
                 )}
               </Link>
             </div>
             <div className="mb-8">
-              <SectionTitle title="Liên kết website" />
+              <SectionTitle title="LIÊN KẾT WEBSITE" className={headingStyle} />
               <WebsiteLinks />
             </div>
             <div>
@@ -189,16 +192,16 @@ export default function HomePage() {
           </aside>
         </div>
 
-        {/* Đa phương tiện */}
+        {/* ĐA PHƯƠNG TIỆN */}
         <section className="bg-[#f2f7fb] rounded-xl p-4 md:p-6 mb-8 shadow-sm border border-blue-100">
           <div className="flex flex-col md:flex-row md:items-center mb-6 pb-3 border-b-2 border-white">
-            <SectionTitle title="ĐA PHƯƠNG TIỆN" className="text-[24px] mr-8 mb-0" />
+            <SectionTitle title="ĐA PHƯƠNG TIỆN" className={`text-[24px] mr-8 mb-0 ${headingStyle}`} />
             <div className="flex gap-4 md:gap-6 mt-3 md:mt-0 font-['Roboto',sans-serif] font-bold text-[14px] text-[#0059b2]">
-              <Link href="/longform" className="hover:text-[#00305f] transition">Longform</Link>
+              <Link href="/longform" className="hover:text-[#00305f] transition uppercase">Longform</Link>
               <span className="text-blue-200">|</span>
-              <Link href="/podcast" className="hover:text-[#00305f] transition">Podcast</Link>
+              <Link href="/podcast" className="hover:text-[#00305f] transition uppercase">Podcast</Link>
               <span className="text-blue-200">|</span>
-              <Link href="/phong-su-anh" className="hover:text-[#00305f] transition">Phóng sự ảnh</Link>
+              <Link href="/phong-su-anh" className="hover:text-[#00305f] transition uppercase">Phóng sự ảnh</Link>
             </div>
           </div>
 
@@ -206,7 +209,7 @@ export default function HomePage() {
             {mediaPosts[0] && (
               <Link href={`/bai-viet/${mediaPosts[0].slug}`} className="group cursor-pointer block">
                 <div className="overflow-hidden rounded-md aspect-[16/10] relative shadow-md">
-                  <span className="absolute bottom-4 left-4 bg-[#00305f] text-white text-xs font-bold px-2 py-1 rounded-sm z-10">
+                  <span className="absolute bottom-4 left-4 bg-[#00305f] text-white text-xs font-bold px-2 py-1 rounded-sm z-10 uppercase">
                     {mediaPosts[0].post_type === 'podcast' ? 'Podcast' : 'Video'}
                   </span>
                   <img src={mediaPosts[0].thumbnail || PLACEHOLDER} alt={mediaPosts[0].title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
@@ -215,7 +218,7 @@ export default function HomePage() {
               </Link>
             )}
             {!mediaPosts[0] && !loading && (
-              <div className="flex items-center justify-center aspect-[16/10] bg-gray-100 rounded-md text-gray-400">Chưa có nội dung</div>
+              <div className="flex items-center justify-center aspect-[16/10] bg-gray-100 rounded-md text-gray-400 uppercase">Chưa có nội dung</div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
@@ -227,8 +230,8 @@ export default function HomePage() {
         {/* PODCAST */}
         <section className="mb-8 border-b border-[#e1e1e1] pb-8">
           <div className="flex items-center justify-between mb-4">
-            <SectionTitle title="PODCAST" className="text-[24px]" />
-            <Link href="/podcast" className="text-[13px] font-bold text-[#0059b2] hover:underline flex items-center gap-1">
+            <SectionTitle title="PODCAST" className={`text-[24px] ${headingStyle}`} />
+            <Link href="/podcast" className="text-[13px] font-bold text-[#0059b2] hover:underline flex items-center gap-1 uppercase">
               Xem thêm
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
@@ -269,9 +272,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Hải quân media */}
+        {/* HẢI QUÂN MEDIA */}
         <section className="mb-8 border-b border-[#e1e1e1] pb-8">
-          <SectionTitle title="HẢI QUÂN MEDIA" className="text-[24px]" />
+          <SectionTitle title="HẢI QUÂN MEDIA" className={`text-[24px] ${headingStyle}`} />
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-9">
               {videoPosts[0] && (
@@ -304,11 +307,11 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* Short Video section */}
+      {/* SHORT VIDEO section */}
       <div className="w-full bg-[#0059b2] pt-10 pb-12 shadow-inner">
         <div className="container mx-auto max-w-[1200px] px-4">
           <div className="mb-12">
-            <SectionTitle title="SHORT VIDEO" light className="text-[24px] mb-6" />
+            <SectionTitle title="SHORT VIDEO" light className="text-[24px] font-serif font-bold uppercase mb-6" />
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {loading
                 ? [...Array(5)].map((_, i) => <div key={i} className="aspect-[9/16] bg-[#004b87] rounded-lg animate-pulse" />)
@@ -328,9 +331,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Truyền hình Hải quân */}
+          {/* TRUYỀN HÌNH HẢI QUÂN */}
           <div>
-            <SectionTitle title="TRUYỀN HÌNH HẢI QUÂN" light className="text-[24px] mb-6" />
+            <SectionTitle title="TRUYỀN HÌNH HẢI QUÂN" light className="text-[24px] font-serif font-bold uppercase mb-6" />
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               <div className="md:col-span-8">
                 {videoPosts[0] ? (
@@ -346,7 +349,7 @@ export default function HomePage() {
                     </div>
                   </Link>
                 ) : (
-                  <div className="aspect-video bg-[#001540] rounded-md flex items-center justify-center text-white/40">Chưa có video</div>
+                  <div className="aspect-video bg-[#001540] rounded-md flex items-center justify-center text-white/40 uppercase">Chưa có video</div>
                 )}
               </div>
               <div className="md:col-span-4 flex flex-col gap-4">
