@@ -14,6 +14,11 @@ export default function HomePage() {
   const [newPosts, setNewPosts] = useState<Post[]>([]);
   const [mostRead, setMostRead] = useState<Post[]>([]);
   const [generalPosts, setGeneralPosts] = useState<Post[]>([]);
+  
+  // Data cho các mục mới
+  const [kinhTePosts, setKinhTePosts] = useState<Post[]>([]);
+  const [chuQuyenPosts, setChuQuyenPosts] = useState<Post[]>([]);
+  
   const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
   const [podcastPosts, setPodcastPosts] = useState<Post[]>([]);
   const [videoPosts, setVideoPosts] = useState<Post[]>([]);
@@ -25,7 +30,7 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       const [all, media, shorts, podcasts, baoIn] = await Promise.all([
-        getPublishedPosts({ limit: 30 }),
+        getPublishedPosts({ limit: 40 }), // Tăng limit lên một chút để đủ bài cho các mục mới
         getPublishedPosts({ postType: 'video', limit: 6 }),
         getPublishedPosts({ postType: 'video', limit: 5 }),
         getPublishedPosts({ postType: 'podcast', limit: 4 }),
@@ -33,11 +38,17 @@ export default function HomePage() {
       ]);
       const posts = all || [];
       const articles = posts.filter(p => p.post_type !== 'baoin');
+      
       setSpotlight(articles.slice(0, 3));
       setNewPosts(articles.slice(0, 4));
+      
       const sorted = [...articles].sort((a, b) => b.view_count - a.view_count);
       setMostRead(sorted.slice(0, 6));
+      
       setGeneralPosts(articles.slice(3, 7));
+      setKinhTePosts(articles.slice(7, 11)); // 4 bài cho Kinh tế - Xã hội
+      setChuQuyenPosts(articles.slice(11, 16)); // 5 bài cho Vì chủ quyền biển đảo
+      
       setMediaPosts((media || []).slice(0, 4));
       setPodcastPosts((podcasts || []).slice(0, 4));
       setVideoPosts((media || []).slice(0, 3));
@@ -61,6 +72,13 @@ export default function HomePage() {
 
   // Helper class để đồng bộ style tiêu đề in đậm, có chân, in hoa
   const headingStyle = "font-serif font-bold uppercase text-[#0059b2] tracking-tight";
+
+  // Helper cho pill buttons (Nút phân loại mỏng)
+  const PillButton = ({ label }: { label: string }) => (
+    <button className="px-4 py-1.5 rounded-full border border-[#e1e1e1] text-[13px] text-[#555555] hover:text-[#0059b2] hover:border-[#0059b2] transition-colors bg-white">
+      {label}
+    </button>
+  );
 
   return (
     <>
@@ -149,7 +167,7 @@ export default function HomePage() {
                 ? [...Array(6)].map((_, i) => <li key={i} className="h-12 bg-gray-100 rounded animate-pulse mb-2" />)
                 : mostRead.map((p, i) => <PostCard key={p.id} post={p} variant="numbered" index={i + 1} />)
               }
-              {/* Lấp đầy cột trái: Thêm khung xám mờ nếu có quá ít bài đọc nhiều (< 5 bài) */}
+              {/* Lấp đầy cột trái */}
               {!loading && mostRead.length < 5 && (
                 [...Array(5 - mostRead.length)].map((_, i) => (
                   <li key={`filler-${i}`} className="opacity-30 pointer-events-none select-none">
@@ -173,10 +191,8 @@ export default function HomePage() {
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="h-28 bg-gray-100 rounded animate-pulse" />)
             ) : generalPosts.length > 0 ? (
-              // Nếu có data, hiển thị bình thường
               generalPosts.map(p => <PostCard key={p.id} post={p} variant="horizontal" />)
             ) : (
-              // Nếu KHÔNG CÓ DATA, hiển thị một khối UI "Đang cập nhật" rất đẹp để lấp đầy
               <div className="bg-[#f8fbff] border border-blue-100 p-8 rounded-md h-full flex flex-col justify-center items-center text-center shadow-sm">
                 <div className="w-16 h-16 bg-[#e8f0fa] rounded-full flex items-center justify-center mb-4">
                   <svg className="w-8 h-8 text-[#0059b2]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5L18.5 7H20M9 15h3m-3 4h6m-9-8h.01M15 15h.01M15 19h.01M9 11h.01M15 11h.01" /></svg>
@@ -185,8 +201,6 @@ export default function HomePage() {
                 <p className="text-[#555555] text-[14px] max-w-[80%] mb-8">
                   Các diễn biến và tin tức hoạt động mới nhất sẽ được tổng hợp và hiển thị tại khu vực này.
                 </p>
-                
-                {/* Các bài viết giả (Skeleton/Placeholder) lấp đầy khoảng trống */}
                 <div className="w-full space-y-6 opacity-40">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="flex gap-4">
@@ -238,6 +252,111 @@ export default function HomePage() {
             </div>
           </aside>
         </div>
+
+        {/* --- KINH TẾ - XÃ HỘI --- */}
+        <section className="mt-8 mb-8 border-b border-[#e1e1e1] pb-8">
+          <div className="flex flex-col md:flex-row md:items-center mb-6">
+            <SectionTitle title="KINH TẾ - XÃ HỘI" className={`text-[24px] mb-0 md:mr-8 ${headingStyle}`} />
+            <div className="flex flex-wrap gap-2 mt-3 md:mt-0">
+              <PillButton label="Tin tức - Sự kiện" />
+              <PillButton label="Kinh tế - Quốc phòng biển đảo" />
+              <PillButton label="Từ đất liền đến hải đảo" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {/* Bài lớn bên trái (hoặc skeleton) */}
+            <div className="md:col-span-8">
+              {loading ? (
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="md:w-2/5 flex flex-col gap-2"><div className="h-6 bg-gray-200 rounded w-full"/><div className="h-20 bg-gray-100 rounded w-full"/></div>
+                  <div className="md:w-3/5 aspect-[4/3] bg-gray-200 rounded animate-pulse" />
+                </div>
+              ) : kinhTePosts[0] ? (
+                <Link href={`/bai-viet/${kinhTePosts[0].slug}`} className="flex flex-col md:flex-row gap-6 group cursor-pointer">
+                  <div className="md:w-[40%] flex flex-col justify-center">
+                    <h3 className="font-['Roboto',sans-serif] text-[22px] md:text-[26px] font-bold leading-tight text-[#222222] mb-3 group-hover:text-[#0059b2] transition-colors">
+                      {kinhTePosts[0].title}
+                    </h3>
+                    <p className="font-['Roboto',sans-serif] text-[14px] text-[#555555] leading-relaxed line-clamp-4">
+                      {kinhTePosts[0].excerpt}
+                    </p>
+                  </div>
+                  <div className="md:w-[60%] overflow-hidden rounded-md relative shadow-sm">
+                    <img src={kinhTePosts[0].thumbnail || PLACEHOLDER} alt={kinhTePosts[0].title} className="w-full h-full object-cover aspect-[4/3] transform transition duration-500 group-hover:scale-105" />
+                  </div>
+                </Link>
+              ) : (
+                 <div className="flex items-center justify-center h-full bg-gray-50 text-gray-400 rounded">Chưa có bài viết</div>
+              )}
+            </div>
+
+            {/* 3 Bài nhỏ xếp chồng bên phải */}
+            <div className="md:col-span-4 flex flex-col gap-4 justify-between">
+              {loading ? (
+                [...Array(3)].map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded animate-pulse" />)
+              ) : (
+                kinTePosts.slice(1, 4).map(p => (
+                  <Link key={p.id} href={`/bai-viet/${p.slug}`} className="flex gap-3 group cursor-pointer">
+                    <div className="w-[130px] flex-shrink-0 relative aspect-[4/3] rounded-sm overflow-hidden">
+                      <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover transform transition duration-500 group-hover:scale-110" />
+                    </div>
+                    <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] leading-snug group-hover:text-[#0059b2]">
+                      {p.title}
+                    </h4>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* --- VÌ CHỦ QUYỀN BIỂN ĐẢO --- */}
+        <section className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-center mb-6">
+            <SectionTitle title="VÌ CHỦ QUYỀN BIỂN ĐẢO" className={`text-[24px] mb-0 md:mr-8 ${headingStyle}`} />
+            <div className="flex flex-wrap gap-2 mt-3 md:mt-0">
+              <PillButton label="Tin tức - Sự kiện" />
+              <PillButton label="Bộ đội Cụ Hồ" />
+              <PillButton label="Bảo vệ nền tảng tư tưởng của Đảng" />
+            </div>
+          </div>
+
+          <div className="relative mb-6">
+             {/* Nút điều hướng mô phỏng */}
+             <button className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center z-10 shadow text-[#0059b2] font-bold hover:bg-[#0059b2] hover:text-white transition hidden md:flex">&lt;</button>
+             <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center z-10 shadow text-[#0059b2] font-bold hover:bg-[#0059b2] hover:text-white transition hidden md:flex">&gt;</button>
+             
+             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {loading ? (
+                   [...Array(5)].map((_, i) => <div key={i} className="aspect-[3/5] bg-gray-200 rounded-xl animate-pulse" />)
+                ) : chuQuyenPosts.length > 0 ? (
+                   chuQuyenPosts.map(p => (
+                     <Link key={p.id} href={`/bai-viet/${p.slug}`} className="relative aspect-[3/5] rounded-xl overflow-hidden group cursor-pointer shadow-md block">
+                        <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-90 group-hover:opacity-100 transition duration-300" />
+                        <h4 className="absolute bottom-4 left-3 right-3 text-white font-['Roboto',sans-serif] font-bold text-[14px] leading-snug text-center group-hover:text-[#FFD700] transition">
+                           {p.title}
+                        </h4>
+                     </Link>
+                   ))
+                ) : (
+                   [...Array(5)].map((_, i) => (
+                      <div key={i} className="aspect-[3/5] bg-[#e8f0fa] rounded-xl flex items-center justify-center">
+                         <span className="text-[#a0c1e8] text-xs font-bold uppercase">Chưa có bài</span>
+                      </div>
+                   ))
+                )}
+             </div>
+          </div>
+
+          {/* Banner Đặc công Hải quân */}
+          <div className="w-full">
+            <a href="#" className="block hover:opacity-95 transition rounded-md overflow-hidden shadow-md">
+               <img src="https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png" alt="Banner Đặc công Hải quân" className="w-full h-auto object-cover" />
+            </a>
+          </div>
+        </section>
 
         {/* ĐA PHƯƠNG TIỆN */}
         <section className="bg-[#f2f7fb] rounded-xl p-4 md:p-6 mb-8 shadow-sm border border-blue-100">
