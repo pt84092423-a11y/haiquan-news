@@ -32,9 +32,9 @@ export default function ArticlePage() {
         getPublishedPosts({ categorySlug: data.category?.slug, limit: 8 }),
         getPublishedPosts({ limit: 8 }),
       ]);
-      setRelatedPosts((related || []).filter(p => p.id !== data.id).slice(0, 8));
+ setRelatedPosts((related || []).filter(p => p.id !== data.id && p.post_type !== 'baoin').slice(0, 8));
       const sorted = [...(popular || [])].sort((a, b) => b.view_count - a.view_count);
-      setMostRead(sorted.filter(p => p.id !== data.id).slice(0, 8));
+      setMostRead(sorted.filter(p => p.id !== data.id && p.post_type !== 'baoin').slice(0, 8));
     });
   }, [slug]);
 
