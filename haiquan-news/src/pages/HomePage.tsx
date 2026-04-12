@@ -296,7 +296,7 @@ export default function HomePage() {
               {loading ? (
                 [...Array(3)].map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded animate-pulse" />)
               ) : (
-                kinTePosts.slice(1, 4).map(p => (
+                kinhTePosts.slice(1, 4).map(p => (
                   <Link key={p.id} href={`/bai-viet/${p.slug}`} className="flex gap-3 group cursor-pointer">
                     <div className="w-[130px] flex-shrink-0 relative aspect-[4/3] rounded-sm overflow-hidden">
                       <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover transform transition duration-500 group-hover:scale-110" />
