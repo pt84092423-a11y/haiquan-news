@@ -18,19 +18,21 @@ export default function HomePage() {
   const [podcastPosts, setPodcastPosts] = useState<Post[]>([]);
   const [videoPosts, setVideoPosts] = useState<Post[]>([]);
   const [shortVideos, setShortVideos] = useState<Post[]>([]);
+  const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     async function load() {
-      const [all, media, shorts, podcasts] = await Promise.all([
+      const [all, media, shorts, podcasts, baoIn] = await Promise.all([
         getPublishedPosts({ limit: 30 }),
         getPublishedPosts({ postType: 'video', limit: 6 }),
         getPublishedPosts({ postType: 'video', limit: 5 }),
         getPublishedPosts({ postType: 'podcast', limit: 4 }),
+        getPublishedPosts({ postType: 'baoin', limit: 1 }),
       ]);
       const posts = all || [];
-   const articles = posts.filter(p => p.post_type !== 'baoin');
+      const articles = posts.filter(p => p.post_type !== 'baoin');
       setSpotlight(articles.slice(0, 3));
       setNewPosts(articles.slice(0, 4));
       const sorted = [...articles].sort((a, b) => b.view_count - a.view_count);
@@ -40,6 +42,7 @@ export default function HomePage() {
       setPodcastPosts((podcasts || []).slice(0, 4));
       setVideoPosts((media || []).slice(0, 3));
       setShortVideos((shorts || []).slice(0, 5));
+      setLatestBaoIn((baoIn || [])[0] || null);
       setLoading(false);
     }
     load();
@@ -158,8 +161,20 @@ export default function HomePage() {
                 <h4 className="font-['Roboto',sans-serif] font-bold text-[#0059b2] text-[15px] mb-1">Báo in Hải quân</h4>
                 <p className="text-[11px] text-[#555555] mb-3">Số mới nhất</p>
                 <div className="shadow-md group-hover:scale-105 transition duration-300 border border-[#e1e1e1]">
-                  <img src="https://via.placeholder.com/260x360/ffffff/555555?text=Ảnh+Bìa+Báo+In" alt="Báo In" className="w-full h-auto" />
+                  {loading ? (
+                    <div className="w-full aspect-[3/4] bg-gray-200 animate-pulse" />
+                  ) : latestBaoIn?.thumbnail ? (
+                    <img src={latestBaoIn.thumbnail} alt={latestBaoIn.title || 'Báo In'} className="w-full h-auto" />
+                  ) : (
+                    <div className="w-full aspect-[3/4] flex flex-col items-center justify-center bg-[#e8f0fa] text-[#0059b2]">
+                      <svg className="w-10 h-10 mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <span className="text-[12px] opacity-50">Chưa có báo in</span>
+                    </div>
+                  )}
                 </div>
+                {latestBaoIn && (
+                  <p className="text-[12px] text-[#555] mt-2 line-clamp-2">{latestBaoIn.title}</p>
+                )}
               </Link>
             </div>
             <div className="mb-8">
