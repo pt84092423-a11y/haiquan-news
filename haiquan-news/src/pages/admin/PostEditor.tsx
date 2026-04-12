@@ -345,7 +345,7 @@ export default function PostEditor() {
               <span>•</span>
               <span>{form.published_at ? new Date(form.published_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')}</span>
               <span>•</span>
-              <span>haiquansrov.site</span>
+              <span>baohaiquansrov.xo.je</span>
             </div>
             {/* Thumbnail */}
             {form.thumbnail && (
@@ -375,13 +375,13 @@ export default function PostEditor() {
             {/* Tags */}
             <div className="mt-8 pt-6 border-t border-gray-200">
               <p className="text-[12px] text-gray-400 mb-2 font-bold uppercase">URL bài viết</p>
-              <p className="text-[#0059b2] text-[13px] font-mono">https://haiquansrov.site/bai-viet/{form.slug || 'slug-bai-viet'}</p>
+              <p className="text-[#0059b2] text-[13px] font-mono">https://baohaiquansrov.xo.je/bai-viet/{form.slug || 'slug-bai-viet'}</p>
             </div>
             {/* SEO card */}
             <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
               <p className="text-[11px] text-gray-400 mb-2 font-bold uppercase">Kết quả hiển thị trên Google</p>
               <p className="text-[#1a0dab] text-[16px] font-medium hover:underline cursor-pointer">{form.meta_title || form.title || 'Tiêu đề SEO'} | Báo Hải Quân Việt Nam - SROV</p>
-              <p className="text-[#006621] text-[12px]">haiquansrov.site › bai-viet › {form.slug || 'slug-bai-viet'}</p>
+              <p className="text-[#006621] text-[12px]">baohaiquansrov.xo.je › bai-viet › {form.slug || 'slug-bai-viet'}</p>
               <p className="text-[#545454] text-[13px] mt-1 line-clamp-2">{form.meta_description || form.excerpt || 'Mô tả SEO của bài viết...'}</p>
             </div>
           </div>
@@ -729,7 +729,7 @@ export default function PostEditor() {
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
                 <p className="text-[11px] text-gray-400 mb-1 font-bold">XEM TRƯỚC GOOGLE</p>
                 <p className="text-[#1a0dab] text-[15px] font-medium">Báo Hải Quân Việt Nam - {form.meta_title || form.title || 'Tiêu đề bài viết'}</p>
-                <p className="text-[#006621] text-[12px]">haiquansrov.site › bai-viet › {form.slug || 'slug-bai-viet'}</p>
+                <p className="text-[#006621] text-[12px]">baohaiquansrov.xo.je › bai-viet › {form.slug || 'slug-bai-viet'}</p>
                 <p className="text-[#545454] text-[13px] mt-0.5 line-clamp-2">{form.meta_description || form.excerpt || 'Mô tả bài viết sẽ xuất hiện tại đây...'}</p>
               </div>
             </div>
