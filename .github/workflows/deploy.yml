@@ -30,4 +30,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./haiquan-news/dist/
-          server-dir: /htdocs/
+          server-dir: /htdocs/baohaiquansrov.xo.je
