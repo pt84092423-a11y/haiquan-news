@@ -30,4 +30,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./haiquan-news/dist/
-          server-dir: /htdocs/baohaiquansrov.xo.je/
+          # Đổi vị trí htdocs vào bên trong thư mục tên miền
+          server-dir: /baohaiquansrov.xo.je/htdocs/
