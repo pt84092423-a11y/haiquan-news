@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "vite build --config vite.config.ts",
+    "start": "node server.js",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -75,7 +76,8 @@
     "zod": "^3.25.76"
   },
   "dependencies": {
-    "react-helmet": "^6.1.0",
-    "@supabase/supabase-js": "^2.100.0"
+    "@supabase/supabase-js": "^2.100.0",
+    "express": "^5.2.1",
+    "react-helmet": "^6.1.0"
   }
 }
