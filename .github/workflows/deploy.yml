@@ -29,6 +29,9 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          timeout: 60000
           local-dir: ./haiquan-news/dist/
           # Đổi vị trí htdocs vào bên trong thư mục tên miền
           server-dir: /baohaiquansrov.xo.je/htdocs/
