@@ -51,12 +51,18 @@ export default function ArticlePage() {
   return (
     <>
       {post && (
-        <SEOHead
-          title={post.meta_title || post.title}
-          description={post.meta_description || post.excerpt}
-          ogImage={post.og_image || post.thumbnail}
-        />
-      )}
+  <SEOHead
+    title={post.meta_title || post.title}
+    description={post.meta_description || post.excerpt}
+    ogImage={post.og_image || post.thumbnail}
+    ogType="article"
+    author={post.author}
+    publishedDate={post.published_at}
+    modifiedDate={post.updated_at || post.published_at}
+    tags={post.category?.name}
+    canonicalUrl={`https://baohaiquansrov.xo.je/bai-viet/${post.slug}`}
+  />
+)}
 
       <main className="flex-grow pt-8 pb-12">
         <div className="container mx-auto max-w-[1200px] px-4">
