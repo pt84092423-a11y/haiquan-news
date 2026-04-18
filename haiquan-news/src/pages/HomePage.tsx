@@ -82,7 +82,12 @@ export default function HomePage() {
 
   return (
     <>
-      <SEOHead />
+      <SEOHead
+  title="Tin tức Hải quân mới nhất"
+  description="Báo Hải quân - Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam"
+  ogType="website"
+  canonicalUrl="https://baohaiquansrov.xo.je/"
+/>
       <div className="container mx-auto max-w-[1200px] px-4 py-6">
 
         {/* Row 1: TIÊU ĐIỂM + Featured + TIN MỚI */}
