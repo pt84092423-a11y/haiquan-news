@@ -16,7 +16,7 @@ interface SEOProps {
 const SITE_NAME = 'Báo Hải Quân Việt Nam - SROV';
 const SITE_DOMAIN = 'baohaiquansrov.xo.je';
 const DEFAULT_DESC = 'Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam';
-const DEFAULT_IMG = 'https://media.discordapp.net/attachments/882932839153299486/1486310006247788595/Copy_of_Bao_Hai_Quan_ND.png?ex=69c5098f&is=69c3b80f&hm=86a45653b0c39f0abf41bf21a3fabd5412a20880a1517a9ee8054fa437d710e8&=&format=webp&quality=lossless&width=1200&height=630';
+const DEFAULT_IMG = `https://${SITE_DOMAIN}/opengraph.jpg`;
 
 export default function SEOHead({
   title,
