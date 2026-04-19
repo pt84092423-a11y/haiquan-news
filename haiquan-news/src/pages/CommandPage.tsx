@@ -7,6 +7,7 @@ export type ActivityMilestone = {
   time: string;
   position: string;
   rank: string;
+  note?: string;
 };
 
 export type Commander = {
@@ -132,7 +133,7 @@ export default function CommandPage() {
                           <span className="absolute -left-5 top-1 w-3 h-3 rounded-full bg-[#0059b2] ring-4 ring-blue-100" />
                           <div className="text-[12px] font-black text-[#0059b2] uppercase">{item.time}</div>
                           <div className="font-bold text-[#222]">{item.position}</div>
-                          <div className="text-sm text-[#555]">{item.rank}</div>
+                          <div className="text-sm text-[#555]">{item.rank}{item.note ? ` • ${item.note}` : ''}</div>
                         </div>
                       ))}
                     </div>

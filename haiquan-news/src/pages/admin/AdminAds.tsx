@@ -4,17 +4,17 @@ import { getAllSettings, upsertSetting, uploadImage } from '@/lib/supabase';
 
 const AD_FIELDS = [
   { key: 'home_ad_main_images', label: 'Poster trang chủ 1 - nhiều ảnh tự đổi (mỗi dòng 1 URL)', type: 'textarea', upload: true },
-  { key: 'home_ad_main_link', label: 'Link quảng cáo ngang trang chủ', type: 'text' },
+  { key: 'home_ad_main_link', label: 'Link quảng cáo ngang trang chủ', type: 'text', upload: true },
   { key: 'home_ad_sidebar_image', label: 'Ảnh quảng cáo cột phải trang chủ', type: 'text', upload: true },
-  { key: 'home_ad_sidebar_link', label: 'Link quảng cáo cột phải trang chủ', type: 'text' },
+  { key: 'home_ad_sidebar_link', label: 'Link quảng cáo cột phải trang chủ', type: 'text', upload: true },
   { key: 'home_ad_media_image', label: 'Ảnh quảng cáo mục Hải Quân Media', type: 'text', upload: true },
-  { key: 'home_ad_media_link', label: 'Link quảng cáo mục Hải Quân Media', type: 'text' },
+  { key: 'home_ad_media_link', label: 'Link quảng cáo mục Hải Quân Media', type: 'text', upload: true },
   { key: 'home_ad_bottom_images', label: 'Poster trang chủ 2 - nhiều ảnh tự đổi (mỗi dòng 1 URL)', type: 'textarea', upload: true },
-  { key: 'home_ad_bottom_link', label: 'Link quảng cáo cuối trang chủ', type: 'text' },
+  { key: 'home_ad_bottom_link', label: 'Link quảng cáo cuối trang chủ', type: 'text', upload: true },
   { key: 'article_ad_1_image', label: 'Ảnh quảng cáo bài viết/chuyên mục 1', type: 'text', upload: true },
-  { key: 'article_ad_1_link', label: 'Link quảng cáo bài viết/chuyên mục 1', type: 'text' },
+  { key: 'article_ad_1_link', label: 'Link quảng cáo bài viết/chuyên mục 1', type: 'text', upload: true },
   { key: 'article_ad_2_image', label: 'Ảnh quảng cáo bài viết/chuyên mục 2', type: 'text', upload: true },
-  { key: 'article_ad_2_link', label: 'Link quảng cáo bài viết/chuyên mục 2', type: 'text' },
+  { key: 'article_ad_2_link', label: 'Link quảng cáo bài viết/chuyên mục 2', type: 'text', upload: true },
 ];
 
 export default function AdminAds() {
@@ -73,7 +73,7 @@ export default function AdminAds() {
         {AD_FIELDS.map(field => (
           <section key={field.key} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-3">
             <label className="block text-[13px] font-bold text-[#374151] uppercase">{field.label}</label>
-            {field.upload && settings[field.key] && field.type !== 'textarea' && <img src={settings[field.key]} alt="" className="max-h-48 rounded-lg border border-gray-100 object-contain bg-gray-50" />}
+            {settings[field.key] && /^https?:\/\/.+\.(png|jpe?g|webp|gif|avif)(\?.*)?$/i.test(settings[field.key]) && <img src={settings[field.key]} alt="" className="max-h-48 rounded-lg border border-gray-100 object-contain bg-gray-50" />}
             {field.type === 'textarea' ? (
               <textarea value={settings[field.key] || ''} onChange={e => setSettings(s => ({ ...s, [field.key]: e.target.value }))} className="w-full p-3 text-[14px] border border-gray-200 rounded-lg resize-none focus:outline-none focus:border-[#0059b2]" rows={5} />
             ) : (

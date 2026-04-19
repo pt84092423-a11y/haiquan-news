@@ -57,8 +57,8 @@ Configured as an **autoscale Node server** deployment so article pages can retur
 - Public pages for `Cấu trúc`, `Chỉ huy`, and `Liên hệ`
 - `Cấu trúc` supports two display modes: editable organization chart or one uploaded poster/image; each chart unit can include logo, slogan, history, and up to 10 activity images shown in a detail modal
 - Admin pages are split into `Cấu trúc`, `Chỉ huy`, and `Quảng cáo`; structure and HICOM personnel are stored as JSON settings
-- `Chỉ huy` personnel records support an activity timeline with time, position, and rank milestones
-- Article/category ad images are managed from the dedicated admin `Quảng cáo` page
+- `Chỉ huy` personnel records support a table-style activity timeline with time, rank/order, position, and note milestones, plus slot-based uploads for detail images and service unit logos
+- Article/category/home ad fields are managed from the dedicated admin `Quảng cáo` page, with upload controls available on every configured field
 - Home page poster slots support one or multiple image URLs with automatic rotation, configurable through admin settings
 - HICOM commander records include unit, display order, bio, HTML detail, detail images, work chart bars, and service unit logos
 - Supabase-powered auth with role-based access control (RBAC)
