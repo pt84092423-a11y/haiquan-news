@@ -42,9 +42,9 @@ The workflow "Start application" handles this automatically.
 
 ## Deployment
 
-Configured as a **static** deployment:
+Configured as an **autoscale Node server** deployment so article pages can return server-rendered OpenGraph tags:
 - **Build**: `cd haiquan-news && PORT=5000 npm run build`
-- **Public Dir**: `haiquan-news/dist`
+- **Run**: `node haiquan-news/server.js`
 
 ## Key Features
 
@@ -52,6 +52,7 @@ Configured as a **static** deployment:
 - Digital newspaper edition viewer (Báo In)
 - Admin dashboard: Post editor, Category manager, User manager, Audit log, Approval queue
 - Post editor supports separate OpenGraph title/image stored independently from meta title/description
+- Article OpenGraph tags are injected by `server.js` for `/bai-viet/:slug` so social/chat crawlers can read the correct title, description, image, and canonical URL
 - Post editor includes quick-insert rich content blocks: image frame, polaroid, cinema/video, podcast, text frame, quote, page background, table, mini org chart, decorative text block
 - Public pages for `Cấu trúc` and `Chỉ huy`
 - `Cấu trúc` supports two display modes: editable organization chart or one uploaded poster/image

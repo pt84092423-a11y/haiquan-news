@@ -15,6 +15,7 @@ interface SEOProps {
 }
 
 const SITE_NAME = 'Báo Hải Quân Việt Nam - SROV';
+const OG_SITE_NAME = 'Cổng Thông Tin SROV';
 const SITE_DOMAIN = 'baohaiquansrov.xo.je';
 const DEFAULT_DESC = 'Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam';
 const DEFAULT_IMG = `https://${SITE_DOMAIN}/opengraph.jpg`;
@@ -33,7 +34,7 @@ export default function SEOHead({
   canonicalUrl,
 }: SEOProps) {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
-  const openGraphTitle = ogTitle ? `${ogTitle} | ${SITE_NAME}` : fullTitle;
+  const openGraphTitle = ogTitle || title || SITE_NAME;
   const desc = description || DEFAULT_DESC;
   const img = ogImage || DEFAULT_IMG;
   const url = canonicalUrl || ogUrl || `https://${SITE_DOMAIN}${window.location.pathname}`;
@@ -45,7 +46,7 @@ export default function SEOHead({
     setMeta('author', author || SITE_NAME);
     setMeta('theme-color', '#0059b2');
 
-    setMeta('og:site_name', SITE_NAME, true);
+    setMeta('og:site_name', OG_SITE_NAME, true);
     setMeta('og:title', openGraphTitle, true);
     setMeta('og:description', desc, true);
     setMeta('og:image', img, true);
@@ -63,7 +64,7 @@ export default function SEOHead({
       if (tags) setMeta('article:tag', tags, true);
     }
 
-    setMeta('twitter:card', 'summary_large_image');
+    setMeta('twitter:card', 'summary');
     setMeta('twitter:site', '@SROVNavy36');
     setMeta('twitter:title', openGraphTitle);
     setMeta('twitter:description', desc);
