@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'wouter';
 import AdminLayout from './AdminLayout';
 import {
   createPost, updatePost, getAllCategories, uploadImage, uploadMediaFile, generateSlug,
+  packOgPayload, parseOgPayload,
   type Post, type Category
 } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
@@ -67,6 +68,19 @@ const CONTENT_TYPES = [
 
 const HAS_QUILL = ['article', 'longform', 'photo_story', 'podcast'];
 
+const CONTENT_BLOCKS = [
+  { label: 'Khung ảnh', html: '<figure class="hq-block hq-image-frame"><img src="https://via.placeholder.com/1200x700/00305f/ffffff?text=Anh+Hai+Quan" alt="Ảnh Hải quân" /><figcaption>Chú thích ảnh tại đây</figcaption></figure>' },
+  { label: 'Khung ảnh Polaroid', html: '<figure class="hq-block hq-polaroid"><img src="https://via.placeholder.com/900x620/e8f0fa/00305f?text=Polaroid" alt="Ảnh Polaroid" /><figcaption>Khoảnh khắc Hải quân</figcaption></figure>' },
+  { label: 'Khung video phim', html: '<div class="hq-block hq-cinema"><div class="hq-cinema-screen">Dán iframe hoặc video vào đây</div><p>Video/Phim tư liệu Hải quân</p></div>' },
+  { label: 'Khung podcast', html: '<div class="hq-block hq-podcast"><div class="hq-podcast-icon">▶</div><div><strong>Podcast Hải quân</strong><p>Dán audio hoặc nội dung giới thiệu tập podcast tại đây.</p></div></div>' },
+  { label: 'Khung chữ', html: '<div class="hq-block hq-text-box"><h3>Tiêu đề khung chữ</h3><p>Nhập nội dung nổi bật tại đây.</p></div>' },
+  { label: 'Trích dẫn', html: '<blockquote class="hq-block hq-quote">“Nhập câu trích dẫn nổi bật tại đây.”<cite>— Nguồn trích dẫn</cite></blockquote>' },
+  { label: 'Nền trang', html: '<section class="hq-block hq-page-bg"><h2>Tiêu đề phần nội dung</h2><p>Nội dung trên nền trang tùy biến.</p></section>' },
+  { label: 'Bảng 3x3', html: '<table class="hq-block hq-table"><tbody><tr><th>Tiêu đề 1</th><th>Tiêu đề 2</th><th>Tiêu đề 3</th></tr><tr><td>Dòng 1</td><td>Nội dung</td><td>Nội dung</td></tr><tr><td>Dòng 2</td><td>Nội dung</td><td>Nội dung</td></tr></tbody></table>' },
+  { label: 'Sơ đồ đơn vị', html: '<div class="hq-block hq-org-mini"><div class="hq-org-node hq-org-root">Bộ Tư lệnh Hải quân</div><div class="hq-org-children"><span>Đơn vị 1</span><span>Đơn vị 2</span><span>Đơn vị 3</span></div></div>' },
+  { label: 'Khung hoa văn', html: '<div class="hq-block hq-flourish"><h3>Tiêu đề trang trọng</h3><p>Khung chữ hoa văn dùng cho longform, e-magazine hoặc câu chuyện đặc biệt.</p></div>' },
+];
+
 export default function PostEditor() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
@@ -81,6 +95,7 @@ export default function PostEditor() {
   const [showPreview, setShowPreview] = useState(false);
   const [success, setSuccess] = useState('');
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [ogImageUploading, setOgImageUploading] = useState(false);
   const [audioUploading, setAudioUploading] = useState(false);
   const [pdfUploading, setPdfUploading] = useState(false);
   const [galleryUploading, setGalleryUploading] = useState(false);
@@ -89,6 +104,8 @@ export default function PostEditor() {
   const [tags, setTags] = useState<string[]>([]);
   const [editionNumber, setEditionNumber] = useState('');
   const [videoSource, setVideoSource] = useState<'embed' | 'upload'>('embed');
+  const [ogTitle, setOgTitle] = useState('');
+  const [ogImage, setOgImage] = useState('');
 
   const quillRef = useRef<any>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -118,16 +135,14 @@ export default function PostEditor() {
       supabase.from('posts').select('*, category:categories(*)').eq('id', params.id).single().then(({ data }) => {
         if (data) {
           setForm(data);
+          const ogPayload = parseOgPayload(data.og_image);
+          setOgTitle(ogPayload.title || '');
+          setOgImage(ogPayload.image || '');
           if (data.meta_title) {
             const tagMatch = data.meta_title.match(/\[TAGS:(.*?)\]/);
             if (tagMatch) setTags(tagMatch[1].split(',').filter(Boolean));
           }
-          if (data.og_image?.startsWith('[GALLERY:')) {
-            try {
-              const raw = data.og_image.replace('[GALLERY:', '').replace(']', '');
-              setGalleryImages(JSON.parse(raw));
-            } catch {}
-          }
+          if (ogPayload.gallery?.length) setGalleryImages(ogPayload.gallery);
           if (data.post_type === 'baoin' && data.excerpt) {
             setEditionNumber(data.excerpt);
           }
@@ -205,6 +220,23 @@ export default function PostEditor() {
     setThumbnailUploading(false);
   };
 
+  const handleOgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setOgImageUploading(true);
+    const url = await uploadImage(file);
+    if (url) setOgImage(url);
+    setOgImageUploading(false);
+  };
+
+  const insertContentBlock = (html: string) => {
+    if (!quillRef.current) return;
+    const selection = quillRef.current.getSelection(true);
+    const index = selection?.index ?? quillRef.current.getLength();
+    quillRef.current.clipboard.dangerouslyPasteHTML(index, html);
+    setForm(f => ({ ...f, content: quillRef.current.root.innerHTML }));
+  };
+
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -261,7 +293,12 @@ export default function PostEditor() {
     setError('');
     try {
       const tagStr = tags.length ? `[TAGS:${tags.join(',')}]` : '';
-      const galleryStr = galleryImages.length ? `[GALLERY:${JSON.stringify(galleryImages)}]` : form.og_image || '';
+      const ogPayload = packOgPayload({
+        title: ogTitle,
+        image: ogImage,
+        gallery: form.post_type === 'photo_story' ? galleryImages : undefined,
+      });
+      const legacyGalleryStr = galleryImages.length ? `[GALLERY:${JSON.stringify(galleryImages)}]` : '';
 
       // EDITOR: khi nhấn "Xuất bản" thì chỉ lưu nháp + tạo approval request
       const actualStatus = (isEditor && status === 'published') ? 'draft' : status;
@@ -273,7 +310,9 @@ export default function PostEditor() {
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
         updated_at: new Date().toISOString(),
         meta_title: tagStr ? `${tagStr} ${form.meta_title || ''}`.trim() : form.meta_title,
-        og_image: form.post_type === 'photo_story' ? galleryStr : form.og_image,
+        og_image: (ogTitle || ogImage || (form.post_type === 'photo_story' && galleryImages.length))
+          ? ogPayload
+          : (form.post_type === 'photo_story' ? legacyGalleryStr : form.og_image),
         excerpt: form.post_type === 'baoin' ? editionNumber : form.excerpt,
       };
 
@@ -481,10 +520,25 @@ export default function PostEditor() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
                 <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Nội dung chi tiết</span>
-                <button className="text-[12px] text-[#0059b2] font-bold hover:underline flex items-center gap-1">
+                <button type="button" className="text-[12px] text-[#0059b2] font-bold hover:underline flex items-center gap-1">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                   Thêm Media (Ảnh/Video)
                 </button>
+              </div>
+              <div className="px-6 py-3 border-b border-gray-100 bg-[#f8fbff]">
+                <p className="text-[12px] font-bold text-[#0059b2] uppercase mb-2">Mẫu khuôn chèn nhanh</p>
+                <div className="flex flex-wrap gap-2">
+                  {CONTENT_BLOCKS.map(block => (
+                    <button
+                      key={block.label}
+                      type="button"
+                      onClick={() => insertContentBlock(block.html)}
+                      className="px-3 py-1.5 rounded-full bg-white border border-blue-100 text-[12px] font-bold text-[#0059b2] hover:bg-[#0059b2] hover:text-white transition"
+                    >
+                      {block.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div ref={editorRef} className="border-0" style={{ minHeight: '320px' }} />
             </div>
@@ -800,6 +854,41 @@ export default function PostEditor() {
                 onChange={e => setForm(f => ({ ...f, thumbnail: e.target.value }))}
                 className="w-full p-2 text-[11px] border border-gray-200 rounded-lg focus:outline-none"
                 placeholder="Hoặc dán URL ảnh..."
+              />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100">
+              <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">OpenGraph riêng</span>
+              <p className="text-[11px] text-gray-400 mt-1">Dùng khi chia sẻ Facebook/Zalo, không thay đổi Meta Title hoặc Meta Description.</p>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Tiêu đề OpenGraph</label>
+                <input
+                  value={ogTitle}
+                  onChange={e => setOgTitle(e.target.value)}
+                  className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]"
+                  placeholder="Nếu để trống sẽ dùng tiêu đề/SEO title"
+                />
+              </div>
+              {ogImage && (
+                <div className="relative">
+                  <img src={ogImage} alt="" className="w-full aspect-[1.91/1] object-cover rounded-xl border border-gray-100" />
+                  <button onClick={() => setOgImage('')} className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow">×</button>
+                </div>
+              )}
+              <label className="flex flex-col items-center justify-center w-full h-[95px] bg-blue-50 rounded-xl border-2 border-dashed border-blue-200 cursor-pointer hover:bg-blue-100 transition">
+                <input type="file" accept="image/*" onChange={handleOgImageUpload} className="hidden" />
+                <span className="text-[12px] font-bold text-[#0059b2]">{ogImageUploading ? 'Đang tải ảnh OG...' : 'Tải ảnh OpenGraph lên ImgBB'}</span>
+                <span className="text-[11px] text-gray-400 mt-1">Khuyến nghị 1200×630</span>
+              </label>
+              <input
+                value={ogImage}
+                onChange={e => setOgImage(e.target.value)}
+                className="w-full p-2 text-[11px] border border-gray-200 rounded-lg focus:outline-none"
+                placeholder="Hoặc dán URL ảnh OpenGraph..."
               />
             </div>
           </div>

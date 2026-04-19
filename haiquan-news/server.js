@@ -30,6 +30,26 @@ async function fetchPost(slug) {
   return data?.[0] || null;
 }
 
+function parseOgPayload(value) {
+  if (!value) return {};
+  if (value.startsWith('[OG:')) {
+    try {
+      return JSON.parse(value.replace('[OG:', '').replace(/\]$/, ''));
+    } catch {
+      return {};
+    }
+  }
+  if (value.startsWith('[GALLERY:')) {
+    try {
+      const gallery = JSON.parse(value.replace('[GALLERY:', '').replace(/\]$/, ''));
+      return { image: gallery?.[0] };
+    } catch {
+      return {};
+    }
+  }
+  return { image: value };
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return str
@@ -40,10 +60,11 @@ function escapeHtml(str) {
 }
 
 function buildOgHtml(post, slug) {
-  const title = escapeHtml(post.meta_title || post.title);
+  const ogPayload = parseOgPayload(post.og_image);
+  const title = escapeHtml(ogPayload.title || post.meta_title || post.title);
   const fullTitle = `${title} | ${SITE_NAME}`;
   const description = escapeHtml(post.meta_description || post.excerpt || DEFAULT_DESC);
-  const image = escapeHtml(post.og_image || post.thumbnail || DEFAULT_IMG);
+  const image = escapeHtml(ogPayload.image || post.thumbnail || DEFAULT_IMG);
   const url = `https://${SITE_DOMAIN}/bai-viet/${slug}`;
   const published = post.published_at || post.created_at || '';
   const modified = post.updated_at || published;

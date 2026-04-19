@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 interface SEOProps {
   title?: string;
   description?: string;
+  ogTitle?: string;
   ogImage?: string;
   ogUrl?: string;
   ogType?: string;
@@ -21,6 +22,7 @@ const DEFAULT_IMG = `https://${SITE_DOMAIN}/opengraph.jpg`;
 export default function SEOHead({
   title,
   description,
+  ogTitle,
   ogImage,
   ogUrl,
   ogType = 'website',
@@ -31,6 +33,7 @@ export default function SEOHead({
   canonicalUrl,
 }: SEOProps) {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+  const openGraphTitle = ogTitle ? `${ogTitle} | ${SITE_NAME}` : fullTitle;
   const desc = description || DEFAULT_DESC;
   const img = ogImage || DEFAULT_IMG;
   const url = canonicalUrl || ogUrl || `https://${SITE_DOMAIN}${window.location.pathname}`;
@@ -43,12 +46,12 @@ export default function SEOHead({
     setMeta('theme-color', '#0059b2');
 
     setMeta('og:site_name', SITE_NAME, true);
-    setMeta('og:title', fullTitle, true);
+    setMeta('og:title', openGraphTitle, true);
     setMeta('og:description', desc, true);
     setMeta('og:image', img, true);
     setMeta('og:image:width', '1200', true);
     setMeta('og:image:height', '630', true);
-    setMeta('og:image:alt', fullTitle, true);
+    setMeta('og:image:alt', openGraphTitle, true);
     setMeta('og:type', ogType, true);
     setMeta('og:url', url, true);
     setMeta('og:locale', 'vi_VN', true);
@@ -62,13 +65,13 @@ export default function SEOHead({
 
     setMeta('twitter:card', 'summary_large_image');
     setMeta('twitter:site', '@SROVNavy36');
-    setMeta('twitter:title', fullTitle);
+    setMeta('twitter:title', openGraphTitle);
     setMeta('twitter:description', desc);
     setMeta('twitter:image', img);
     if (author) setMeta('twitter:creator', author);
 
     setCanonical(url);
-  }, [fullTitle, desc, img, url, ogType, author, publishedDate, modifiedDate, tags]);
+  }, [fullTitle, openGraphTitle, desc, img, url, ogType, author, publishedDate, modifiedDate, tags]);
 
   return null;
 }

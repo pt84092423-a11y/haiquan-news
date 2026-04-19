@@ -4,7 +4,7 @@ import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import PostCard from '@/components/PostCard';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getPublishedPosts, type Post } from '@/lib/supabase';
+import { getAllSettings, getPublishedPosts, type Post } from '@/lib/supabase';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
 
@@ -24,17 +24,19 @@ export default function HomePage() {
   const [videoPosts, setVideoPosts] = useState<Post[]>([]);
   const [shortVideos, setShortVideos] = useState<Post[]>([]);
   const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
+  const [ads, setAds] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     async function load() {
-      const [all, media, shorts, podcasts, baoIn] = await Promise.all([
+      const [all, media, shorts, podcasts, baoIn, settings] = await Promise.all([
         getPublishedPosts({ limit: 40 }), // Tăng limit lên một chút để đủ bài cho các mục mới
         getPublishedPosts({ postType: 'video', limit: 6 }),
         getPublishedPosts({ postType: 'video', limit: 5 }),
         getPublishedPosts({ postType: 'podcast', limit: 4 }),
         getPublishedPosts({ postType: 'baoin', limit: 1 }),
+        getAllSettings(),
       ]);
       const posts = all || [];
       const articles = posts.filter(p => p.post_type !== 'baoin');
@@ -54,6 +56,7 @@ export default function HomePage() {
       setVideoPosts((media || []).slice(0, 3));
       setShortVideos((shorts || []).slice(0, 5));
       setLatestBaoIn((baoIn || [])[0] || null);
+      setAds(settings || {});
       setLoading(false);
     }
     load();
@@ -156,8 +159,8 @@ export default function HomePage() {
 
         {/* Banner */}
         <div className="my-8">
-          <a href="#" className="block w-full rounded-sm overflow-hidden shadow-md cursor-pointer hover:opacity-95 transition">
-            <img src="https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg" alt="Banner Cổ Động" className="w-full h-auto object-cover" />
+          <a href={ads.home_ad_main_link || "#"} className="block w-full rounded-sm overflow-hidden shadow-md cursor-pointer hover:opacity-95 transition">
+            <img src={ads.home_ad_main_image || "https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg"} alt="Banner Cổ Động" className="w-full h-auto object-cover" />
           </a>
         </div>
 
@@ -251,21 +254,21 @@ export default function HomePage() {
               <WebsiteLinks />
             </div>
             <div>
-              <a href="#" className="block hover:opacity-95 transition">
-                <img src="/quangcao-101.png" className="w-full h-auto shadow-md rounded-sm" alt="Gia nhập Hải quân đánh bộ 101" />
+              <a href={ads.home_ad_sidebar_link || "#"} className="block hover:opacity-95 transition">
+                <img src={ads.home_ad_sidebar_image || "/quangcao-101.png"} className="w-full h-auto shadow-md rounded-sm" alt="Quảng cáo trang chủ" />
               </a>
             </div>
           </aside>
         </div>
 
-        {/* --- KINH TẾ - XÃ HỘI --- */}
+        {/* --- CHỈ HUY --- */}
         <section className="mt-8 mb-8 border-b border-[#e1e1e1] pb-8">
           <div className="flex flex-col md:flex-row md:items-center mb-6">
-            <SectionTitle title="KINH TẾ - XÃ HỘI" className={`text-[24px] mb-0 md:mr-8 ${headingStyle}`} />
+            <SectionTitle title="CHỈ HUY" className={`text-[24px] mb-0 md:mr-8 ${headingStyle}`} />
             <div className="flex flex-wrap gap-2 mt-3 md:mt-0">
               <PillButton label="Tin tức - Sự kiện" />
-              <PillButton label="Kinh tế - Quốc phòng biển đảo" />
-              <PillButton label="Từ đất liền đến hải đảo" />
+              <PillButton label="HICOM Bộ Tư lệnh" />
+              <PillButton label="HICOM các đơn vị" />
             </div>
           </div>
 
@@ -292,7 +295,10 @@ export default function HomePage() {
                   </div>
                 </Link>
               ) : (
-                 <div className="flex items-center justify-center h-full bg-gray-50 text-gray-400 rounded">Chưa có bài viết</div>
+                 <div className="bg-[#f8fbff] border border-blue-100 p-8 rounded-md min-h-[240px] flex flex-col justify-center items-center text-center text-[#0059b2]">
+                   <strong>Chưa có nội dung Chỉ huy</strong>
+                   <span className="text-sm text-gray-500 mt-2">Khi có bài viết mới, nội dung sẽ tự hiển thị tại đây.</span>
+                 </div>
               )}
             </div>
 
@@ -357,8 +363,8 @@ export default function HomePage() {
 
           {/* Banner Đặc công Hải quân */}
           <div className="w-full">
-            <a href="#" className="block hover:opacity-95 transition rounded-md overflow-hidden shadow-md">
-               <img src="https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png" alt="Banner Đặc công Hải quân" className="w-full h-auto object-cover" />
+            <a href={ads.home_ad_bottom_link || "#"} className="block hover:opacity-95 transition rounded-md overflow-hidden shadow-md">
+               <img src={ads.home_ad_bottom_image || "https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png"} alt="Banner Đặc công Hải quân" className="w-full h-auto object-cover" />
             </a>
           </div>
         </section>
@@ -394,6 +400,9 @@ export default function HomePage() {
 
             <div className="grid grid-cols-2 gap-4">
               {mediaPosts.slice(1, 5).map(p => <PostCard key={p.id} post={p} variant="video" />)}
+              {!loading && mediaPosts.length <= 1 && [...Array(4 - Math.max(0, mediaPosts.length - 1))].map((_, i) => (
+                <div key={`media-empty-${i}`} className="aspect-[4/3] rounded-md bg-white/70 border border-blue-100 flex items-center justify-center text-[12px] text-[#0059b2]/50 font-bold uppercase">Chưa có nội dung</div>
+              ))}
             </div>
           </div>
         </section>
@@ -470,8 +479,8 @@ export default function HomePage() {
               </div>
             </div>
             <div className="md:col-span-3">
-              <a href="#" className="block hover:opacity-95 transition">
-                <img src="/quangcao-101.png" className="w-full h-auto rounded-md shadow-md" alt="Gia nhập Hải quân đánh bộ 101" />
+              <a href={ads.home_ad_media_link || "#"} className="block hover:opacity-95 transition">
+                <img src={ads.home_ad_media_image || "/quangcao-101.png"} className="w-full h-auto rounded-md shadow-md" alt="Quảng cáo media" />
               </a>
             </div>
           </div>
@@ -486,7 +495,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {loading
                 ? [...Array(5)].map((_, i) => <div key={i} className="aspect-[9/16] bg-[#004b87] rounded-lg animate-pulse" />)
-                : shortVideos.map(p => (
+                : shortVideos.length > 0 ? shortVideos.map(p => (
                   <Link key={p.id} href={`/bai-viet/${p.slug}`} className="relative aspect-[9/16] rounded-lg overflow-hidden group cursor-pointer shadow-lg border border-white/10">
                     <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
@@ -497,7 +506,7 @@ export default function HomePage() {
                     </div>
                     <h4 className="absolute bottom-3 left-3 right-3 text-white font-['Roboto',sans-serif] font-bold text-[14px] leading-tight">{p.title}</h4>
                   </Link>
-                ))
+                )) : [...Array(5)].map((_, i) => <div key={`short-empty-${i}`} className="aspect-[9/16] bg-[#004b87] rounded-lg flex items-center justify-center text-white/40 uppercase text-xs font-bold">Chưa có nội dung</div>)
               }
             </div>
           </div>
@@ -520,7 +529,7 @@ export default function HomePage() {
                     </div>
                   </Link>
                 ) : (
-                  <div className="aspect-video bg-[#001540] rounded-md flex items-center justify-center text-white/40 uppercase">Chưa có video</div>
+                  <div className="aspect-video bg-[#001540] rounded-md flex items-center justify-center text-white/40 uppercase">Chưa có nội dung</div>
                 )}
               </div>
               <div className="md:col-span-4 flex flex-col gap-4">
@@ -531,6 +540,15 @@ export default function HomePage() {
                     </div>
                     <h4 className="font-['Roboto',sans-serif] text-[13px] font-bold text-white/80 group-hover:text-[#FFD700] leading-snug">{p.title}</h4>
                   </Link>
+                ))}
+                {!loading && videoPosts.length <= 1 && [...Array(3)].map((_, i) => (
+                  <div key={`tv-empty-${i}`} className="flex gap-3 opacity-60">
+                    <div className="w-[120px] flex-shrink-0 aspect-video rounded-sm bg-[#001540]" />
+                    <div className="flex-1 space-y-2 pt-1">
+                      <div className="h-3 bg-white/15 rounded" />
+                      <div className="h-3 bg-white/10 rounded w-2/3" />
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

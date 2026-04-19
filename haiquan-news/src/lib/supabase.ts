@@ -37,6 +37,12 @@ export type Post = {
   published_at?: string;
 };
 
+export type OgPayload = {
+  title?: string;
+  image?: string;
+  gallery?: string[];
+};
+
 export type SiteSetting = {
   key: string;
   value: string;
@@ -119,8 +125,44 @@ export async function getSiteSetting(key: string): Promise<string | null> {
     .from('settings')
     .select('value')
     .eq('key', key)
-    .single();
+    .maybeSingle();
   return data?.value ?? null;
+}
+
+export function parseJsonSetting<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export function packOgPayload(payload: OgPayload): string {
+  const clean: OgPayload = {};
+  if (payload.title?.trim()) clean.title = payload.title.trim();
+  if (payload.image?.trim()) clean.image = payload.image.trim();
+  if (payload.gallery?.length) clean.gallery = payload.gallery;
+  return `[OG:${JSON.stringify(clean)}]`;
+}
+
+export function parseOgPayload(value?: string | null): OgPayload {
+  if (!value) return {};
+  if (value.startsWith('[OG:')) {
+    try {
+      return JSON.parse(value.replace('[OG:', '').replace(/\]$/, '')) as OgPayload;
+    } catch {
+      return {};
+    }
+  }
+  if (value.startsWith('[GALLERY:')) {
+    try {
+      return { gallery: JSON.parse(value.replace('[GALLERY:', '').replace(/\]$/, '')) };
+    } catch {
+      return {};
+    }
+  }
+  return { image: value };
 }
 
 export async function getAllSettings(): Promise<Record<string, string>> {
@@ -212,6 +254,7 @@ export async function uploadImage(file: File): Promise<string | null> {
     const formData = new FormData();
     formData.append('key', IMGBB_API_KEY);
     formData.append('image', base64);
+    formData.append('name', file.name.replace(/\.[^.]+$/, '') || `haiquan-${Date.now()}`);
     const res = await fetch('https://api.imgbb.com/1/upload', {
       method: 'POST',
       body: formData,
@@ -347,6 +390,8 @@ INSERT INTO categories (name, slug, description) VALUES
   ('Longform', 'longform', 'Bài viết chuyên sâu dạng dài'),
   ('Phóng sự ảnh', 'phong-su-anh', 'Phóng sự bằng hình ảnh'),
   ('Truyền hình Hải quân', 'truyen-hinh-hq', 'Video truyền hình'),
+  ('Cấu trúc', 'cau-truc', 'Cấu trúc tổ chức Hải quân'),
+  ('Chỉ huy', 'chi-huy', 'Thông tin chỉ huy Hải quân'),
   ('Podcast', 'podcast', 'Chương trình âm thanh'),
   ('Báo In', 'bao-in', 'Phiên bản báo in số hóa')
 ON CONFLICT (slug) DO NOTHING;
@@ -362,7 +407,15 @@ INSERT INTO settings (key, value) VALUES
   ('contact_email', 'pt84092423@gmail.com'),
   ('contact_phone', '024.XXXX.XXXX'),
   ('contact_address', 'Số XX đường XX, Hà Nội'),
-  ('og_default_image', 'https://media.discordapp.net/attachments/882932839153299486/1486310006247788595/Copy_of_Bao_Hai_Quan_ND.png?ex=69c5098f&is=69c3b80f&hm=86a45653b0c39f0abf41bf21a3fabd5412a20880a1517a9ee8054fa437d710e8&=&format=webp&quality=lossless&width=619&height=203')
+  ('og_default_image', 'https://media.discordapp.net/attachments/882932839153299486/1486310006247788595/Copy_of_Bao_Hai_Quan_ND.png?ex=69c5098f&is=69c3b80f&hm=86a45653b0c39f0abf41bf21a3fabd5412a20880a1517a9ee8054fa437d710e8&=&format=webp&quality=lossless&width=619&height=203'),
+  ('home_ad_main_image', 'https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg'),
+  ('home_ad_main_link', '#'),
+  ('home_ad_sidebar_image', '/quangcao-101.png'),
+  ('home_ad_sidebar_link', '#'),
+  ('home_ad_media_image', '/quangcao-101.png'),
+  ('home_ad_media_link', '#'),
+  ('home_ad_bottom_image', 'https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png'),
+  ('home_ad_bottom_link', '#')
 ON CONFLICT (key) DO NOTHING;
 
 -- Enable RLS

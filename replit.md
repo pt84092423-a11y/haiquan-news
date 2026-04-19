@@ -19,8 +19,8 @@ A news portal website for the Vietnam People's Navy (Báo Hải Quân Việt Nam
 ```
 haiquan-news/          # Main project directory
   src/
-    components/        # Reusable components (ui/, layout, etc.)
-    pages/             # Route-level pages
+    components/        # Reusable components (ui/, layout, SEO, cards)
+    pages/             # Route-level public pages
       admin/           # Admin dashboard pages
     lib/               # Supabase client, auth, utilities
     hooks/             # Custom React hooks
@@ -51,6 +51,11 @@ Configured as a **static** deployment:
 - News articles, videos, podcasts, photo stories, long-form content
 - Digital newspaper edition viewer (Báo In)
 - Admin dashboard: Post editor, Category manager, User manager, Audit log, Approval queue
+- Post editor supports separate OpenGraph title/image stored independently from meta title/description
+- Post editor includes quick-insert rich content blocks: image frame, polaroid, cinema/video, podcast, text frame, quote, page background, table, mini org chart, decorative text block
+- Public pages for `Cấu trúc` and `Chỉ huy`
+- Admin page `Cấu trúc & Chỉ huy` stores editable unit charts and HICOM personnel as JSON settings
+- Home page advertisements are configurable through admin settings and can upload images via ImgBB
 - Supabase-powered auth with role-based access control (RBAC)
 - Automated WebP image conversion before upload
 

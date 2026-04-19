@@ -41,6 +41,11 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           label: 'Báo In',
           icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
         },
+        {
+          href: '/admin/cau-truc-chi-huy',
+          label: 'Cấu trúc & Chỉ huy',
+          icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 20H4a2 2 0 01-2-2v-7a2 2 0 012-2h7m0 11V9m0 11h9a2 2 0 002-2v-7a2 2 0 00-2-2h-9m0 0V4a2 2 0 012-2h4a2 2 0 012 2v5" /></svg>
+        },
       ]
     },
     ...(can(session?.role, 'approve_requests') ? [{

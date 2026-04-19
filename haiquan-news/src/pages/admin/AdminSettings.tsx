@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAllSettings, upsertSetting } from '@/lib/supabase';
+import { getAllSettings, upsertSetting, uploadImage } from '@/lib/supabase';
 
 const SETTINGS_FIELDS = [
   { key: 'site_name', label: 'Tên website', type: 'text' },
   { key: 'site_description', label: 'Mô tả website', type: 'textarea' },
   { key: 'logo_url', label: 'URL Logo', type: 'text' },
   { key: 'og_default_image', label: 'OG Image mặc định', type: 'text' },
+  { key: 'home_ad_main_image', label: 'Ảnh quảng cáo ngang trang chủ', type: 'text', upload: true },
+  { key: 'home_ad_main_link', label: 'Link quảng cáo ngang trang chủ', type: 'text' },
+  { key: 'home_ad_sidebar_image', label: 'Ảnh quảng cáo cột phải trang chủ', type: 'text', upload: true },
+  { key: 'home_ad_sidebar_link', label: 'Link quảng cáo cột phải trang chủ', type: 'text' },
+  { key: 'home_ad_media_image', label: 'Ảnh quảng cáo mục Hải Quân Media', type: 'text', upload: true },
+  { key: 'home_ad_media_link', label: 'Link quảng cáo mục Hải Quân Media', type: 'text' },
+  { key: 'home_ad_bottom_image', label: 'Ảnh quảng cáo cuối trang chủ', type: 'text', upload: true },
+  { key: 'home_ad_bottom_link', label: 'Link quảng cáo cuối trang chủ', type: 'text' },
   { key: 'facebook_url', label: 'Facebook URL', type: 'text' },
   { key: 'youtube_url', label: 'YouTube URL', type: 'text' },
   { key: 'zalo_url', label: 'Zalo URL', type: 'text' },
@@ -19,6 +27,7 @@ export default function AdminSettings() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [uploadingKey, setUploadingKey] = useState('');
 
   useEffect(() => {
     getAllSettings().then(setSettings);
@@ -48,6 +57,14 @@ export default function AdminSettings() {
     }
   };
 
+  const handleUpload = async (key: string, file?: File) => {
+    if (!file) return;
+    setUploadingKey(key);
+    const url = await uploadImage(file);
+    if (url) setSettings(s => ({ ...s, [key]: url }));
+    setUploadingKey('');
+  };
+
   return (
     <AdminLayout title="Cài đặt chung">
       <div className="mb-6">
@@ -70,12 +87,23 @@ export default function AdminSettings() {
                 rows={3}
               />
             ) : (
-              <input
-                type={field.type}
-                value={settings[field.key] || ''}
-                onChange={e => setSettings(s => ({ ...s, [field.key]: e.target.value }))}
-                className="w-full p-3 text-[14px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]"
-              />
+              <div className="space-y-2">
+                {field.upload && settings[field.key] && (
+                  <img src={settings[field.key]} alt="" className="max-h-40 rounded-lg border border-gray-100 object-contain bg-gray-50" />
+                )}
+                <input
+                  type={field.type}
+                  value={settings[field.key] || ''}
+                  onChange={e => setSettings(s => ({ ...s, [field.key]: e.target.value }))}
+                  className="w-full p-3 text-[14px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]"
+                />
+                {field.upload && (
+                  <label className="inline-flex items-center px-3 py-2 bg-blue-50 text-[#0059b2] rounded-lg text-[12px] font-bold cursor-pointer hover:bg-blue-100">
+                    <input type="file" accept="image/*" className="hidden" onChange={e => handleUpload(field.key, e.target.files?.[0])} />
+                    {uploadingKey === field.key ? 'Đang tải ảnh ImgBB...' : 'Tải ảnh lên ImgBB'}
+                  </label>
+                )}
+              </div>
             )}
           </div>
         ))}

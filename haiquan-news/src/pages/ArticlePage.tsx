@@ -3,7 +3,7 @@ import { useParams, Link } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getPostBySlug, getPublishedPosts, incrementViewCount, type Post } from '@/lib/supabase';
+import { getPostBySlug, getPublishedPosts, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
 import { formatDateLong, timeAgo } from '@/lib/utils';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Hải+Quân';
@@ -17,6 +17,7 @@ export default function ArticlePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [fontSize, setFontSize] = useState(15);
+  const ogPayload = parseOgPayload(post?.og_image);
 
   useEffect(() => {
     if (!slug) return;
@@ -54,7 +55,8 @@ export default function ArticlePage() {
   <SEOHead
     title={post.meta_title || post.title}
     description={post.meta_description || post.excerpt}
-    ogImage={post.og_image || post.thumbnail}
+    ogTitle={ogPayload.title}
+    ogImage={ogPayload.image || ogPayload.gallery?.[0] || post.thumbnail}
     ogType="article"
     author={post.author}
     publishedDate={post.published_at}
