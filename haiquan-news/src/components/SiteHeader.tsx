@@ -53,7 +53,7 @@ export default function SiteHeader() {
           <div className="flex items-center gap-3">
             <span className="font-normal">{clock}</span>
             <span className="text-white/30 font-light text-[10px]">|</span>
-            <a href="#" className="hover:text-[#FFD700] transition uppercase font-medium">Liên hệ</a>
+            <Link href="/lien-he" className="hover:text-[#FFD700] transition uppercase font-medium">Liên hệ</Link>
           </div>
           <div className="flex gap-3 text-white/90 items-center">
             <a href="https://x.com/SROVNavy36/status/2010442603951706552" target="_blank" rel="noreferrer" className="hover:text-[#FFD700] transition" title="X (Twitter)">

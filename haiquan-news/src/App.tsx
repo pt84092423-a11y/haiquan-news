@@ -7,6 +7,7 @@ import ArticlePage from "@/pages/ArticlePage";
 import BaoInPage from "@/pages/BaoInPage";
 import StructurePage from "@/pages/StructurePage";
 import CommandPage from "@/pages/CommandPage";
+import ContactPage from "@/pages/ContactPage";
 import CategoryPage from "@/pages/CategoryPage";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import PostEditor from "@/pages/admin/PostEditor";
@@ -20,6 +21,8 @@ import AuditLog from "@/pages/admin/AuditLog";
 import ApprovalQueue from "@/pages/admin/ApprovalQueue";
 import AdminBaoIn from "@/pages/admin/AdminBaoIn";
 import StructureManager from "@/pages/admin/StructureManager";
+import CommandManager from "@/pages/admin/CommandManager";
+import AdminAds from "@/pages/admin/AdminAds";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import { getSession, can } from "@/lib/auth";
 
@@ -73,13 +76,17 @@ function Router() {
       <Route path="/admin/audit-log" component={() => <ProtectedRoute component={AuditLog} action="view_audit_log" />} />
       <Route path="/admin/duyet-yeu-cau" component={() => <ProtectedRoute component={ApprovalQueue} action="approve_requests" />} />
       <Route path="/admin/bao-in" component={() => <ProtectedRoute component={AdminBaoIn} action="write_post" />} />
+      <Route path="/admin/cau-truc" component={() => <ProtectedRoute component={StructureManager} />} />
+      <Route path="/admin/chi-huy" component={() => <ProtectedRoute component={CommandManager} />} />
       <Route path="/admin/cau-truc-chi-huy" component={() => <ProtectedRoute component={StructureManager} />} />
+      <Route path="/admin/quang-cao" component={() => <ProtectedRoute component={AdminAds} />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />
       <Route path="/bao-in" component={() => <PublicLayout><BaoInPage /></PublicLayout>} />
       <Route path="/cau-truc" component={() => <PublicLayout><StructurePage /></PublicLayout>} />
       <Route path="/chi-huy" component={() => <PublicLayout><CommandPage /></PublicLayout>} />
+      <Route path="/lien-he" component={() => <PublicLayout><ContactPage /></PublicLayout>} />
       <Route path="/bai-viet/:slug" component={() => (
         <PublicLayout><ArticlePage /></PublicLayout>
       )} />

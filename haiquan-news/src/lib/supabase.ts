@@ -415,7 +415,11 @@ INSERT INTO settings (key, value) VALUES
   ('home_ad_media_image', '/quangcao-101.png'),
   ('home_ad_media_link', '#'),
   ('home_ad_bottom_image', 'https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png'),
-  ('home_ad_bottom_link', '#')
+  ('home_ad_bottom_link', '#'),
+  ('article_ad_1_image', '/quangcao-101.png'),
+  ('article_ad_1_link', '#'),
+  ('article_ad_2_image', '/quangcao-954.png'),
+  ('article_ad_2_link', '#')
 ON CONFLICT (key) DO NOTHING;
 
 -- Enable RLS

@@ -20,8 +20,8 @@ export default function SiteFooter() {
             <div>
               <h3 className="font-bold text-[13px] uppercase text-[#002060] mb-3">Cấu trúc</h3>
               <ul className="text-[12px] text-gray-500 space-y-1.5">
-                <li><Link href="/co-cau" className="hover:text-[#0059b2] transition">Cơ cấu tổ chức</Link></li>
-                <li><Link href="/don-vi" className="hover:text-[#0059b2] transition">Các đơn vị</Link></li>
+                <li><Link href="/cau-truc" className="hover:text-[#0059b2] transition">Cơ cấu tổ chức</Link></li>
+                <li><Link href="/cau-truc" className="hover:text-[#0059b2] transition">Các đơn vị</Link></li>
               </ul>
             </div>
             <div>
@@ -76,7 +76,7 @@ export default function SiteFooter() {
             </div>
             <div>
               <p>
-                <strong className="text-[#002060]">Liên hệ:</strong><br />
+                <Link href="/lien-he" className="text-[#002060] font-bold hover:text-[#0059b2] transition">Liên hệ:</Link><br />
                 <a href="mailto:hoaidung2806le@gmail.com" className="hover:text-[#0059b2] transition">hoaidung2806le@gmail.com</a><br />
                 <a href="mailto:pt84092423@gmail.com" className="hover:text-[#0059b2] transition">pt84092423@gmail.com</a>
               </p>

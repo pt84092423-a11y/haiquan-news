@@ -4,7 +4,7 @@ import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import PostCard from '@/components/PostCard';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getPublishedPosts, getCategoryBySlug, type Post, type Category } from '@/lib/supabase';
+import { getAllSettings, getPublishedPosts, getCategoryBySlug, type Post, type Category } from '@/lib/supabase';
 
 const CATEGORY_CONFIG: Record<string, { title: string; desc: string }> = {
   'tin-tuc': { title: 'Tin tức', desc: 'Tin tức thời sự Hải quân Nhân dân Việt Nam' },
@@ -29,6 +29,7 @@ export default function CategoryPage() {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [ads, setAds] = useState<Record<string, string>>({});
 
   const config = CATEGORY_CONFIG[slug] || { title: slug, desc: '' };
 
@@ -46,6 +47,10 @@ export default function CategoryPage() {
       setLoading(false);
     });
   }, [slug, page]);
+
+  useEffect(() => {
+    getAllSettings().then(setAds);
+  }, []);
 
   const hasMore = posts.length < total || (page === 0 && posts.length === LIMIT);
 
@@ -125,11 +130,11 @@ export default function CategoryPage() {
             </div>
 
             <div className="space-y-4">
-              <a href="#" className="block hover:opacity-95 transition">
-                <img src="/quangcao-101.png" className="w-full rounded-sm shadow-md" alt="Gia nhập Hải quân đánh bộ 101" />
+              <a href={ads.article_ad_1_link || "#"} className="block hover:opacity-95 transition">
+                <img src={ads.article_ad_1_image || "/quangcao-101.png"} className="w-full rounded-sm shadow-md" alt="Quảng cáo chuyên mục 1" />
               </a>
-              <a href="#" className="block hover:opacity-95 transition">
-                <img src="/quangcao-954.png" className="w-full rounded-sm shadow-md" alt="Gia nhập Phi đội Không quân Hải quân 954th" />
+              <a href={ads.article_ad_2_link || "#"} className="block hover:opacity-95 transition">
+                <img src={ads.article_ad_2_image || "/quangcao-954.png"} className="w-full rounded-sm shadow-md" alt="Quảng cáo chuyên mục 2" />
               </a>
             </div>
           </aside>

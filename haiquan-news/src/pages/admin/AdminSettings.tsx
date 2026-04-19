@@ -7,14 +7,6 @@ const SETTINGS_FIELDS = [
   { key: 'site_description', label: 'Mô tả website', type: 'textarea' },
   { key: 'logo_url', label: 'URL Logo', type: 'text' },
   { key: 'og_default_image', label: 'OG Image mặc định', type: 'text' },
-  { key: 'home_ad_main_images', label: 'Poster trang chủ 1 - nhiều ảnh tự đổi (mỗi dòng 1 URL)', type: 'textarea', upload: true },
-  { key: 'home_ad_main_link', label: 'Link quảng cáo ngang trang chủ', type: 'text' },
-  { key: 'home_ad_sidebar_image', label: 'Ảnh quảng cáo cột phải trang chủ', type: 'text', upload: true },
-  { key: 'home_ad_sidebar_link', label: 'Link quảng cáo cột phải trang chủ', type: 'text' },
-  { key: 'home_ad_media_image', label: 'Ảnh quảng cáo mục Hải Quân Media', type: 'text', upload: true },
-  { key: 'home_ad_media_link', label: 'Link quảng cáo mục Hải Quân Media', type: 'text' },
-  { key: 'home_ad_bottom_images', label: 'Poster trang chủ 2 - nhiều ảnh tự đổi (mỗi dòng 1 URL)', type: 'textarea', upload: true },
-  { key: 'home_ad_bottom_link', label: 'Link quảng cáo cuối trang chủ', type: 'text' },
   { key: 'facebook_url', label: 'Facebook URL', type: 'text' },
   { key: 'youtube_url', label: 'YouTube URL', type: 'text' },
   { key: 'zalo_url', label: 'Zalo URL', type: 'text' },
@@ -68,8 +60,9 @@ export default function AdminSettings() {
   return (
     <AdminLayout title="Cài đặt chung">
       <div className="mb-6">
-        <h2 className="text-[26px] font-['Playfair_Display',serif] font-black text-[#222222] uppercase tracking-wide">Cài Đặt Website</h2>
-        <p className="text-[#555555] text-[13px] mt-1">Quản lý thông tin chung, logo, liên hệ và SEO mặc định</p>
+        <p className="text-[#0059b2] font-bold text-[12px] uppercase tracking-[0.18em]">Cấu hình hệ thống</p>
+        <h2 className="text-[28px] font-black text-[#111827] tracking-tight">Cài đặt website</h2>
+        <p className="text-[#6b7280] text-[14px] mt-1">Quản lý thông tin chung, logo, liên hệ và SEO mặc định. Ảnh quảng cáo đã được chuyển sang mục Quảng cáo riêng.</p>
       </div>
 
       {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-[13px] font-semibold flex items-center gap-2"><span>✓</span> {success}</div>}

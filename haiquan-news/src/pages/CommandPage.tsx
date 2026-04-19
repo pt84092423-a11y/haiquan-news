@@ -3,6 +3,12 @@ import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import { getSiteSetting, parseJsonSetting } from '@/lib/supabase';
 
+export type ActivityMilestone = {
+  time: string;
+  position: string;
+  rank: string;
+};
+
 export type Commander = {
   id: string;
   group: 'navy' | 'units';
@@ -19,6 +25,7 @@ export type Commander = {
   chartLabel?: string;
   chartValue?: number;
   workChart?: { label: string; value: number }[];
+  activityTimeline?: ActivityMilestone[];
   serviceLogos?: string[];
 };
 
@@ -34,7 +41,7 @@ export const DEFAULT_COMMAND_DATA: CommandData = {
   title: 'Chỉ huy Hải quân',
   description: 'Thông tin HICOM Bộ Tư lệnh Hải quân và HICOM các đơn vị trực thuộc',
   people: [
-    { id: 'hicom-navy-default', group: 'navy', name: 'Nguyễn Văn A', rank: 'Đô đốc', position: 'Tư lệnh Hải quân', unit: 'HICOM NAVY', displayOrder: 0, detail: 'Thẻ mặc định, có thể sửa hoặc thêm người trong quản trị.', chartLabel: 'Mức độ hoàn thành', chartValue: 85, serviceLogos: [] },
+    { id: 'hicom-navy-default', group: 'navy', name: 'Nguyễn Văn A', rank: 'Đô đốc', position: 'Tư lệnh Hải quân', unit: 'HICOM NAVY', displayOrder: 0, detail: 'Thẻ mặc định, có thể sửa hoặc thêm người trong quản trị.', chartLabel: 'Mức độ hoàn thành', chartValue: 85, activityTimeline: [{ time: '2026', position: 'Tư lệnh Hải quân', rank: 'Đô đốc' }], serviceLogos: [] },
   ],
 };
 
@@ -115,6 +122,21 @@ export default function CommandPage() {
                   <div className="mt-5 prose prose-sm max-w-none text-[#333]" dangerouslySetInnerHTML={{ __html: selected.detailHtml }} />
                 ) : (
                   <div className="mt-5 text-[#333] leading-relaxed whitespace-pre-line">{selected.detail || 'Chưa có nội dung chi tiết.'}</div>
+                )}
+                {selected.activityTimeline && selected.activityTimeline.length > 0 && (
+                  <div className="mt-6 rounded-2xl bg-[#f8fbff] border border-blue-100 p-5">
+                    <p className="text-xs font-bold uppercase text-[#0059b2] mb-4">Biểu đồ mốc hoạt động</p>
+                    <div className="relative pl-5 space-y-4 before:absolute before:left-1.5 before:top-1 before:bottom-1 before:w-px before:bg-blue-200">
+                      {selected.activityTimeline.map((item, index) => (
+                        <div key={`${item.time}-${index}`} className="relative">
+                          <span className="absolute -left-5 top-1 w-3 h-3 rounded-full bg-[#0059b2] ring-4 ring-blue-100" />
+                          <div className="text-[12px] font-black text-[#0059b2] uppercase">{item.time}</div>
+                          <div className="font-bold text-[#222]">{item.position}</div>
+                          <div className="text-sm text-[#555]">{item.rank}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {selected.detailImages && selected.detailImages.length > 0 && (
                   <div className="mt-5 grid grid-cols-2 gap-3">

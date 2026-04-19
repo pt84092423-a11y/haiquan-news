@@ -42,9 +42,19 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
         },
         {
-          href: '/admin/cau-truc-chi-huy',
-          label: 'Cấu trúc & Chỉ huy',
+          href: '/admin/cau-truc',
+          label: 'Cấu trúc',
           icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 20H4a2 2 0 01-2-2v-7a2 2 0 012-2h7m0 11V9m0 11h9a2 2 0 002-2v-7a2 2 0 00-2-2h-9m0 0V4a2 2 0 012-2h4a2 2 0 012 2v5" /></svg>
+        },
+        {
+          href: '/admin/chi-huy',
+          label: 'Chỉ huy',
+          icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 100-8 4 4 0 000 8zm8 0a4 4 0 100-8 4 4 0 000 8z" /></svg>
+        },
+        {
+          href: '/admin/quang-cao',
+          label: 'Quảng cáo',
+          icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-7 7h14M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
         },
       ]
     },
@@ -77,7 +87,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const roleBadge = session?.role === 'HADMIN' ? 'bg-red-500' : session?.role === 'ADMIN' ? 'bg-blue-500' : 'bg-green-500';
 
   return (
-    <div className="bg-[#f4f6f8] font-['Roboto',sans-serif] text-[#222222] h-screen flex overflow-hidden">
+    <div className="bg-gradient-to-br from-[#f8fafc] via-[#eef5ff] to-[#f4f6f8] font-['Roboto',sans-serif] text-[#222222] h-screen flex overflow-hidden">
       <aside className={`${sidebarOpen ? 'w-[260px]' : 'w-0 overflow-hidden'} bg-[#02183b] text-white flex flex-col h-full shadow-[4px_0_24px_rgba(0,0,0,0.15)] z-20 flex-shrink-0 transition-all duration-300`}>
         <div className="h-20 flex items-center px-6 border-b border-white/5 bg-[#01122e]">
           <img src={logoImg} alt="Logo Báo Hải Quân" className="h-10 w-auto object-contain" />
@@ -132,7 +142,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <header className="h-16 bg-white shadow-sm flex items-center justify-between px-6 md:px-10 z-10 flex-shrink-0 border-b border-[#e5e7eb]">
+        <header className="h-16 bg-white/90 backdrop-blur shadow-sm flex items-center justify-between px-6 md:px-10 z-10 flex-shrink-0 border-b border-[#e5e7eb]">
           <div className="flex items-center gap-4 w-2/3">
             <button className="text-[#555555] hover:text-[#0059b2] transition" onClick={() => setSidebarOpen(o => !o)}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>

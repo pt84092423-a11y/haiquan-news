@@ -3,7 +3,7 @@ import { useParams, Link } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getPostBySlug, getPublishedPosts, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
+import { getAllSettings, getPostBySlug, getPublishedPosts, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
 import { formatDateLong, timeAgo } from '@/lib/utils';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Hải+Quân';
@@ -17,6 +17,7 @@ export default function ArticlePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [fontSize, setFontSize] = useState(15);
+  const [ads, setAds] = useState<Record<string, string>>({});
   const ogPayload = parseOgPayload(post?.og_image);
 
   useEffect(() => {
@@ -38,6 +39,10 @@ export default function ArticlePage() {
       setMostRead(sorted.filter(p => p.id !== data.id && p.post_type !== 'baoin').slice(0, 8));
     });
   }, [slug]);
+
+  useEffect(() => {
+    getAllSettings().then(setAds);
+  }, []);
 
   if (notFound) {
     return (
@@ -221,11 +226,11 @@ export default function ArticlePage() {
               </div>
 
               <div className="space-y-4">
-                <a href="#" className="block hover:opacity-95 transition">
-                  <img src="/quangcao-101.png" className="w-full rounded-sm shadow-md" alt="Gia nhập Hải quân đánh bộ 101" />
+                <a href={ads.article_ad_1_link || "#"} className="block hover:opacity-95 transition">
+                  <img src={ads.article_ad_1_image || "/quangcao-101.png"} className="w-full rounded-sm shadow-md" alt="Quảng cáo bài viết 1" />
                 </a>
-                <a href="#" className="block hover:opacity-95 transition">
-                  <img src="/quangcao-954.png" className="w-full rounded-sm shadow-md" alt="Gia nhập Phi đội Không quân Hải quân 954th" />
+                <a href={ads.article_ad_2_link || "#"} className="block hover:opacity-95 transition">
+                  <img src={ads.article_ad_2_image || "/quangcao-954.png"} className="w-full rounded-sm shadow-md" alt="Quảng cáo bài viết 2" />
                 </a>
               </div>
             </aside>
