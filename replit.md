@@ -54,8 +54,10 @@ Configured as a **static** deployment:
 - Post editor supports separate OpenGraph title/image stored independently from meta title/description
 - Post editor includes quick-insert rich content blocks: image frame, polaroid, cinema/video, podcast, text frame, quote, page background, table, mini org chart, decorative text block
 - Public pages for `Cấu trúc` and `Chỉ huy`
+- `Cấu trúc` supports two display modes: editable organization chart or one uploaded poster/image
 - Admin page `Cấu trúc & Chỉ huy` stores editable unit charts and HICOM personnel as JSON settings
-- Home page advertisements are configurable through admin settings and can upload images via ImgBB
+- Home page poster slots support one or multiple image URLs with automatic rotation, configurable through admin settings
+- HICOM commander records include unit, display order, bio, HTML detail, detail images, work chart bars, and service unit logos
 - Supabase-powered auth with role-based access control (RBAC)
 - Automated WebP image conversion before upload
 

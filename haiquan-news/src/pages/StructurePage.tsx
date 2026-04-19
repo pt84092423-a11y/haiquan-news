@@ -15,6 +15,8 @@ export type StructureData = {
   title: string;
   description: string;
   backgroundImage?: string;
+  displayMode?: 'chart' | 'image';
+  posterImage?: string;
   units: StructureUnit[];
 };
 
@@ -22,6 +24,8 @@ export const DEFAULT_STRUCTURE_DATA: StructureData = {
   title: 'Cấu trúc tổ chức Hải quân',
   description: 'Sơ đồ các đơn vị thuộc Hải quân Nhân dân Việt Nam',
   backgroundImage: '',
+  displayMode: 'chart',
+  posterImage: '',
   units: [
     { id: 'navy-command', name: 'Bộ Tư lệnh Hải quân', description: 'Cơ quan chỉ huy trung tâm' },
     { id: 'unit-1', name: 'Đơn vị trực thuộc 1', parentId: 'navy-command', description: 'Có thể sửa tên, mô tả và ảnh nền trong quản trị' },
@@ -54,30 +58,42 @@ export default function StructurePage() {
       </div>
 
       <main className="container mx-auto max-w-[1200px] px-4 py-10">
-        <SectionTitle title="Sơ đồ đơn vị" className="text-[28px]" />
-        <div className="bg-[#f8fbff] border border-blue-100 rounded-3xl p-6 md:p-10 shadow-sm overflow-hidden">
-          <div className="flex flex-col items-center gap-8">
-            {rootUnits.map(unit => (
-              <div key={unit.id} className="text-center">
-                <div className="inline-flex flex-col items-center rounded-2xl bg-[#0059b2] text-white px-8 py-5 shadow-xl border-4 border-white">
-                  {unit.image && <img src={unit.image} alt={unit.name} className="w-20 h-20 rounded-full object-cover mb-3 border-2 border-[#FFD700]" />}
-                  <strong className="text-xl uppercase">{unit.name}</strong>
-                  {unit.description && <span className="text-sm text-white/75 mt-1">{unit.description}</span>}
-                </div>
+        <SectionTitle title={data.displayMode === 'image' ? 'Hình ảnh cấu trúc' : 'Sơ đồ đơn vị'} className="text-[28px]" />
+        {data.displayMode === 'image' ? (
+          <div className="bg-[#f8fbff] border border-blue-100 rounded-3xl p-3 md:p-5 shadow-sm overflow-hidden">
+            {data.posterImage ? (
+              <img src={data.posterImage} alt={data.title} className="w-full rounded-2xl object-contain bg-white" />
+            ) : (
+              <div className="aspect-[16/9] rounded-2xl bg-[#e8f0fa] flex items-center justify-center text-[#0059b2]/50 font-bold uppercase">
+                Chưa có hình cấu trúc
               </div>
-            ))}
-            <div className="w-px h-8 bg-blue-200" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
-              {childUnits.map(unit => (
-                <div key={unit.id} className="bg-white rounded-2xl border border-blue-100 p-5 shadow-sm hover:shadow-md transition text-center">
-                  {unit.image && <img src={unit.image} alt={unit.name} className="w-full aspect-video object-cover rounded-xl mb-4" />}
-                  <h3 className="font-bold text-[#00305f] text-lg uppercase">{unit.name}</h3>
-                  {unit.description && <p className="text-sm text-[#555] mt-2 leading-relaxed">{unit.description}</p>}
+            )}
+          </div>
+        ) : (
+          <div className="bg-[#f8fbff] border border-blue-100 rounded-3xl p-6 md:p-10 shadow-sm overflow-hidden">
+            <div className="flex flex-col items-center gap-8">
+              {rootUnits.map(unit => (
+                <div key={unit.id} className="text-center">
+                  <div className="inline-flex flex-col items-center rounded-2xl bg-[#0059b2] text-white px-8 py-5 shadow-xl border-4 border-white">
+                    {unit.image && <img src={unit.image} alt={unit.name} className="w-20 h-20 rounded-full object-cover mb-3 border-2 border-[#FFD700]" />}
+                    <strong className="text-xl uppercase">{unit.name}</strong>
+                    {unit.description && <span className="text-sm text-white/75 mt-1">{unit.description}</span>}
+                  </div>
                 </div>
               ))}
+              <div className="w-px h-8 bg-blue-200" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
+                {childUnits.map(unit => (
+                  <div key={unit.id} className="bg-white rounded-2xl border border-blue-100 p-5 shadow-sm hover:shadow-md transition text-center">
+                    {unit.image && <img src={unit.image} alt={unit.name} className="w-full aspect-video object-cover rounded-xl mb-4" />}
+                    <h3 className="font-bold text-[#00305f] text-lg uppercase">{unit.name}</h3>
+                    {unit.description && <p className="text-sm text-[#555] mt-2 leading-relaxed">{unit.description}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
     </>
   );

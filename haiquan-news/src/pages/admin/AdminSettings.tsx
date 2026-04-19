@@ -7,13 +7,13 @@ const SETTINGS_FIELDS = [
   { key: 'site_description', label: 'Mô tả website', type: 'textarea' },
   { key: 'logo_url', label: 'URL Logo', type: 'text' },
   { key: 'og_default_image', label: 'OG Image mặc định', type: 'text' },
-  { key: 'home_ad_main_image', label: 'Ảnh quảng cáo ngang trang chủ', type: 'text', upload: true },
+  { key: 'home_ad_main_images', label: 'Poster trang chủ 1 - nhiều ảnh tự đổi (mỗi dòng 1 URL)', type: 'textarea', upload: true },
   { key: 'home_ad_main_link', label: 'Link quảng cáo ngang trang chủ', type: 'text' },
   { key: 'home_ad_sidebar_image', label: 'Ảnh quảng cáo cột phải trang chủ', type: 'text', upload: true },
   { key: 'home_ad_sidebar_link', label: 'Link quảng cáo cột phải trang chủ', type: 'text' },
   { key: 'home_ad_media_image', label: 'Ảnh quảng cáo mục Hải Quân Media', type: 'text', upload: true },
   { key: 'home_ad_media_link', label: 'Link quảng cáo mục Hải Quân Media', type: 'text' },
-  { key: 'home_ad_bottom_image', label: 'Ảnh quảng cáo cuối trang chủ', type: 'text', upload: true },
+  { key: 'home_ad_bottom_images', label: 'Poster trang chủ 2 - nhiều ảnh tự đổi (mỗi dòng 1 URL)', type: 'textarea', upload: true },
   { key: 'home_ad_bottom_link', label: 'Link quảng cáo cuối trang chủ', type: 'text' },
   { key: 'facebook_url', label: 'Facebook URL', type: 'text' },
   { key: 'youtube_url', label: 'YouTube URL', type: 'text' },
@@ -61,7 +61,7 @@ export default function AdminSettings() {
     if (!file) return;
     setUploadingKey(key);
     const url = await uploadImage(file);
-    if (url) setSettings(s => ({ ...s, [key]: url }));
+    if (url) setSettings(s => ({ ...s, [key]: s[key] ? `${s[key]}\n${url}` : url }));
     setUploadingKey('');
   };
 
@@ -79,32 +79,32 @@ export default function AdminSettings() {
         {SETTINGS_FIELDS.map(field => (
           <div key={field.key}>
             <label className="block text-[13px] font-bold text-[#555555] mb-1 uppercase">{field.label}</label>
-            {field.type === 'textarea' ? (
-              <textarea
-                value={settings[field.key] || ''}
-                onChange={e => setSettings(s => ({ ...s, [field.key]: e.target.value }))}
-                className="w-full p-3 text-[14px] border border-gray-200 rounded-lg resize-none focus:outline-none focus:border-[#0059b2]"
-                rows={3}
-              />
-            ) : (
-              <div className="space-y-2">
-                {field.upload && settings[field.key] && (
-                  <img src={settings[field.key]} alt="" className="max-h-40 rounded-lg border border-gray-100 object-contain bg-gray-50" />
-                )}
+            <div className="space-y-2">
+              {field.upload && settings[field.key] && field.type !== 'textarea' && (
+                <img src={settings[field.key]} alt="" className="max-h-40 rounded-lg border border-gray-100 object-contain bg-gray-50" />
+              )}
+              {field.type === 'textarea' ? (
+                <textarea
+                  value={settings[field.key] || ''}
+                  onChange={e => setSettings(s => ({ ...s, [field.key]: e.target.value }))}
+                  className="w-full p-3 text-[14px] border border-gray-200 rounded-lg resize-none focus:outline-none focus:border-[#0059b2]"
+                  rows={4}
+                />
+              ) : (
                 <input
                   type={field.type}
                   value={settings[field.key] || ''}
                   onChange={e => setSettings(s => ({ ...s, [field.key]: e.target.value }))}
                   className="w-full p-3 text-[14px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]"
                 />
-                {field.upload && (
-                  <label className="inline-flex items-center px-3 py-2 bg-blue-50 text-[#0059b2] rounded-lg text-[12px] font-bold cursor-pointer hover:bg-blue-100">
-                    <input type="file" accept="image/*" className="hidden" onChange={e => handleUpload(field.key, e.target.files?.[0])} />
-                    {uploadingKey === field.key ? 'Đang tải ảnh ImgBB...' : 'Tải ảnh lên ImgBB'}
-                  </label>
-                )}
-              </div>
-            )}
+              )}
+              {field.upload && (
+                <label className="inline-flex items-center px-3 py-2 bg-blue-50 text-[#0059b2] rounded-lg text-[12px] font-bold cursor-pointer hover:bg-blue-100">
+                  <input type="file" accept="image/*" className="hidden" onChange={e => handleUpload(field.key, e.target.files?.[0])} />
+                  {uploadingKey === field.key ? 'Đang tải ảnh ImgBB...' : 'Tải ảnh lên ImgBB'}
+                </label>
+              )}
+            </div>
           </div>
         ))}
 

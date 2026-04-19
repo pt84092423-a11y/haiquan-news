@@ -7,6 +7,23 @@ import WebsiteLinks from '@/components/WebsiteLinks';
 import { getAllSettings, getPublishedPosts, type Post } from '@/lib/supabase';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
+const DEFAULT_MAIN_AD = 'https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg';
+const DEFAULT_BOTTOM_AD = 'https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png';
+
+const getAdImages = (settings: Record<string, string>, multiKey: string, singleKey: string, fallback: string) => {
+  const raw = settings[multiKey] || settings[singleKey] || fallback;
+  const images = raw.trim().startsWith('[')
+    ? (() => {
+        try {
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })()
+    : raw.split(/[\n,]+/);
+  return images.map((item: string) => item.trim()).filter(Boolean);
+};
 
 export default function HomePage() {
   const [spotlight, setSpotlight] = useState<Post[]>([]);
@@ -25,6 +42,8 @@ export default function HomePage() {
   const [shortVideos, setShortVideos] = useState<Post[]>([]);
   const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
   const [ads, setAds] = useState<Record<string, string>>({});
+  const [mainAdIdx, setMainAdIdx] = useState(0);
+  const [bottomAdIdx, setBottomAdIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -72,6 +91,18 @@ export default function HomePage() {
   }, [spotlight]);
 
   const featured = spotlight[featuredIdx];
+  const mainAdImages = getAdImages(ads, 'home_ad_main_images', 'home_ad_main_image', DEFAULT_MAIN_AD);
+  const bottomAdImages = getAdImages(ads, 'home_ad_bottom_images', 'home_ad_bottom_image', DEFAULT_BOTTOM_AD);
+  const activeMainAd = mainAdImages[mainAdIdx % mainAdImages.length] || DEFAULT_MAIN_AD;
+  const activeBottomAd = bottomAdImages[bottomAdIdx % bottomAdImages.length] || DEFAULT_BOTTOM_AD;
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMainAdIdx(i => i + 1);
+      setBottomAdIdx(i => i + 1);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Helper class để đồng bộ style tiêu đề in đậm, có chân, in hoa
   const headingStyle = "font-serif font-bold uppercase text-[#0059b2] tracking-tight";
@@ -160,7 +191,7 @@ export default function HomePage() {
         {/* Banner */}
         <div className="my-8">
           <a href={ads.home_ad_main_link || "#"} className="block w-full rounded-sm overflow-hidden shadow-md cursor-pointer hover:opacity-95 transition">
-            <img src={ads.home_ad_main_image || "https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg"} alt="Banner Cổ Động" className="w-full h-auto object-cover" />
+            <img src={activeMainAd} alt="Banner Cổ Động" className="w-full h-auto object-cover" />
           </a>
         </div>
 
@@ -364,7 +395,7 @@ export default function HomePage() {
           {/* Banner Đặc công Hải quân */}
           <div className="w-full">
             <a href={ads.home_ad_bottom_link || "#"} className="block hover:opacity-95 transition rounded-md overflow-hidden shadow-md">
-               <img src={ads.home_ad_bottom_image || "https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png"} alt="Banner Đặc công Hải quân" className="w-full h-auto object-cover" />
+               <img src={activeBottomAd} alt="Banner Đặc công Hải quân" className="w-full h-auto object-cover" />
             </a>
           </div>
         </section>
@@ -456,31 +487,47 @@ export default function HomePage() {
         <section className="mb-8 border-b border-[#e1e1e1] pb-8">
           <SectionTitle title="HẢI QUÂN MEDIA" className={`text-[24px] ${headingStyle}`} />
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <div className="md:col-span-9">
-              {videoPosts[0] && (
-                <Link href={`/bai-viet/${videoPosts[0].slug}`} className="relative aspect-video rounded-md overflow-hidden shadow-lg group cursor-pointer mb-4 block">
-                  <img src={videoPosts[0].thumbnail || PLACEHOLDER} alt={videoPosts[0].title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 bg-white/40 backdrop-blur-sm rounded-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+            <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[0, 1, 2, 3].map(index => {
+                const post = videoPosts[index];
+                return post ? (
+                  <Link key={post.id} href={`/bai-viet/${post.slug}`} className="group block bg-white rounded-lg overflow-hidden border border-blue-50 shadow-sm hover:shadow-md transition">
+                    <div className="relative aspect-video bg-[#e8f0fa] overflow-hidden">
+                      <img src={post.thumbnail || PLACEHOLDER} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-white/35 backdrop-blur-sm flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] group-hover:text-[#0059b2] line-clamp-2">{post.title}</h4>
+                    </div>
+                  </Link>
+                ) : (
+                  <div key={`media-slot-${index}`} className="bg-white rounded-lg overflow-hidden border border-blue-50 shadow-sm">
+                    <div className="aspect-video bg-[#e8f0fa] flex items-center justify-center">
+                      <svg className="w-7 h-7 text-[#a8c8e8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m15 10 4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2Z" /></svg>
+                    </div>
+                    <div className="p-3 space-y-2 opacity-60">
+                      <div className="h-3 bg-gray-100 rounded w-full" />
+                      <div className="h-3 bg-gray-100 rounded w-3/4" />
                     </div>
                   </div>
-                </Link>
-              )}
-              <div className="grid grid-cols-3 gap-4">
-                {videoPosts.slice(1, 4).map(p => (
-                  <Link key={p.id} href={`/bai-viet/${p.slug}`} className="flex gap-2 group cursor-pointer">
-                    <div className="w-1/2 relative aspect-video rounded-sm overflow-hidden flex-shrink-0">
-                      <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover" />
-                    </div>
-                    <h4 className="w-1/2 font-['Roboto',sans-serif] text-[13px] font-bold text-[#222222] group-hover:text-[#0059b2]">{p.title}</h4>
-                  </Link>
-                ))}
-              </div>
+                );
+              })}
             </div>
-            <div className="md:col-span-3">
-              <a href={ads.home_ad_media_link || "#"} className="block hover:opacity-95 transition">
-                <img src={ads.home_ad_media_image || "/quangcao-101.png"} className="w-full h-auto rounded-md shadow-md" alt="Quảng cáo media" />
+            <div className="md:col-span-4">
+              <a href={ads.home_ad_media_link || "#"} className="h-full min-h-[280px] rounded-xl bg-gradient-to-br from-[#001a55] to-[#0059b2] flex flex-col items-center justify-center text-center text-white p-6 shadow-md hover:opacity-95 transition">
+                {ads.home_ad_media_image ? (
+                  <img src={ads.home_ad_media_image} className="w-full h-full object-cover rounded-lg" alt="Poster Hải Quân Media" />
+                ) : (
+                  <>
+                    <svg className="w-10 h-10 text-white/35 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Z" /></svg>
+                    <strong className="uppercase tracking-wide">Hải quân Nhân dân Việt Nam</strong>
+                    <span className="text-xs text-white/60 mt-2">Cài ảnh poster trong Admin → Cài đặt</span>
+                  </>
+                )}
               </a>
             </div>
           </div>
