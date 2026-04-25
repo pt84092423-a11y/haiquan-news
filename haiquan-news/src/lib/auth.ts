@@ -98,6 +98,7 @@ export function can(role: UserRole | undefined, action: string): boolean {
     view_audit_log: ['HADMIN', 'ADMIN'],
     manage_users: ['HADMIN', 'ADMIN'],
     approve_requests: ['HADMIN', 'ADMIN'],
+    view_hadmin_panel: ['HADMIN'],
   };
   return (perms[action] || []).includes(role);
 }
