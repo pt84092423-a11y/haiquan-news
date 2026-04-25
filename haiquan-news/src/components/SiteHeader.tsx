@@ -58,138 +58,145 @@ export default function SiteHeader() {
   };
 
   return (
-    <header className="w-full z-50 sticky top-0 shadow-lg select-none">
-      {/* Top Bar (Dark Navy) */}
+    <header className="bg-[#0059b2] text-white sticky top-0 z-50 shadow-md">
+      {/* --- Top Bar --- */}
       <div className="bg-[#002060] text-white">
-        <div className="container mx-auto max-w-[1200px] px-4 py-2 flex justify-between items-center text-[11px] md:text-[12px] font-['Roboto',sans-serif] tracking-wide uppercase border-b border-white/5">
-          <div className="flex items-center gap-4">
-            <span className="font-medium opacity-90">{clock}</span>
-            <span className="opacity-20 hidden sm:inline">|</span>
-            <Link href="/lien-he" className="hover:text-sky-300 transition-colors hidden sm:inline">Liên hệ</Link>
+        <div className="container mx-auto max-w-[1200px] px-4 py-1.5 flex justify-between items-center text-[12px] tracking-wide border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <span className="font-normal">{clock}</span>
+            <span className="text-white/30 font-light text-[10px]">|</span>
+            <Link href="/lien-he" className="hover:text-[#FFD700] transition uppercase font-medium">Liên hệ</Link>
           </div>
-          <div className="flex gap-4 items-center opacity-80">
-            <a href="https://x.com/SROVNavy36/status/2010442603951706552" target="_blank" rel="noreferrer" className="hover:text-sky-300 transition-transform hover:scale-110">
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+          
+          <div className="flex gap-3 text-white/90 items-center">
+            <a href="#" className="hover:opacity-80 transition" title="Zalo">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Icon_of_Zalo.svg/1200px-Icon_of_Zalo.svg.png" alt="Zalo" className="w-4 h-4 bg-white rounded-full" />
             </a>
-            <a href="https://www.youtube.com/@TGM_Kuroma" target="_blank" rel="noreferrer" className="hover:text-red-500 transition-transform hover:scale-110">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.626-.246-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" /></svg>
+            <a href="#" className="hover:text-[#FFD700] transition" title="YouTube">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.626-.246-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z"/></svg>
             </a>
-            <a href="https://www.tiktok.com/@srovnavy36" target="_blank" rel="noreferrer" className="hover:text-sky-300 transition-transform hover:scale-110">
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" /></svg>
+            <a href="#" className="hover:text-[#FFD700] transition" title="Facebook">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947C23.721 2.601 21.306.181 16.948.072 15.667.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
             </a>
           </div>
         </div>
       </div>
 
-      {/* Main Bar (Royal Blue) */}
-      <div className="bg-[#0059b2] text-white">
-        <div className="container mx-auto max-w-[1200px] px-4">
-          <div className="flex justify-between items-center py-3 md:py-4">
-            <Link href="/" className="block transition-transform active:scale-95">
-              <img
-                src={logoImg}
-                alt="Logo Báo Hải Quân Việt Nam"
-                className="h-[55px] md:h-[75px] w-auto object-contain"
-              />
+      {/* --- Main Header --- */}
+      <div className="container mx-auto max-w-[1200px] px-4 py-3 flex flex-col md:flex-row justify-between items-center md:items-end">
+        {/* Logo */}
+        <Link href="/" className="block w-full md:w-auto mb-4 md:mb-0">
+          <img 
+            src={logoImg} 
+            alt="Logo Hải Quân Việt Nam" 
+            className="h-[55px] md:h-[65px] w-auto object-contain object-left" 
+          />
+        </Link>
+
+        {/* Right Section (Buttons + Nav) */}
+        <div className="flex flex-col items-center md:items-end w-full md:w-auto">
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2 mb-3">
+            <Link href="/bao-in" className="bg-white/10 hover:bg-[#176dc3] text-white text-[11px] font-bold uppercase px-3 py-1.5 rounded flex items-center gap-1.5 transition">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> 
+              BÁO IN
             </Link>
-
-            <div className="flex items-center gap-2 md:gap-3">
-              <Link href="/bao-in" className="group flex items-center gap-2 bg-[#00305f]/40 hover:bg-[#00305f] border border-white/20 px-3 md:px-5 py-2 md:py-2.5 rounded-sm transition-all duration-300">
-                <svg className="w-4 h-4 text-sky-300" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" /></svg>
-                <span className="hidden sm:inline text-[11px] md:text-[13px] font-bold uppercase tracking-widest group-hover:translate-x-0.5 transition-transform">Báo in</span>
-              </Link>
-              
-              <Link href="/truyen-hinh-hq" className="group flex items-center gap-2 bg-[#00305f]/40 hover:bg-[#00305f] border border-white/20 px-3 md:px-5 py-2 md:py-2.5 rounded-sm transition-all duration-300">
-                <svg className="w-4 h-4 text-sky-300" fill="currentColor" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z" /></svg>
-                <span className="hidden md:inline text-[11px] md:text-[13px] font-bold uppercase tracking-widest group-hover:translate-x-0.5 transition-transform">Truyền hình Hải Quân</span>
-              </Link>
-
-              <button
-                onClick={() => setSearchOpen(!searchOpen)}
-                className={`flex items-center justify-center p-2.5 md:p-3 rounded-sm transition-all duration-300 border border-white/20 ${searchOpen ? 'bg-white text-[#0059b2]' : 'bg-[#00305f]/40 hover:bg-[#00305f] text-white'}`}
-              >
-                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              </button>
-            </div>
+            <Link href="/truyen-hinh-hq" className="bg-white/10 hover:bg-[#176dc3] text-white text-[11px] font-bold uppercase px-3 py-1.5 rounded flex items-center gap-1.5 transition">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg> 
+              TRUYỀN HÌNH HẢI QUÂN
+            </Link>
+            <button 
+              onClick={() => setSearchOpen(!searchOpen)} 
+              className="bg-white/10 hover:bg-[#176dc3] text-white text-[13px] font-bold px-3 py-1.5 rounded transition"
+              title="Tìm kiếm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </button>
           </div>
 
-          {/* Navigation Bar */}
-          <nav className="border-t border-white/10 relative">
-            <div className="overflow-x-auto scrollbar-hide">
-              <ul className="flex items-center font-['Roboto',sans-serif] text-[13px] md:text-[14px] font-black uppercase tracking-wide text-white whitespace-nowrap">
-                {navItems.map((item, i) => (
-                  <li key={i} className="flex-shrink-0">
-                    <Link
-                      href={item.href}
-                      className={`block py-3.5 px-4 md:px-5 border-b-2 border-transparent transition-all duration-300 ${location === item.href ? 'bg-[#00305f] border-sky-400 text-sky-300' : 'hover:bg-[#00478f] hover:text-sky-200'}`}
-                    >
-                      {item.icon ? (
-                        <svg className="w-5 h-5 mb-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
-                      ) : item.label}
-                    </Link>
-                  </li>
-                ))}
-                
-                {/* Burger Menu Button (Far Right) */}
-                <li className="ml-auto sticky right-0 bg-[#0059b2] shadow-[-10px_0_15px_rgba(0,0,0,0.1)]">
-                  <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className={`py-3.5 px-5 transition-colors ${menuOpen ? 'bg-[#002060] text-sky-300' : 'hover:bg-[#00478f]'}`}
+          {/* Navigation Menu */}
+          <nav className="w-full">
+            <ul className="flex flex-wrap justify-center md:justify-end items-center gap-x-5 gap-y-2 font-['Roboto',sans-serif] text-[14px] md:text-[15px] font-bold tracking-tight text-white whitespace-nowrap">
+              {navItems.map((item, i) => (
+                <li key={i}>
+                  <Link
+                    href={item.href}
+                    className={`hover:text-[#FFD700] transition flex items-center ${location === item.href ? 'text-[#FFD700]' : ''}`}
                   >
-                    {menuOpen ? (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    {item.icon ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                     ) : (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                      item.label
                     )}
-                  </button>
+                  </Link>
                 </li>
-              </ul>
-            </div>
+              ))}
+              <li>
+                <button 
+                  onClick={() => setMenuOpen(!menuOpen)} 
+                  className="hover:text-[#FFD700] transition ml-2 flex items-center justify-center"
+                  title="Menu"
+                >
+                  {menuOpen ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                  )}
+                </button>
+              </li>
+            </ul>
           </nav>
         </div>
       </div>
 
-      {/* Search Overlay (Hidden by default) */}
+      {/* --- Search Panel (Logic retained from original TSX) --- */}
       {searchOpen && (
-        <div className="bg-white border-b-4 border-[#0059b2] shadow-2xl animate-in slide-in-from-top duration-300">
-          <div className="container mx-auto max-w-[800px] px-4 py-8">
-            <form onSubmit={handleSearch} className="relative group">
+        <div className="bg-[#001540] border-t border-white/10">
+          <div className="container mx-auto max-w-[1200px] px-4 py-3">
+            <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Nhập nội dung cần tìm..."
-                className="w-full bg-gray-100 text-[#002060] border-2 border-gray-200 rounded-full px-8 py-4 text-[16px] font-medium focus:outline-none focus:border-[#0059b2] focus:bg-white transition-all shadow-inner"
+                placeholder="Tìm kiếm tin tức..."
+                className="flex-1 bg-white/10 text-white placeholder-white/50 border border-white/20 rounded px-4 py-2 text-[14px] focus:outline-none focus:border-white/50"
               />
               <button
                 type="submit"
-                className="absolute right-3 top-2 bg-[#0059b2] text-white p-2.5 rounded-full hover:bg-[#002060] transition-colors shadow-md"
+                className="bg-[#FFD700] text-[#002060] font-bold px-5 py-2 rounded hover:bg-yellow-300 transition text-[13px]"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                Tìm
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                className="bg-white/10 text-white px-3 py-2 rounded hover:bg-white/20 transition"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Mega Menu Overlay */}
+      {/* --- Mobile Menu Drawer (Logic retained from original TSX) --- */}
       {menuOpen && (
-        <div className="bg-[#002060] text-white border-t border-white/5 shadow-2xl animate-in fade-in zoom-in-95 duration-200 origin-top">
-          <div className="container mx-auto max-w-[1200px] px-4 py-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
+        <div className="bg-[#002060] border-t border-white/10">
+          <div className="container mx-auto max-w-[1200px] px-4 py-4">
+            <ul className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {navItems.filter(item => !item.icon).map((item, i) => (
-                <li key={i} className="list-none group">
+                <li key={i}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 py-3 px-4 rounded-sm border-l-4 border-transparent hover:border-sky-400 hover:bg-white/5 transition-all ${location === item.href ? 'border-sky-400 bg-white/10 text-sky-300' : 'text-gray-300'}`}
+                    className={`block px-3 py-2 rounded text-[14px] font-bold hover:bg-white/10 hover:text-[#FFD700] transition ${location === item.href ? 'text-[#FFD700] bg-white/10' : 'text-white'}`}
                   >
-                    <span className="w-1.5 h-1.5 bg-sky-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="text-[15px] font-bold uppercase tracking-tight font-['Roboto',sans-serif]">{item.label}</span>
+                    {item.label}
                   </Link>
                 </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
       )}
