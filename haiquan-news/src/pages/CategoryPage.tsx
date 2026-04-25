@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import NavyGalleryStrip from '@/components/NavyGalleryStrip';
 import {
   getAllCategories,
   getAllSettings,
@@ -43,6 +42,22 @@ function formatDate(iso?: string) {
   return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 }
 
+/* ── Section title with double-bar decoration ─────────────────────────────── */
+function SidebarHeading({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 pb-2 mb-4 border-b-2 border-[#0059b2]">
+      <div className="flex shrink-0">
+        <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
+        <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
+      </div>
+      <h3 className="font-['Roboto',sans-serif] font-black uppercase text-[13px] tracking-wide text-[#0059b2]">
+        {label}
+      </h3>
+    </div>
+  );
+}
+
+/* ── Hero featured post ────────────────────────────────────────────────────── */
 function HeroFeatured({ post }: { post: Post }) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="group block">
@@ -53,7 +68,7 @@ function HeroFeatured({ post }: { post: Post }) {
           className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition duration-500"
         />
       </div>
-      <h2 className="mt-3 font-['Roboto',sans-serif] font-bold text-[20px] md:text-[22px] leading-snug text-[#222] group-hover:text-[#0059b2]">
+      <h2 className="mt-3 font-['Roboto',sans-serif] font-bold text-[19px] md:text-[21px] leading-snug text-[#222] group-hover:text-[#0059b2]">
         {post.title}
       </h2>
       {post.excerpt && (
@@ -63,6 +78,7 @@ function HeroFeatured({ post }: { post: Post }) {
   );
 }
 
+/* ── Medium card (2×2 grid) ────────────────────────────────────────────────── */
 function MediumCard({ post }: { post: Post }) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="group block">
@@ -73,30 +89,32 @@ function MediumCard({ post }: { post: Post }) {
           className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-500"
         />
       </div>
-      <h3 className="mt-2 font-bold text-[13.5px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-3">
+      <h3 className="mt-2 font-['Roboto',sans-serif] font-bold text-[13px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-3">
         {post.title}
       </h3>
     </Link>
   );
 }
 
+/* ── Mini row (thumbnail + title) ──────────────────────────────────────────── */
 function MiniRow({ post }: { post: Post }) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="group flex gap-3">
-      <div className="w-[110px] flex-shrink-0 overflow-hidden rounded-sm">
+      <div className="w-[100px] flex-shrink-0 overflow-hidden rounded-sm">
         <img
           src={post.thumbnail || PLACEHOLDER}
           alt={post.title}
           className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition duration-500"
         />
       </div>
-      <h4 className="text-[13px] font-bold leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-3">
+      <h4 className="font-['Roboto',sans-serif] text-[13px] font-bold leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-3">
         {post.title}
       </h4>
     </Link>
   );
 }
 
+/* ── List item (main article list) ─────────────────────────────────────────── */
 function ListItem({ post }: { post: Post }) {
   return (
     <Link
@@ -113,7 +131,7 @@ function ListItem({ post }: { post: Post }) {
         </div>
       </div>
       <div className="col-span-12 sm:col-span-7 flex flex-col">
-        <h3 className="font-bold text-[16px] md:text-[17px] leading-snug text-[#222] group-hover:text-[#0059b2]">
+        <h3 className="font-['Roboto',sans-serif] font-bold text-[15px] md:text-[16px] leading-snug text-[#222] group-hover:text-[#0059b2]">
           {post.title}
         </h3>
         {post.excerpt && (
@@ -125,28 +143,43 @@ function ListItem({ post }: { post: Post }) {
   );
 }
 
-function OtherCategoryColumn({ cat, post }: { cat: Category; post: Post | null }) {
+/* ── Other category column ──────────────────────────────────────────────────── */
+function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
+  const [featured, ...rest] = posts;
   return (
     <div>
-      <h3 className="text-[12px] font-bold uppercase tracking-wider text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2]">
-        {cat.name}
-      </h3>
-      {post ? (
-        <Link href={`/bai-viet/${post.slug}`} className="group block">
-          <div className="overflow-hidden rounded-sm mb-2">
-            <img
-              src={post.thumbnail || PLACEHOLDER}
-              alt={post.title}
-              className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-500"
-            />
-          </div>
-          <h4 className="font-bold text-[13.5px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-3">
-            {post.title}
-          </h4>
-          {post.excerpt && (
-            <p className="mt-1 text-[12px] text-[#666] leading-relaxed line-clamp-2">{post.excerpt}</p>
-          )}
-        </Link>
+      <Link href={`/${cat.slug}`}>
+        <h3 className="font-['Roboto',sans-serif] text-[12px] font-black uppercase tracking-wider text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
+          {cat.name}
+        </h3>
+      </Link>
+      {featured ? (
+        <>
+          <Link href={`/bai-viet/${featured.slug}`} className="group block mb-2">
+            <div className="overflow-hidden rounded-sm mb-2">
+              <img
+                src={featured.thumbnail || PLACEHOLDER}
+                alt={featured.title}
+                className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-500"
+              />
+            </div>
+            <h4 className="font-['Roboto',sans-serif] font-bold text-[13px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-2">
+              {featured.title}
+            </h4>
+          </Link>
+          <ul className="space-y-1.5 mt-2">
+            {rest.map(p => (
+              <li key={p.id}>
+                <Link
+                  href={`/bai-viet/${p.slug}`}
+                  className="font-['Roboto',sans-serif] text-[12.5px] text-[#333] leading-snug hover:text-[#0059b2] line-clamp-2 block"
+                >
+                  {p.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : (
         <div className="text-[12px] text-gray-400 italic">Chưa có bài</div>
       )}
@@ -154,6 +187,9 @@ function OtherCategoryColumn({ cat, post }: { cat: Category; post: Post | null }
   );
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   Main Page
+══════════════════════════════════════════════════════════════════════════════ */
 export default function CategoryPage() {
   const [location] = useLocation();
   const slug = location.replace(/^\//, '').split('/')[0] || '';
@@ -162,7 +198,7 @@ export default function CategoryPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [mostRead, setMostRead] = useState<Post[]>([]);
   const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
-  const [otherCats, setOtherCats] = useState<Array<{ cat: Category; post: Post | null }>>([]);
+  const [otherCats, setOtherCats] = useState<Array<{ cat: Category; posts: Post[] }>>([]);
   const [ads, setAds] = useState<Record<string, string>>({});
   const [visibleListCount, setVisibleListCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
@@ -198,8 +234,8 @@ export default function CategoryPage() {
       const others = (allCats || []).filter((c: Category) => c.slug !== slug).slice(0, 5);
       const withPosts = await Promise.all(
         others.map(async (c: Category) => {
-          const items = await getPublishedPosts({ categorySlug: c.slug, limit: 1 });
-          return { cat: c, post: (items || [])[0] || null };
+          const items = await getPublishedPosts({ categorySlug: c.slug, limit: 5 });
+          return { cat: c, posts: items || [] };
         })
       );
       setOtherCats(withPosts);
@@ -228,7 +264,8 @@ export default function CategoryPage() {
     <>
       <SEOHead title={title} description={desc} />
 
-      <div className="bg-[#f2f7fb] border-b border-[#e1e1e1] py-3">
+      {/* Breadcrumb bar */}
+      <div className="bg-[#f2f7fb] border-b border-[#e1e1e1] py-2.5">
         <div className="container mx-auto max-w-[1200px] px-4">
           <div className="flex items-center gap-2 text-[12px] text-[#555]">
             <Link href="/" className="hover:text-[#0059b2]">Trang chủ</Link>
@@ -238,13 +275,17 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      <main className="container mx-auto max-w-[1200px] px-4 pt-8 pb-12">
-        {/* Centered title with horizontal rule */}
-        <div className="text-center mb-8">
-          <h1 className="font-['Playfair_Display',serif] text-[28px] md:text-[34px] font-black uppercase text-[#002060] tracking-wide">
+      <main className="container mx-auto max-w-[1200px] px-4 pt-7 pb-12">
+
+        {/* ── Category title ──────────────────────────────────────────────── */}
+        <div className="text-center mb-7">
+          <h1 className="font-['Roboto',sans-serif] text-[26px] md:text-[32px] font-black uppercase text-[#002060] tracking-wide">
             {title}
           </h1>
-          <div className="mt-3 mx-auto w-24 border-t-2 border-[#0059b2]" />
+          <div className="mt-2 mx-auto flex items-center justify-center gap-1">
+            <div className="h-[3px] w-10 bg-[#0059b2]" />
+            <div className="h-[3px] w-3 bg-sky-300" />
+          </div>
         </div>
 
         {loading ? (
@@ -273,19 +314,19 @@ export default function CategoryPage() {
           </div>
         ) : (
           <>
-            {/* HERO GRID: 5 + 4 + 3 */}
-            <section className="grid grid-cols-12 gap-6 pb-10 border-b border-gray-100">
+            {/* ── HERO GRID: 5 + 4 + 3 ─────────────────────────────────────── */}
+            <section className="grid grid-cols-12 gap-6 pb-8 border-b border-gray-200">
               <div className="col-span-12 md:col-span-5">
                 {featured && <HeroFeatured post={featured} />}
               </div>
-              <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-4">
+              <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-x-4 gap-y-5">
                 {middleQuad.length > 0
                   ? middleQuad.map(p => <MediumCard key={p.id} post={p} />)
                   : [...Array(4)].map((_, i) => (
                       <div key={i} className="aspect-[16/10] bg-blue-50/40 rounded-sm" />
                     ))}
               </div>
-              <div className="col-span-12 md:col-span-3 flex flex-col gap-4">
+              <div className="col-span-12 md:col-span-3 flex flex-col gap-4 border-l border-gray-100 pl-4">
                 {rightStack.length > 0
                   ? rightStack.map(p => <MiniRow key={p.id} post={p} />)
                   : [...Array(4)].map((_, i) => (
@@ -294,19 +335,17 @@ export default function CategoryPage() {
               </div>
             </section>
 
-            {/* LIST + READ + BÁO IN */}
-            <section className="grid grid-cols-12 gap-8 mt-10">
+            {/* ── LIST + TIN ĐỌC NHIỀU + BÁO IN ───────────────────────────── */}
+            <section className="grid grid-cols-12 gap-8 mt-8">
               {/* Tin đọc nhiều */}
               <aside className="col-span-12 md:col-span-3 order-2 md:order-1">
-                <h3 className="text-[14px] font-black uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2]">
-                  Tin đọc nhiều
-                </h3>
+                <SidebarHeading label="Tin đọc nhiều" />
                 <ol className="space-y-3">
                   {mostRead.length === 0 && <li className="text-sm text-gray-400 italic">Chưa có dữ liệu</li>}
                   {mostRead.map((p, i) => (
-                    <li key={p.id} className="flex gap-3">
+                    <li key={p.id} className="flex gap-3 items-start">
                       <span
-                        className={`flex-shrink-0 w-7 h-7 rounded-sm flex items-center justify-center font-black text-[14px] ${
+                        className={`flex-shrink-0 w-6 h-6 rounded-sm flex items-center justify-center font-black text-[13px] ${
                           i < 3 ? 'text-[#FFD700] bg-[#0059b2]' : 'text-[#0059b2] bg-blue-50'
                         }`}
                       >
@@ -314,7 +353,7 @@ export default function CategoryPage() {
                       </span>
                       <Link
                         href={`/bai-viet/${p.slug}`}
-                        className="text-[13px] font-bold text-[#222] leading-snug hover:text-[#0059b2] line-clamp-3"
+                        className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] leading-snug hover:text-[#0059b2] line-clamp-3"
                       >
                         {p.title}
                       </Link>
@@ -334,9 +373,9 @@ export default function CategoryPage() {
                       <div className="text-center mt-4">
                         <button
                           onClick={() => setVisibleListCount(c => c + PAGE_SIZE)}
-                          className="px-8 py-2.5 border-2 border-[#0059b2] text-[#0059b2] font-bold text-[13px] rounded-sm hover:bg-[#0059b2] hover:text-white transition"
+                          className="px-8 py-2.5 border-2 border-[#0059b2] text-[#0059b2] font-['Roboto',sans-serif] font-bold text-[13px] rounded-sm hover:bg-[#0059b2] hover:text-white transition"
                         >
-                          Xem thêm
+                          Xem Thêm
                         </button>
                       </div>
                     )}
@@ -346,9 +385,7 @@ export default function CategoryPage() {
 
               {/* Đọc báo in + ads */}
               <aside className="col-span-12 md:col-span-3 order-3">
-                <h3 className="text-[14px] font-black uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2]">
-                  Đọc Báo In
-                </h3>
+                <SidebarHeading label="Đọc Báo In" />
                 {latestBaoIn ? (
                   <Link href="/bao-in" className="block group">
                     <div className="overflow-hidden rounded-sm shadow border border-gray-100">
@@ -359,7 +396,7 @@ export default function CategoryPage() {
                       />
                     </div>
                     <p className="mt-2 text-[12px] text-[#0059b2] font-bold uppercase">{formatDate(latestBaoIn.published_at || latestBaoIn.created_at)}</p>
-                    <p className="text-[13px] font-bold text-[#222] group-hover:text-[#0059b2] line-clamp-2 leading-snug">
+                    <p className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] group-hover:text-[#0059b2] line-clamp-2 leading-snug">
                       {latestBaoIn.title}
                     </p>
                   </Link>
@@ -383,15 +420,29 @@ export default function CategoryPage() {
               </aside>
             </section>
 
-            {/* CHUYÊN MỤC KHÁC */}
+            {/* ── CHUYÊN MỤC KHÁC ──────────────────────────────────────────── */}
             {otherCats.length > 0 && (
-              <section className="mt-12 pt-8 border-t border-gray-100">
-                <h2 className="text-[16px] font-black uppercase text-[#0059b2] mb-6 pb-2 border-b-2 border-[#0059b2] inline-block px-1">
-                  Chuyên mục khác
-                </h2>
+              <section className="mt-10 pt-8 border-t border-gray-200">
+                {/* Section heading with bar decoration */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <div className="flex shrink-0">
+                      <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
+                      <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
+                    </div>
+                    <h2 className="font-['Roboto',sans-serif] font-black uppercase text-[16px] text-[#0059b2] tracking-wide">
+                      Chuyên mục khác
+                    </h2>
+                  </div>
+                  <div className="flex gap-1">
+                    <span className="w-6 h-6 border border-gray-300 flex items-center justify-center text-gray-400 text-xs hover:border-[#0059b2] hover:text-[#0059b2] cursor-pointer transition">‹</span>
+                    <span className="w-6 h-6 border border-gray-300 flex items-center justify-center text-gray-400 text-xs hover:border-[#0059b2] hover:text-[#0059b2] cursor-pointer transition">›</span>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
-                  {otherCats.map(({ cat, post }) => (
-                    <OtherCategoryColumn key={cat.id} cat={cat} post={post} />
+                  {otherCats.map(({ cat, posts: catPosts }) => (
+                    <OtherCategoryColumn key={cat.id} cat={cat} posts={catPosts} />
                   ))}
                 </div>
               </section>
@@ -399,8 +450,6 @@ export default function CategoryPage() {
           </>
         )}
       </main>
-
-      <NavyGalleryStrip />
     </>
   );
 }
