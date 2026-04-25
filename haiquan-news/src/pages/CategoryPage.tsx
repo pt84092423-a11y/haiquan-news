@@ -42,7 +42,7 @@ function formatDate(iso?: string) {
   return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-/* ── Sidebar Heading: Font Cinzel 800 (Dùng cho "TIN ĐỌC NHIỀU") ────────── */
+/* ── Section title with Cinzel ExtraBold 800 ─────────────────────────────── */
 function SidebarHeading({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 pb-2 mb-4 border-b-2 border-[#0059b2]">
@@ -50,7 +50,7 @@ function SidebarHeading({ label }: { label: string }) {
         <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
         <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
       </div>
-      <h3 className="font-['Cinzel',serif] font-[800] uppercase text-[15px] text-[#0059b2] tracking-tight">
+      <h3 className="font-['Cinzel',serif] font-[800] uppercase text-[14px] text-[#0059b2] tracking-tighter">
         {label}
       </h3>
     </div>
@@ -143,13 +143,13 @@ function ListItem({ post }: { post: Post }) {
   );
 }
 
-/* ── Other category column: Font Cinzel 800 (Dùng cho "CHUYÊN MỤC KHÁC") ───── */
+/* ── Other category column ──────────────────────────────────────────────────── */
 function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   const [featured, ...rest] = posts;
   return (
     <div>
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Cinzel',serif] text-[13px] font-[800] uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition tracking-tight">
+        <h3 className="font-['Cinzel',serif] text-[12px] font-[800] uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition tracking-tighter">
           {cat.name}
         </h3>
       </Link>
@@ -187,9 +187,6 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   Main Page
-══════════════════════════════════════════════════════════════════════════════ */
 export default function CategoryPage() {
   const [location] = useLocation();
   const slug = location.replace(/^\//, '').split('/')[0] || '';
@@ -263,22 +260,20 @@ export default function CategoryPage() {
     <>
       <SEOHead title={title} description={desc} />
 
-      {/* Breadcrumb bar */}
       <div className="bg-[#f2f7fb] border-b border-[#e1e1e1] py-2.5">
         <div className="container mx-auto max-w-[1200px] px-4">
           <div className="flex items-center gap-2 text-[12px] text-[#555]">
             <Link href="/" className="hover:text-[#0059b2]">Trang chủ</Link>
             <span>/</span>
-            <span className="font-bold text-[#0059b2] uppercase tracking-wide">{title}</span>
+            <span className="font-bold text-[#0059b2] uppercase">{title}</span>
           </div>
         </div>
       </div>
 
       <main className="container mx-auto max-w-[1200px] px-4 pt-7 pb-12">
-
-        {/* ── Tiêu đề chính: Font Cinzel 800 (Dùng cho "TIN TỨC" lớn) ────────── */}
+        {/* ── Category title Main (Cinzel 800) ──────────────────────────────── */}
         <div className="text-center mb-7">
-          <h1 className="font-['Cinzel',serif] text-[30px] md:text-[38px] font-[800] uppercase text-[#0059b2] tracking-tight">
+          <h1 className="font-['Cinzel',serif] text-[28px] md:text-[36px] font-[800] uppercase text-[#0059b2] tracking-tighter">
             {title}
           </h1>
           <div className="mt-2 mx-auto flex items-center justify-center gap-1">
@@ -290,8 +285,11 @@ export default function CategoryPage() {
         {loading ? (
           <div className="grid grid-cols-12 gap-6 animate-pulse">
             <div className="col-span-12 md:col-span-5 space-y-3">
-              <div className="aspect-[4/3] bg-blue-50 rounded" />
-              <div className="h-5 bg-blue-50 rounded w-3/4" />
+               <div className="aspect-[4/3] bg-blue-50 rounded" />
+               <div className="h-5 bg-blue-50 rounded w-3/4" />
+            </div>
+            <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-4">
+               {[...Array(4)].map((_, i) => <div key={i} className="aspect-[16/10] bg-blue-50 rounded" />)}
             </div>
           </div>
         ) : posts.length === 0 ? (
@@ -301,28 +299,26 @@ export default function CategoryPage() {
           </div>
         ) : (
           <>
-            {/* HERO GRID */}
             <section className="grid grid-cols-12 gap-6 pb-8 border-b border-gray-200">
               <div className="col-span-12 md:col-span-5">
                 {featured && <HeroFeatured post={featured} />}
               </div>
               <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-x-4 gap-y-5">
-                {middleQuad.map(p => <MediumCard key={p.id} post={p} />)}
+                {middleQuad.length > 0 ? middleQuad.map(p => <MediumCard key={p.id} post={p} />) : null}
               </div>
               <div className="col-span-12 md:col-span-3 flex flex-col gap-4 border-l border-gray-100 pl-4">
-                {rightStack.map(p => <MiniRow key={p.id} post={p} />)}
+                {rightStack.length > 0 ? rightStack.map(p => <MiniRow key={p.id} post={p} />) : null}
               </div>
             </section>
 
             <section className="grid grid-cols-12 gap-8 mt-8">
-              {/* Tin đọc nhiều */}
               <aside className="col-span-12 md:col-span-3 order-2 md:order-1">
                 <SidebarHeading label="Tin đọc nhiều" />
                 <ol className="divide-y divide-gray-200">
                   {mostRead.map((p, i) => (
                     <li key={p.id} className="py-3 flex gap-3 items-start">
-                      {/* Số thứ tự: Font Cinzel 800 nén lại như ảnh 3 */}
-                      <span className="font-['Cinzel',serif] font-[800] text-[42px] leading-none text-[#c5d9e8] shrink-0 w-[40px] text-right select-none tracking-tighter">
+                      {/* Số thứ tự cũng dùng Cinzel 800 */}
+                      <span className="font-['Cinzel',serif] font-[800] text-[40px] leading-none text-[#c5d9e8] shrink-0 w-[38px] text-right select-none tracking-tighter">
                         {i + 1}
                       </span>
                       <Link
@@ -336,7 +332,6 @@ export default function CategoryPage() {
                 </ol>
               </aside>
 
-              {/* Main article list */}
               <div className="col-span-12 md:col-span-6 order-1 md:order-2">
                 {visibleList.map(p => <ListItem key={p.id} post={p} />)}
                 {hasMore && (
@@ -351,7 +346,6 @@ export default function CategoryPage() {
                 )}
               </div>
 
-              {/* Quảng cáo */}
               <aside className="col-span-12 md:col-span-3 order-3">
                 <WebsiteLinks />
                 <div className="mt-5 flex flex-col gap-3">
@@ -364,7 +358,6 @@ export default function CategoryPage() {
               </aside>
             </section>
 
-            {/* Chuyên mục khác */}
             {otherCats.length > 0 && (
               <section className="mt-10 pt-8 border-t border-gray-200">
                 <div className="flex items-center justify-between mb-6">
@@ -373,8 +366,7 @@ export default function CategoryPage() {
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    {/* Chữ CHUYÊN MỤC KHÁC: Font Cinzel 800 */}
-                    <h2 className="font-['Cinzel',serif] font-[800] uppercase text-[16px] text-[#0059b2] tracking-tight">
+                    <h2 className="font-['Cinzel',serif] font-[800] uppercase text-[16px] text-[#0059b2] tracking-tighter">
                       Chuyên mục khác
                     </h2>
                   </div>
