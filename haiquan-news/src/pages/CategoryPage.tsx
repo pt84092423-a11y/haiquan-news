@@ -50,7 +50,7 @@ function SidebarHeading({ label }: { label: string }) {
         <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
         <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
       </div>
-      <h3 className="font-['Cinzel',serif] font-bold uppercase text-[13px] text-[#0059b2]">
+      <h3 className="font-['Cinzel',serif] font-black uppercase text-[13px] text-[#0059b2]">
         {label}
       </h3>
     </div>
@@ -149,7 +149,7 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   return (
     <div>
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Cinzel',serif] text-[11px] font-bold uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
+        <h3 className="font-['Cinzel',serif] text-[11px] font-black uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
           {cat.name}
         </h3>
       </Link>
@@ -225,6 +225,7 @@ export default function CategoryPage() {
       setPosts(mainPosts || []);
 
       const sortedPopular = [...(popular || [])]
+        .filter((p: Post) => p.post_type !== 'baoin')
         .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
         .slice(0, 8);
       setMostRead(sortedPopular);
@@ -279,7 +280,7 @@ export default function CategoryPage() {
 
         {/* ── Category title ──────────────────────────────────────────────── */}
         <div className="text-center mb-7">
-          <h1 className="font-['Cinzel',serif] text-[24px] md:text-[30px] font-bold uppercase text-[#002060]">
+          <h1 className="font-['Cinzel',serif] text-[24px] md:text-[30px] font-black uppercase text-[#0059b2]">
             {title}
           </h1>
           <div className="mt-2 mx-auto flex items-center justify-center gap-1">
@@ -351,7 +352,7 @@ export default function CategoryPage() {
                       </span>
                       <Link
                         href={`/bai-viet/${p.slug}`}
-                        className="font-['Roboto',sans-serif] text-[13px] text-[#222] leading-snug hover:text-[#0059b2] pt-1 flex-1"
+                        className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] leading-snug hover:text-[#0059b2] pt-1 flex-1"
                       >
                         {p.title}
                       </Link>
@@ -405,7 +406,7 @@ export default function CategoryPage() {
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    <h2 className="font-['Cinzel',serif] font-bold uppercase text-[15px] text-[#0059b2]">
+                    <h2 className="font-['Cinzel',serif] font-black uppercase text-[15px] text-[#0059b2]">
                       Chuyên mục khác
                     </h2>
                   </div>
