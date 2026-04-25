@@ -1,7 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import { realtimeClock } from '@/lib/utils';
+import { getSiteSetting, parseJsonSetting } from '@/lib/supabase';
 import logoImg from '@assets/logo_haiquan.png';
+
+export type NavItem = { href: string; label: string; icon?: boolean };
+
+export const DEFAULT_NAV_ITEMS: NavItem[] = [
+  { href: '/', label: '', icon: true },
+  { href: '/tin-tuc', label: 'Tin tức' },
+  { href: '/cau-truc', label: 'Cấu trúc' },
+  { href: '/vi-chu-quyen', label: 'Vì chủ quyền biển đảo' },
+  { href: '/tam-tinh', label: 'Tâm tình lính biển' },
+  { href: '/lich-su', label: 'Lịch sử' },
+  { href: '/chi-huy', label: 'Chỉ huy' },
+  { href: '/da-phuong-tien', label: 'Đa phương tiện' },
+];
 
 export default function SiteHeader() {
   const [clock, setClock] = useState(realtimeClock());
@@ -9,6 +23,7 @@ export default function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [navItems, setNavItems] = useState<NavItem[]>(DEFAULT_NAV_ITEMS);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -26,16 +41,12 @@ export default function SiteHeader() {
     setMenuOpen(false);
   }, [location]);
 
-  const navItems = [
-    { href: '/', label: '', icon: true },
-    { href: '/tin-tuc', label: 'Tin tức' },
-    { href: '/cau-truc', label: 'Cấu trúc' },
-    { href: '/vi-chu-quyen', label: 'Vì chủ quyền biển đảo' },
-    { href: '/tam-tinh', label: 'Tâm tình lính biển' },
-    { href: '/lich-su', label: 'Lịch sử' },
-    { href: '/chi-huy', label: 'Chỉ huy' },
-    { href: '/da-phuong-tien', label: 'Đa phương tiện' },
-  ];
+  useEffect(() => {
+    getSiteSetting('site_nav_items').then(value => {
+      const parsed = parseJsonSetting<NavItem[]>(value, DEFAULT_NAV_ITEMS);
+      if (Array.isArray(parsed) && parsed.length > 0) setNavItems(parsed);
+    });
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

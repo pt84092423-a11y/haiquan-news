@@ -23,6 +23,7 @@ import AdminBaoIn from "@/pages/admin/AdminBaoIn";
 import StructureManager from "@/pages/admin/StructureManager";
 import CommandManager from "@/pages/admin/CommandManager";
 import AdminAds from "@/pages/admin/AdminAds";
+import NavManager from "@/pages/admin/NavManager";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import { getSession, can } from "@/lib/auth";
 
@@ -80,6 +81,7 @@ function Router() {
       <Route path="/admin/chi-huy" component={() => <ProtectedRoute component={CommandManager} />} />
       <Route path="/admin/cau-truc-chi-huy" component={() => <ProtectedRoute component={StructureManager} />} />
       <Route path="/admin/quang-cao" component={() => <ProtectedRoute component={AdminAds} />} />
+      <Route path="/admin/thanh-dieu-huong" component={() => <ProtectedRoute component={NavManager} />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />

@@ -55,6 +55,10 @@ Configured as an **autoscale Node server** deployment so article pages can retur
 - Article OpenGraph tags are injected by `server.js` for `/bai-viet/:slug` so social/chat crawlers can read the correct title, description, image, and canonical URL
 - Post editor includes quick-insert rich content blocks: image frame, polaroid, cinema/video, podcast, text frame, quote, page background, table, mini org chart, decorative text block
 - Public pages for `Cấu trúc`, `Chỉ huy`, and `Liên hệ`
+- Home page renders dedicated sections for `Tâm tình lính biển` (slug `tam-tinh`) and `Lịch sử` (slug `lich-su`) using the Chỉ huy layout (1 large + 3 small posts)
+- Liên hệ page shows Discord contact (default `donkey3959`) and Khánh Hòa address; values come from `contact_email`, `contact_discord`, and `contact_address` settings
+- Báo In reader features a page-flip book animation (CSS `pageFlipNext`/`pageFlipPrev` keyframes in `index.css`); click left/right halves or use arrow keys to navigate
+- Top navigation taskbar is admin-managed via `/admin/thanh-dieu-huong` (NavManager): reorder, edit label/href, mark home icon, add/remove items, reset to defaults; persisted as `site_nav_items` JSON setting and read by `SiteHeader` (falls back to `DEFAULT_NAV_ITEMS`)
 - `Cấu trúc` supports two display modes: editable organization chart or one uploaded poster/image; each chart unit can include logo, slogan, history, and up to 10 activity images shown in a detail modal
 - Admin pages are split into `Cấu trúc`, `Chỉ huy`, and `Quảng cáo`; structure and HICOM personnel are stored as JSON settings
 - `Chỉ huy` personnel records support a table-style activity timeline with time, rank/order, position, and note milestones, plus slot-based uploads for detail images and service unit logos

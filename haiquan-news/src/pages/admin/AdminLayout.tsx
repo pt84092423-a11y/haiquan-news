@@ -56,6 +56,11 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           label: 'Quảng cáo',
           icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-7 7h14M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
         },
+        {
+          href: '/admin/thanh-dieu-huong',
+          label: 'Thanh điều hướng',
+          icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h10M4 18h16" /></svg>
+        },
       ]
     },
     ...(can(session?.role, 'approve_requests') ? [{

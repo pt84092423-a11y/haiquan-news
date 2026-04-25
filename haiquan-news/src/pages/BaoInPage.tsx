@@ -13,14 +13,35 @@ interface NewspaperIssue {
 
 function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: () => void }) {
   const [page, setPage] = useState(0);
+  const [flip, setFlip] = useState<{ from: number; to: number; dir: 'next' | 'prev' } | null>(null);
   const contentPages = issue.pages.filter(Boolean);
   const pages = issue.cover && !contentPages.includes(issue.cover)
     ? [issue.cover, ...contentPages]
     : contentPages.length > 0 ? contentPages : (issue.cover ? [issue.cover] : []);
   const total = pages.length;
+  const FLIP_MS = 650;
 
-  const goNext = useCallback(() => setPage(p => Math.min(p + 1, total - 1)), [total]);
-  const goPrev = useCallback(() => setPage(p => Math.max(p - 1, 0)), []);
+  const turnTo = useCallback((nextPage: number, dir: 'next' | 'prev') => {
+    setPage(curr => {
+      if (nextPage === curr || nextPage < 0 || nextPage >= total) return curr;
+      setFlip({ from: curr, to: nextPage, dir });
+      window.setTimeout(() => {
+        setPage(nextPage);
+        setFlip(null);
+      }, FLIP_MS);
+      return curr;
+    });
+  }, [total]);
+
+  const goNext = useCallback(() => {
+    if (flip) return;
+    turnTo(Math.min(page + 1, total - 1), 'next');
+  }, [flip, page, total, turnTo]);
+
+  const goPrev = useCallback(() => {
+    if (flip) return;
+    turnTo(Math.max(page - 1, 0), 'prev');
+  }, [flip, page, turnTo]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -57,26 +78,51 @@ function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: (
         </div>
       </div>
 
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden" style={{ perspective: '2200px' }}>
         <button
           onClick={goPrev}
-          disabled={page === 0}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 disabled:opacity-20 rounded-full flex items-center justify-center text-white transition"
+          disabled={page === 0 || !!flip}
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-white/20 disabled:opacity-20 rounded-full flex items-center justify-center text-white transition"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
 
-        <img
-          src={pages[page]}
-          alt={`Trang ${page + 1}`}
-          className="max-h-full max-w-full object-contain select-none"
-          draggable={false}
-        />
+        <div className="relative h-full max-h-full flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
+          {/* Page underneath (destination) */}
+          {flip && (
+            <img
+              src={pages[flip.to]}
+              alt={`Trang ${flip.to + 1}`}
+              className="max-h-[92vh] max-w-[95vw] object-contain select-none shadow-2xl"
+              draggable={false}
+            />
+          )}
+
+          {/* Current page (the one flipping) */}
+          <img
+            key={`current-${page}-${flip ? flip.dir : 'idle'}`}
+            src={pages[page]}
+            alt={`Trang ${page + 1}`}
+            onClick={e => {
+              if (flip) return;
+              const rect = (e.currentTarget as HTMLImageElement).getBoundingClientRect();
+              const isLeftHalf = (e.clientX - rect.left) < rect.width / 2;
+              if (isLeftHalf) goPrev(); else goNext();
+            }}
+            className={`max-h-[92vh] max-w-[95vw] object-contain select-none shadow-2xl cursor-pointer ${flip ? (flip.dir === 'next' ? 'page-flip-next' : 'page-flip-prev') : ''} ${flip ? 'absolute inset-0 m-auto' : ''}`}
+            style={{
+              backfaceVisibility: 'hidden',
+              transformOrigin: flip?.dir === 'next' ? 'left center' : 'right center',
+              boxShadow: flip ? '0 40px 80px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.2)' : undefined,
+            }}
+            draggable={false}
+          />
+        </div>
 
         <button
           onClick={goNext}
-          disabled={page === total - 1}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 disabled:opacity-20 rounded-full flex items-center justify-center text-white transition"
+          disabled={page === total - 1 || !!flip}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-white/20 disabled:opacity-20 rounded-full flex items-center justify-center text-white transition"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
         </button>
