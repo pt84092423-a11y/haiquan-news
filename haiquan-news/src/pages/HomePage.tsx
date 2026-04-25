@@ -4,7 +4,8 @@ import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import PostCard from '@/components/PostCard';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getAllSettings, getPublishedPosts, type Post } from '@/lib/supabase';
+import { getAllSettings, getPublishedPosts, getSiteSetting, parseJsonSetting, type Post } from '@/lib/supabase';
+import { DEFAULT_COMMAND_DATA, type CommandData, type Commander } from '@/pages/CommandPage';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
 const DEFAULT_MAIN_AD = 'https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg';
@@ -33,10 +34,10 @@ export default function HomePage() {
   const [generalPosts, setGeneralPosts] = useState<Post[]>([]);
   
   // Data cho các mục mới
-  const [kinhTePosts, setKinhTePosts] = useState<Post[]>([]);
   const [chuQuyenPosts, setChuQuyenPosts] = useState<Post[]>([]);
   const [tamTinhPosts, setTamTinhPosts] = useState<Post[]>([]);
   const [lichSuPosts, setLichSuPosts] = useState<Post[]>([]);
+  const [commanders, setCommanders] = useState<Commander[]>([]);
   
   const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
   const [podcastPosts, setPodcastPosts] = useState<Post[]>([]);
@@ -51,7 +52,7 @@ export default function HomePage() {
 
   useEffect(() => {
     async function load() {
-      const [all, media, shorts, podcasts, baoIn, tamTinh, lichSu, settings] = await Promise.all([
+      const [all, media, shorts, podcasts, baoIn, tamTinh, lichSu, settings, commandRaw] = await Promise.all([
         getPublishedPosts({ limit: 40 }), // Tăng limit lên một chút để đủ bài cho các mục mới
         getPublishedPosts({ postType: 'video', limit: 6 }),
         getPublishedPosts({ postType: 'video', limit: 5 }),
@@ -60,6 +61,7 @@ export default function HomePage() {
         getPublishedPosts({ categorySlug: 'tam-tinh', limit: 4 }),
         getPublishedPosts({ categorySlug: 'lich-su', limit: 4 }),
         getAllSettings(),
+        getSiteSetting('command_page_data'),
       ]);
       const posts = all || [];
       const articles = posts.filter(p => p.post_type !== 'baoin');
@@ -71,11 +73,16 @@ export default function HomePage() {
       setMostRead(sorted.slice(0, 6));
       
       setGeneralPosts(articles.slice(3, 7));
-      setKinhTePosts(articles.slice(7, 11)); // 4 bài cho Kinh tế - Xã hội
       setChuQuyenPosts(articles.slice(11, 16)); // 5 bài cho Vì chủ quyền biển đảo
       
       setTamTinhPosts(tamTinh || []);
       setLichSuPosts(lichSu || []);
+
+      const command = parseJsonSetting<CommandData>(commandRaw, DEFAULT_COMMAND_DATA);
+      const sortedCommanders = [...command.people]
+        .filter(p => p.group === 'navy')
+        .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+      setCommanders(sortedCommanders);
       setMediaPosts((media || []).slice(0, 4));
       setPodcastPosts((podcasts || []).slice(0, 4));
       setVideoPosts((media || []).slice(0, 3));
@@ -309,53 +316,46 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            {/* Bài lớn bên trái (hoặc skeleton) */}
-            <div className="md:col-span-8">
-              {loading ? (
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="md:w-2/5 flex flex-col gap-2"><div className="h-6 bg-gray-200 rounded w-full"/><div className="h-20 bg-gray-100 rounded w-full"/></div>
-                  <div className="md:w-3/5 aspect-[4/3] bg-gray-200 rounded animate-pulse" />
-                </div>
-              ) : kinhTePosts[0] ? (
-                <Link href={`/bai-viet/${kinhTePosts[0].slug}`} className="flex flex-col md:flex-row gap-6 group cursor-pointer">
-                  <div className="md:w-[40%] flex flex-col justify-center">
-                    <h3 className="font-['Roboto',sans-serif] text-[22px] md:text-[26px] font-bold leading-tight text-[#222222] mb-3 group-hover:text-[#0059b2] transition-colors">
-                      {kinhTePosts[0].title}
-                    </h3>
-                    <p className="font-['Roboto',sans-serif] text-[14px] text-[#555555] leading-relaxed line-clamp-4">
-                      {kinhTePosts[0].excerpt}
-                    </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+            {loading ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-blue-100 overflow-hidden shadow-sm">
+                  <div className="aspect-[4/3] bg-gray-100 animate-pulse" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 bg-gray-100 rounded w-1/3 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2 animate-pulse" />
                   </div>
-                  <div className="md:w-[60%] overflow-hidden rounded-md relative shadow-sm">
-                    <img src={kinhTePosts[0].thumbnail || PLACEHOLDER} alt={kinhTePosts[0].title} className="w-full h-full object-cover aspect-[4/3] transform transition duration-500 group-hover:scale-105" />
+                </div>
+              ))
+            ) : commanders.length > 0 ? (
+              commanders.slice(0, 4).map(person => (
+                <Link
+                  key={person.id}
+                  href="/chi-huy"
+                  className="text-left bg-white rounded-2xl border border-blue-100 overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition group block"
+                >
+                  <div className="aspect-[4/3] bg-[#e8f0fa] overflow-hidden">
+                    {person.photo ? (
+                      <img src={person.photo} alt={person.name} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#0059b2]/40 font-bold">ẢNH THẺ</div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <p className="text-[11px] font-bold text-[#0059b2] uppercase">{person.rank}</p>
+                    <h3 className="font-bold text-[#222] text-lg leading-tight mt-1 group-hover:text-[#0059b2] transition-colors">{person.name}</h3>
+                    <p className="text-sm text-[#555] mt-1">{person.position}</p>
+                    {person.unit && <p className="text-[12px] text-[#0059b2] font-bold mt-2 uppercase">{person.unit}</p>}
                   </div>
                 </Link>
-              ) : (
-                 <div className="bg-[#f8fbff] border border-blue-100 p-8 rounded-md min-h-[240px] flex flex-col justify-center items-center text-center text-[#0059b2]">
-                   <strong>Chưa có nội dung Chỉ huy</strong>
-                   <span className="text-sm text-gray-500 mt-2">Khi có bài viết mới, nội dung sẽ tự hiển thị tại đây.</span>
-                 </div>
-              )}
-            </div>
-
-            {/* 3 Bài nhỏ xếp chồng bên phải */}
-            <div className="md:col-span-4 flex flex-col gap-4 justify-between">
-              {loading ? (
-                [...Array(3)].map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded animate-pulse" />)
-              ) : (
-                kinhTePosts.slice(1, 4).map(p => (
-                  <Link key={p.id} href={`/bai-viet/${p.slug}`} className="flex gap-3 group cursor-pointer">
-                    <div className="w-[130px] flex-shrink-0 relative aspect-[4/3] rounded-sm overflow-hidden">
-                      <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover transform transition duration-500 group-hover:scale-110" />
-                    </div>
-                    <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] leading-snug group-hover:text-[#0059b2]">
-                      {p.title}
-                    </h4>
-                  </Link>
-                ))
-              )}
-            </div>
+              ))
+            ) : (
+              <div className="col-span-full bg-[#f8fbff] border border-blue-100 p-8 rounded-md min-h-[200px] flex flex-col justify-center items-center text-center text-[#0059b2]">
+                <strong>Chưa có nội dung Chỉ huy</strong>
+                <span className="text-sm text-gray-500 mt-2">Thêm nhân sự HICOM trong trang quản trị để hiển thị tại đây.</span>
+              </div>
+            )}
           </div>
         </section>
 

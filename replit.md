@@ -55,7 +55,9 @@ Configured as an **autoscale Node server** deployment so article pages can retur
 - Article OpenGraph tags are injected by `server.js` for `/bai-viet/:slug` so social/chat crawlers can read the correct title, description, image, and canonical URL
 - Post editor includes quick-insert rich content blocks: image frame, polaroid, cinema/video, podcast, text frame, quote, page background, table, mini org chart, decorative text block
 - Public pages for `Cấu trúc`, `Chỉ huy`, and `Liên hệ`
-- Home page renders dedicated sections for `Tâm tình lính biển` (slug `tam-tinh`) and `Lịch sử` (slug `lich-su`) using the Chỉ huy layout (1 large + 3 small posts)
+- Home page `CHỈ HUY` section renders HICOM cards (photo, rank, name, position, unit) sourced from the admin `command_page_data` setting; cards link to `/chi-huy`
+- Home page renders dedicated sections for `Tâm tình lính biển` (slug `tam-tinh`) and `Lịch sử` (slug `lich-su`) with a 1 large + 3 small post layout
+- Liên hệ hero uses `/contact-hero-bg.png` (Vietnam People's Navy banner) with a navy-gradient overlay
 - Liên hệ page shows Discord contact (default `donkey3959`) and Khánh Hòa address; values come from `contact_email`, `contact_discord`, and `contact_address` settings
 - Báo In reader features a page-flip book animation (CSS `pageFlipNext`/`pageFlipPrev` keyframes in `index.css`); click left/right halves or use arrow keys to navigate
 - Top navigation taskbar is admin-managed via `/admin/thanh-dieu-huong` (NavManager): reorder, edit label/href, mark home icon, add/remove items, reset to defaults; persisted as `site_nav_items` JSON setting and read by `SiteHeader` (falls back to `DEFAULT_NAV_ITEMS`)

@@ -20,11 +20,15 @@ export default function ContactPage() {
   return (
     <>
       <SEOHead title="Liên hệ" description="Thông tin liên hệ Báo Hải Quân Việt Nam - SROV" />
-      <div className="bg-gradient-to-r from-[#002060] to-[#0059b2] text-white py-14">
-        <div className="container mx-auto max-w-[1200px] px-4">
+      <div
+        className="relative text-white py-14 bg-cover bg-center"
+        style={{ backgroundImage: "url('/contact-hero-bg.png')" }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-[#002060]/85 to-[#0059b2]/70" />
+        <div className="container mx-auto max-w-[1200px] px-4 relative">
           <p className="text-[#FFD700] uppercase text-[13px] font-bold tracking-[0.2em] mb-3">Kết nối với chúng tôi</p>
-          <h1 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-black uppercase mb-4">Liên hệ</h1>
-          <p className="max-w-2xl text-white/85 leading-relaxed">Gửi thông tin, tin bài, hình ảnh hoặc liên hệ công tác với Cổng Thông Tin SROV.</p>
+          <h1 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-black uppercase mb-4 drop-shadow">Liên hệ</h1>
+          <p className="max-w-2xl text-white/90 leading-relaxed drop-shadow">Gửi thông tin, tin bài, hình ảnh hoặc liên hệ công tác với Cổng Thông Tin SROV.</p>
         </div>
       </div>
 
