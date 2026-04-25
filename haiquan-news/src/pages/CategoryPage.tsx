@@ -42,7 +42,7 @@ function formatDate(iso?: string) {
   return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-/* ── Section title with double-bar decoration ─────────────────────────────── */
+/* ── Section title with Cinzel ExtraBold 800 ─────────────────────────────── */
 function SidebarHeading({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 pb-2 mb-4 border-b-2 border-[#0059b2]">
@@ -50,7 +50,7 @@ function SidebarHeading({ label }: { label: string }) {
         <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
         <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
       </div>
-      <h3 className="font-['Oswald',sans-serif] font-black uppercase text-[13px] text-[#0059b2]">
+      <h3 className="font-['Cinzel',serif] font-[800] uppercase text-[14px] text-[#0059b2] tracking-tighter">
         {label}
       </h3>
     </div>
@@ -149,7 +149,7 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   return (
     <div>
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Oswald',sans-serif] text-[11px] font-black uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
+        <h3 className="font-['Cinzel',serif] text-[12px] font-[800] uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition tracking-tighter">
           {cat.name}
         </h3>
       </Link>
@@ -187,9 +187,6 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   Main Page
-══════════════════════════════════════════════════════════════════════════════ */
 export default function CategoryPage() {
   const [location] = useLocation();
   const slug = location.replace(/^\//, '').split('/')[0] || '';
@@ -197,7 +194,6 @@ export default function CategoryPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [mostRead, setMostRead] = useState<Post[]>([]);
-  const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
   const [otherCats, setOtherCats] = useState<Array<{ cat: Category; posts: Post[] }>>([]);
   const [ads, setAds] = useState<Record<string, string>>({});
   const [visibleListCount, setVisibleListCount] = useState(PAGE_SIZE);
@@ -229,7 +225,6 @@ export default function CategoryPage() {
         .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
         .slice(0, 8);
       setMostRead(sortedPopular);
-      setLatestBaoIn((baoIn || [])[0] || null);
       setAds(settings || {});
 
       const others = (allCats || []).filter((c: Category) => c.slug !== slug && c.slug !== 'bao-in').slice(0, 5);
@@ -265,7 +260,6 @@ export default function CategoryPage() {
     <>
       <SEOHead title={title} description={desc} />
 
-      {/* Breadcrumb bar */}
       <div className="bg-[#f2f7fb] border-b border-[#e1e1e1] py-2.5">
         <div className="container mx-auto max-w-[1200px] px-4">
           <div className="flex items-center gap-2 text-[12px] text-[#555]">
@@ -277,10 +271,9 @@ export default function CategoryPage() {
       </div>
 
       <main className="container mx-auto max-w-[1200px] px-4 pt-7 pb-12">
-
-        {/* ── Category title ──────────────────────────────────────────────── */}
+        {/* ── Category title Main (Cinzel 800) ──────────────────────────────── */}
         <div className="text-center mb-7">
-          <h1 className="font-['Oswald',sans-serif] text-[26px] md:text-[32px] font-bold uppercase text-[#0059b2]">
+          <h1 className="font-['Cinzel',serif] text-[28px] md:text-[36px] font-[800] uppercase text-[#0059b2] tracking-tighter">
             {title}
           </h1>
           <div className="mt-2 mx-auto flex items-center justify-center gap-1">
@@ -292,20 +285,11 @@ export default function CategoryPage() {
         {loading ? (
           <div className="grid grid-cols-12 gap-6 animate-pulse">
             <div className="col-span-12 md:col-span-5 space-y-3">
-              <div className="aspect-[4/3] bg-blue-50 rounded" />
-              <div className="h-5 bg-blue-50 rounded w-3/4" />
-              <div className="h-4 bg-blue-50 rounded w-full" />
+               <div className="aspect-[4/3] bg-blue-50 rounded" />
+               <div className="h-5 bg-blue-50 rounded w-3/4" />
             </div>
             <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="aspect-[16/10] bg-blue-50 rounded" />
-                  <div className="h-3 bg-blue-50 rounded w-full" />
-                </div>
-              ))}
-            </div>
-            <div className="col-span-12 md:col-span-3 space-y-3">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-blue-50 rounded" />)}
+               {[...Array(4)].map((_, i) => <div key={i} className="aspect-[16/10] bg-blue-50 rounded" />)}
             </div>
           </div>
         ) : posts.length === 0 ? (
@@ -315,39 +299,26 @@ export default function CategoryPage() {
           </div>
         ) : (
           <>
-            {/* ── HERO GRID: 5 + 4 + 3 ─────────────────────────────────────── */}
             <section className="grid grid-cols-12 gap-6 pb-8 border-b border-gray-200">
               <div className="col-span-12 md:col-span-5">
                 {featured && <HeroFeatured post={featured} />}
               </div>
               <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-x-4 gap-y-5">
-                {middleQuad.length > 0
-                  ? middleQuad.map(p => <MediumCard key={p.id} post={p} />)
-                  : [...Array(4)].map((_, i) => (
-                      <div key={i} className="aspect-[16/10] bg-blue-50/40 rounded-sm" />
-                    ))}
+                {middleQuad.length > 0 ? middleQuad.map(p => <MediumCard key={p.id} post={p} />) : null}
               </div>
               <div className="col-span-12 md:col-span-3 flex flex-col gap-4 border-l border-gray-100 pl-4">
-                {rightStack.length > 0
-                  ? rightStack.map(p => <MiniRow key={p.id} post={p} />)
-                  : [...Array(4)].map((_, i) => (
-                      <div key={i} className="h-20 bg-blue-50/40 rounded-sm" />
-                    ))}
+                {rightStack.length > 0 ? rightStack.map(p => <MiniRow key={p.id} post={p} />) : null}
               </div>
             </section>
 
-            {/* ── LIST + TIN ĐỌC NHIỀU + BÁO IN ───────────────────────────── */}
             <section className="grid grid-cols-12 gap-8 mt-8">
-              {/* Tin đọc nhiều */}
               <aside className="col-span-12 md:col-span-3 order-2 md:order-1">
                 <SidebarHeading label="Tin đọc nhiều" />
                 <ol className="divide-y divide-gray-200">
-                  {mostRead.length === 0 && (
-                    <li className="py-3 text-sm text-gray-400 italic">Chưa có dữ liệu</li>
-                  )}
                   {mostRead.map((p, i) => (
                     <li key={p.id} className="py-3 flex gap-3 items-start">
-                      <span className="font-['Oswald',sans-serif] font-bold text-[46px] leading-none text-[#c5d9e8] shrink-0 w-[38px] text-right select-none">
+                      {/* Số thứ tự cũng dùng Cinzel 800 */}
+                      <span className="font-['Cinzel',serif] font-[800] text-[40px] leading-none text-[#c5d9e8] shrink-0 w-[38px] text-right select-none tracking-tighter">
                         {i + 1}
                       </span>
                       <Link
@@ -361,31 +332,22 @@ export default function CategoryPage() {
                 </ol>
               </aside>
 
-              {/* Main article list */}
               <div className="col-span-12 md:col-span-6 order-1 md:order-2">
-                {listPool.length === 0 ? (
-                  <div className="text-sm text-gray-400 italic py-6">Đã hiển thị toàn bộ bài viết của chuyên mục.</div>
-                ) : (
-                  <>
-                    {visibleList.map(p => <ListItem key={p.id} post={p} />)}
-                    {hasMore && (
-                      <div className="text-center mt-4">
-                        <button
-                          onClick={() => setVisibleListCount(c => c + PAGE_SIZE)}
-                          className="px-8 py-2.5 border-2 border-[#0059b2] text-[#0059b2] font-['Roboto',sans-serif] font-bold text-[13px] rounded-sm hover:bg-[#0059b2] hover:text-white transition"
-                        >
-                          Xem Thêm
-                        </button>
-                      </div>
-                    )}
-                  </>
+                {visibleList.map(p => <ListItem key={p.id} post={p} />)}
+                {hasMore && (
+                  <div className="text-center mt-4">
+                    <button
+                      onClick={() => setVisibleListCount(c => c + PAGE_SIZE)}
+                      className="px-8 py-2.5 border-2 border-[#0059b2] text-[#0059b2] font-['Roboto',sans-serif] font-bold text-[13px] rounded-sm hover:bg-[#0059b2] hover:text-white transition"
+                    >
+                      Xem Thêm
+                    </button>
+                  </div>
                 )}
               </div>
 
-              {/* Liên kết website + quảng cáo */}
               <aside className="col-span-12 md:col-span-3 order-3">
                 <WebsiteLinks />
-
                 <div className="mt-5 flex flex-col gap-3">
                   {adBlocks.map((ad, i) => (
                     <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition shadow-sm rounded-sm overflow-hidden">
@@ -396,23 +358,17 @@ export default function CategoryPage() {
               </aside>
             </section>
 
-            {/* ── CHUYÊN MỤC KHÁC ──────────────────────────────────────────── */}
             {otherCats.length > 0 && (
               <section className="mt-10 pt-8 border-t border-gray-200">
-                {/* Section heading with bar decoration */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <div className="flex shrink-0">
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    <h2 className="font-['Oswald',sans-serif] font-black uppercase text-[15px] text-[#0059b2]">
+                    <h2 className="font-['Cinzel',serif] font-[800] uppercase text-[16px] text-[#0059b2] tracking-tighter">
                       Chuyên mục khác
                     </h2>
-                  </div>
-                  <div className="flex gap-1">
-                    <span className="w-6 h-6 border border-gray-300 flex items-center justify-center text-gray-400 text-xs hover:border-[#0059b2] hover:text-[#0059b2] cursor-pointer transition">‹</span>
-                    <span className="w-6 h-6 border border-gray-300 flex items-center justify-center text-gray-400 text-xs hover:border-[#0059b2] hover:text-[#0059b2] cursor-pointer transition">›</span>
                   </div>
                 </div>
 
