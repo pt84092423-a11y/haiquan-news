@@ -50,7 +50,7 @@ function SidebarHeading({ label }: { label: string }) {
         <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
         <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
       </div>
-      <h3 className="font-['Cinzel',serif] font-[800] uppercase text-[14px] text-[#0059b2] tracking-tighter">
+      <h3 className="font-['Cinzel',serif] font-[800] uppercase text-[15px] text-[#0059b2] tracking-tighter">
         {label}
       </h3>
     </div>
@@ -265,7 +265,7 @@ export default function CategoryPage() {
           <div className="flex items-center gap-2 text-[12px] text-[#555]">
             <Link href="/" className="hover:text-[#0059b2]">Trang chủ</Link>
             <span>/</span>
-            <span className="font-bold text-[#0059b2] uppercase">{title}</span>
+            <span className="font-['Cinzel',serif] font-[800] text-[#0059b2] uppercase tracking-tighter">{title}</span>
           </div>
         </div>
       </div>
@@ -273,12 +273,12 @@ export default function CategoryPage() {
       <main className="container mx-auto max-w-[1200px] px-4 pt-7 pb-12">
         {/* ── Category title Main (Cinzel 800) ──────────────────────────────── */}
         <div className="text-center mb-7">
-          <h1 className="font-['Cinzel',serif] text-[28px] md:text-[36px] font-[800] uppercase text-[#0059b2] tracking-tighter">
+          <h1 className="font-['Cinzel',serif] text-[30px] md:text-[38px] font-[800] uppercase text-[#0059b2] tracking-tighter">
             {title}
           </h1>
           <div className="mt-2 mx-auto flex items-center justify-center gap-1">
-            <div className="h-[3px] w-10 bg-[#0059b2]" />
-            <div className="h-[3px] w-3 bg-sky-300" />
+            <div className="h-[3.5px] w-12 bg-[#0059b2]" />
+            <div className="h-[3.5px] w-4 bg-sky-300" />
           </div>
         </div>
 
@@ -317,8 +317,8 @@ export default function CategoryPage() {
                 <ol className="divide-y divide-gray-200">
                   {mostRead.map((p, i) => (
                     <li key={p.id} className="py-3 flex gap-3 items-start">
-                      {/* Số thứ tự cũng dùng Cinzel 800 */}
-                      <span className="font-['Cinzel',serif] font-[800] text-[40px] leading-none text-[#c5d9e8] shrink-0 w-[38px] text-right select-none tracking-tighter">
+                      {/* Số thứ tự cũng dùng Cinzel 800 với tracking nén */}
+                      <span className="font-['Cinzel',serif] font-[800] text-[42px] leading-none text-[#c5d9e8] shrink-0 w-[40px] text-right select-none tracking-tighter">
                         {i + 1}
                       </span>
                       <Link
@@ -366,7 +366,7 @@ export default function CategoryPage() {
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    <h2 className="font-['Cinzel',serif] font-[800] uppercase text-[16px] text-[#0059b2] tracking-tighter">
+                    <h2 className="font-['Cinzel',serif] font-[800] uppercase text-[18px] text-[#0059b2] tracking-tighter">
                       Chuyên mục khác
                     </h2>
                   </div>
