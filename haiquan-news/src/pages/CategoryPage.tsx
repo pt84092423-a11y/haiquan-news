@@ -50,7 +50,7 @@ function SidebarHeading({ label }: { label: string }) {
         <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
         <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
       </div>
-      <h3 className="font-['Roboto',sans-serif] font-black uppercase text-[13px] tracking-wide text-[#0059b2]">
+      <h3 className="font-['Roboto',sans-serif] font-black uppercase text-[13px] text-[#0059b2]">
         {label}
       </h3>
     </div>
@@ -149,7 +149,7 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   return (
     <div>
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Roboto',sans-serif] text-[12px] font-black uppercase tracking-wider text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
+        <h3 className="font-['Roboto',sans-serif] text-[12px] font-black uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
           {cat.name}
         </h3>
       </Link>
@@ -279,7 +279,7 @@ export default function CategoryPage() {
 
         {/* ── Category title ──────────────────────────────────────────────── */}
         <div className="text-center mb-7">
-          <h1 className="font-['Roboto',sans-serif] text-[26px] md:text-[32px] font-black uppercase text-[#002060] tracking-wide">
+          <h1 className="font-['Roboto',sans-serif] text-[26px] md:text-[32px] font-black uppercase text-[#002060]">
             {title}
           </h1>
           <div className="mt-2 mx-auto flex items-center justify-center gap-1">
@@ -406,10 +406,10 @@ export default function CategoryPage() {
                   </div>
                 )}
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-4 flex flex-col gap-3">
                   {adBlocks.map((ad, i) => (
-                    <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition shadow-sm rounded-sm overflow-hidden bg-white p-1">
-                      <img src={ad.src} className="w-full h-[60px] object-contain" alt={`Quảng cáo ${i + 1}`} />
+                    <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition shadow-sm rounded-sm overflow-hidden">
+                      <img src={ad.src} className="w-full h-auto object-cover" alt={`Quảng cáo ${i + 1}`} />
                     </a>
                   ))}
                 </div>
@@ -430,7 +430,7 @@ export default function CategoryPage() {
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    <h2 className="font-['Roboto',sans-serif] font-black uppercase text-[16px] text-[#0059b2] tracking-wide">
+                    <h2 className="font-['Roboto',sans-serif] font-black uppercase text-[16px] text-[#0059b2]">
                       Chuyên mục khác
                     </h2>
                   </div>
