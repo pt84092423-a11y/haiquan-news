@@ -55,18 +55,18 @@ function SidebarHeading({ label }: { label: string }) {
   );
 }
 
-/* ── Hero featured post (Top Left) ─────────────────────────────────────────── */
+/* ── Hero featured post (Main Top Left) ────────────────────────────────────── */
 function HeroFeatured({ post }: { post: Post }) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="group block cursor-pointer">
-      <div className="overflow-hidden rounded-[2px] mb-4 relative aspect-[16/9] shadow-sm">
+      <div className="overflow-hidden rounded-[2px] mb-4 relative aspect-[16/9]">
         <img
           src={post.thumbnail || PLACEHOLDER}
           alt={post.title}
-          className="w-full h-full object-cover transform transition duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transform transition duration-700 group-hover:scale-105"
         />
       </div>
-      <h2 className="font-['Roboto',sans-serif] text-[26px] md:text-[30px] font-bold leading-tight text-[#222] mb-3 group-hover:text-[#0059b2] transition-colors">
+      <h2 className="font-['Roboto',sans-serif] text-[26px] md:text-[32px] font-bold leading-tight text-[#222] mb-3 group-hover:text-[#0059b2] transition-colors">
         {post.title}
       </h2>
       {post.excerpt && (
@@ -78,7 +78,7 @@ function HeroFeatured({ post }: { post: Post }) {
   );
 }
 
-/* ── Mini Row for Sidebar Top (Aside Right) ────────────────────────────────── */
+/* ── Mini Row for Sidebar (Aside Right of Hero) ────────────────────────────── */
 function MiniRow({ post }: { post: Post }) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="flex gap-4 group cursor-pointer pb-4 border-b border-dashed border-[#e1e1e1] last:border-0 last:pb-0">
@@ -98,11 +98,11 @@ function MiniRow({ post }: { post: Post }) {
   );
 }
 
-/* ── List item (Main vertical list) ────────────────────────────────────────── */
+/* ── List item (Main vertical list in the middle) ─────────────────────────── */
 function ListItem({ post }: { post: Post }) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="flex gap-4 group cursor-pointer border-b border-[#e1e1e1] pb-5 last:border-0">
-      <div className="w-[180px] md:w-[220px] flex-shrink-0 overflow-hidden rounded-[2px] relative aspect-[3/2]">
+      <div className="w-[180px] md:w-[240px] flex-shrink-0 overflow-hidden rounded-[2px] aspect-[3/2]">
         <img
           src={post.thumbnail || PLACEHOLDER}
           alt={post.title}
@@ -110,27 +110,29 @@ function ListItem({ post }: { post: Post }) {
         />
       </div>
       <div className="flex-1">
-        <h3 className="font-['Roboto',sans-serif] text-[16px] md:text-[17px] font-bold leading-snug text-[#222] group-hover:text-[#0059b2] transition-colors mb-2">
+        <h3 className="font-['Roboto',sans-serif] text-[17px] font-bold leading-snug text-[#222] group-hover:text-[#0059b2] transition-colors mb-2">
           {post.title}
         </h3>
         {post.excerpt && (
-          <p className="text-[13px] text-[#555] font-['Roboto',sans-serif] line-clamp-3">
+          <p className="text-[14px] text-[#555] font-['Roboto',sans-serif] line-clamp-3 leading-relaxed">
             {post.excerpt}
           </p>
         )}
-        <div className="mt-2 text-[11px] text-gray-400">{formatDate(post.published_at || post.created_at)}</div>
+        <div className="mt-2 text-[11px] text-gray-400 font-medium">
+          {formatDate(post.published_at || post.created_at)}
+        </div>
       </div>
     </Link>
   );
 }
 
-/* ── Other category column (Bottom section) ─────────────────────────────────── */
+/* ── Other category column (Footer grid) ───────────────────────────────────── */
 function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   const [featured, ...rest] = posts;
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Playfair_Display',serif] text-[16px] font-black uppercase text-[#0059b2] pb-2 border-b-2 border-[#0059b2] hover:text-[#002060] transition">
+        <h3 className="font-['Playfair_Display',serif] text-[16px] font-black uppercase text-[#0059b2] pb-2 border-b-2 border-[#0059b2] hover:text-[#00305f] transition-colors">
           {cat.name}
         </h3>
       </Link>
@@ -144,7 +146,7 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
               />
             </div>
-            <h4 className="font-['Roboto',sans-serif] font-bold text-[13px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-2">
+            <h4 className="font-['Roboto',sans-serif] font-bold text-[13.5px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-2">
               {featured.title}
             </h4>
           </Link>
@@ -153,7 +155,7 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
               <li key={p.id}>
                 <Link
                   href={`/bai-viet/${p.slug}`}
-                  className="font-['Roboto',sans-serif] text-[12.5px] text-[#333] leading-snug hover:text-[#0059b2] line-clamp-2 block"
+                  className="font-['Roboto',sans-serif] text-[12.5px] text-[#444] leading-snug hover:text-[#0059b2] line-clamp-2 block"
                 >
                   • {p.title}
                 </Link>
@@ -240,10 +242,28 @@ export default function CategoryPage() {
     <>
       <SEOHead title={title} description={desc} />
 
-      <div className="container mx-auto max-w-[1200px] px-4 py-6">
-        <h1 className="text-center font-['Playfair_Display',serif] text-[28px] md:text-[32px] font-black uppercase text-[#0059b2] mb-8 tracking-wide">
-          {title}
-        </h1>
+      {/* Breadcrumb Section */}
+      <div className="bg-[#f2f7fb] border-b border-[#e1e1e1] py-3">
+        <div className="container mx-auto max-w-[1200px] px-4">
+          <div className="flex items-center gap-2 text-[12px] text-[#555] font-['Roboto',sans-serif]">
+            <Link href="/" className="hover:text-[#0059b2] transition-colors">Trang chủ</Link>
+            <span className="text-gray-400">/</span>
+            <span className="font-bold text-[#0059b2] uppercase">{title}</span>
+          </div>
+        </div>
+      </div>
+
+      <main className="container mx-auto max-w-[1200px] px-4 pt-8 pb-16">
+        {/* Category Header */}
+        <div className="text-center mb-10">
+          <h1 className="font-['Playfair_Display',serif] text-[32px] md:text-[38px] font-black uppercase text-[#0059b2] leading-tight tracking-wide">
+            {title}
+          </h1>
+          <div className="mt-3 mx-auto flex items-center justify-center gap-1">
+            <div className="h-[3px] w-12 bg-[#0059b2]" />
+            <div className="h-[3px] w-4 bg-sky-300" />
+          </div>
+        </div>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-pulse">
@@ -253,14 +273,14 @@ export default function CategoryPage() {
             </div>
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-20 text-[#555]">
-            <p className="text-lg">Chưa có bài viết trong chuyên mục này.</p>
-            <Link href="/" className="inline-block mt-4 text-[#0059b2] font-bold hover:underline">← Về trang chủ</Link>
+          <div className="text-center py-24 text-[#555]">
+            <p className="text-lg font-medium font-['Roboto',sans-serif]">Chưa có bài viết trong chuyên mục này.</p>
+            <Link href="/" className="inline-block mt-4 text-[#0059b2] font-bold hover:underline">← Quay lại trang chủ</Link>
           </div>
         ) : (
           <>
-            {/* Top Section: Hero + Sidebar Mini Posts */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10 pb-8 border-b border-[#e1e1e1]">
+            {/* Top Grid: Hero + Side Stack */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12 pb-10 border-b border-[#e1e1e1]">
               <div className="md:col-span-8">
                 {featured && <HeroFeatured post={featured} />}
               </div>
@@ -269,20 +289,21 @@ export default function CategoryPage() {
               </aside>
             </div>
 
-            {/* Middle Section: Most Read + Main List + Ads/Links */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-10">
-              {/* Aside Left: Most Read */}
-              <aside className="md:col-span-3">
+            {/* Main Content Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+              
+              {/* Left Column: Most Read */}
+              <aside className="md:col-span-3 order-2 md:order-1">
                 <SidebarHeading label="Tin đọc nhiều" />
                 <ul className="flex flex-col">
                   {mostRead.map((p, i) => (
-                    <li key={p.id} className="flex gap-4 py-3 border-b border-dashed border-[#e1e1e1] group cursor-pointer items-start">
-                      <div className="font-['Playfair_Display',serif] text-[32px] text-[#aed1ef] font-black leading-none mt-1">
+                    <li key={p.id} className="flex gap-4 py-4 border-b border-dashed border-[#e1e1e1] group cursor-pointer items-start last:border-0">
+                      <div className="font-['Playfair_Display',serif] text-[36px] text-[#aed1ef] font-black leading-none mt-1 min-w-[32px]">
                         {i + 1}
                       </div>
                       <Link
                         href={`/bai-viet/${p.slug}`}
-                        className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222] leading-snug group-hover:text-[#0059b2]"
+                        className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222] leading-snug group-hover:text-[#0059b2] transition-colors"
                       >
                         {p.title}
                       </Link>
@@ -291,15 +312,15 @@ export default function CategoryPage() {
                 </ul>
               </aside>
 
-              {/* Main Center Column: Article List */}
-              <div className="md:col-span-6 px-0 md:px-2 flex flex-col gap-6">
+              {/* Center Column: Articles List */}
+              <div className="md:col-span-6 order-1 md:order-2 flex flex-col gap-8">
                 {visibleList.map(p => <ListItem key={p.id} post={p} />)}
                 
                 {hasMore && (
-                  <div className="text-center mt-4">
+                  <div className="text-center mt-6">
                     <button
                       onClick={() => setVisibleListCount(c => c + PAGE_SIZE)}
-                      className="px-8 py-2.5 border-2 border-[#0059b2] text-[#0059b2] font-['Roboto',sans-serif] font-bold text-[13px] rounded-sm hover:bg-[#0059b2] hover:text-white transition"
+                      className="px-10 py-3 border-2 border-[#0059b2] text-[#0059b2] font-['Roboto',sans-serif] font-bold text-[13px] tracking-widest uppercase rounded-sm hover:bg-[#0059b2] hover:text-white transition-all duration-300"
                     >
                       XEM THÊM
                     </button>
@@ -307,12 +328,12 @@ export default function CategoryPage() {
                 )}
               </div>
 
-              {/* Aside Right: Ads & Links */}
-              <aside className="md:col-span-3 flex flex-col gap-6">
+              {/* Right Column: Links & Ads */}
+              <aside className="md:col-span-3 order-3">
                 <WebsiteLinks />
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4 mt-6">
                   {adBlocks.map((ad, i) => (
-                    <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition shadow-sm rounded-sm overflow-hidden border border-gray-100">
+                    <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition-opacity shadow-sm rounded-[2px] overflow-hidden border border-gray-100">
                       <img src={ad.src} className="w-full h-auto object-cover" alt={`Quảng cáo ${i + 1}`} />
                     </a>
                   ))}
@@ -320,20 +341,20 @@ export default function CategoryPage() {
               </aside>
             </div>
 
-            {/* Bottom Section: Other Categories */}
+            {/* Bottom Section: Related Categories Grid */}
             {otherCats.length > 0 && (
-              <section className="mt-4 pt-10 border-t border-[#e1e1e1]">
-                <div className="flex items-center gap-2 mb-8">
+              <section className="mt-16 pt-12 border-t border-[#e1e1e1]">
+                <div className="flex items-center gap-2 mb-10">
                     <div className="flex shrink-0">
-                      <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
-                      <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
+                      <div className="w-[6px] h-[22px] bg-[#0059b2] -skew-x-[20deg] mr-[3px]" />
+                      <div className="w-[6px] h-[22px] bg-sky-300 -skew-x-[20deg]" />
                     </div>
-                    <h2 className="font-['Playfair_Display',serif] font-black uppercase text-[20px] text-[#0059b2] tracking-wide">
+                    <h2 className="font-['Playfair_Display',serif] font-black uppercase text-[22px] text-[#0059b2] tracking-wide">
                       Chuyên mục khác
                     </h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
                   {otherCats.map(({ cat, posts: catPosts }) => (
                     <OtherCategoryColumn key={cat.id} cat={cat} posts={catPosts} />
                   ))}
@@ -342,7 +363,7 @@ export default function CategoryPage() {
             )}
           </>
         )}
-      </div>
+      </main>
     </>
   );
 }
