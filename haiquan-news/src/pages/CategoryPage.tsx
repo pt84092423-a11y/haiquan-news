@@ -50,8 +50,8 @@ function SidebarHeading({ label }: { label: string }) {
         <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
         <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
       </div>
-      <h3 className="font-['Cinzel',serif] font-black uppercase text-[13px] text-[#0059b2]">
-        {label}
+      <h3 className="font-['Cinzel',serif] font-black text-[13px] text-[#0059b2]">
+        {label.toUpperCase()}
       </h3>
     </div>
   );
@@ -149,8 +149,8 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   return (
     <div>
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Cinzel',serif] text-[11px] font-black uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
-          {cat.name}
+        <h3 className="font-['Cinzel',serif] text-[11px] font-black text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
+          {cat.name.toUpperCase()}
         </h3>
       </Link>
       {featured ? (
@@ -280,8 +280,8 @@ export default function CategoryPage() {
 
         {/* ── Category title ──────────────────────────────────────────────── */}
         <div className="text-center mb-7">
-          <h1 className="font-['Cinzel',serif] text-[24px] md:text-[30px] font-black uppercase text-[#0059b2]">
-            {title}
+          <h1 className="font-['Cinzel',serif] text-[24px] md:text-[30px] font-black text-[#0059b2]">
+            {title.toUpperCase()}
           </h1>
           <div className="mt-2 mx-auto flex items-center justify-center gap-1">
             <div className="h-[3px] w-10 bg-[#0059b2]" />
@@ -406,8 +406,8 @@ export default function CategoryPage() {
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    <h2 className="font-['Cinzel',serif] font-black uppercase text-[15px] text-[#0059b2]">
-                      Chuyên mục khác
+                    <h2 className="font-['Cinzel',serif] font-black text-[15px] text-[#0059b2]">
+                      {'Chuyên mục khác'.toUpperCase()}
                     </h2>
                   </div>
                   <div className="flex gap-1">
