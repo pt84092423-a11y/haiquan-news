@@ -50,7 +50,7 @@ function SidebarHeading({ label }: { label: string }) {
         <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
         <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
       </div>
-      <h3 className="font-['Roboto',sans-serif] font-black uppercase text-[13px] text-[#0059b2]">
+      <h3 className="font-['Cinzel',serif] font-bold uppercase text-[13px] text-[#0059b2]">
         {label}
       </h3>
     </div>
@@ -149,7 +149,7 @@ function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   return (
     <div>
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Roboto',sans-serif] text-[12px] font-black uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
+        <h3 className="font-['Cinzel',serif] text-[11px] font-bold uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition">
           {cat.name}
         </h3>
       </Link>
@@ -231,7 +231,7 @@ export default function CategoryPage() {
       setLatestBaoIn((baoIn || [])[0] || null);
       setAds(settings || {});
 
-      const others = (allCats || []).filter((c: Category) => c.slug !== slug).slice(0, 5);
+      const others = (allCats || []).filter((c: Category) => c.slug !== slug && c.slug !== 'bao-in').slice(0, 5);
       const withPosts = await Promise.all(
         others.map(async (c: Category) => {
           const items = await getPublishedPosts({ categorySlug: c.slug, limit: 5 });
@@ -279,7 +279,7 @@ export default function CategoryPage() {
 
         {/* ── Category title ──────────────────────────────────────────────── */}
         <div className="text-center mb-7">
-          <h1 className="font-['Roboto',sans-serif] text-[26px] md:text-[32px] font-black uppercase text-[#002060]">
+          <h1 className="font-['Cinzel',serif] text-[24px] md:text-[30px] font-bold uppercase text-[#002060]">
             {title}
           </h1>
           <div className="mt-2 mx-auto flex items-center justify-center gap-1">
@@ -340,20 +340,18 @@ export default function CategoryPage() {
               {/* Tin đọc nhiều */}
               <aside className="col-span-12 md:col-span-3 order-2 md:order-1">
                 <SidebarHeading label="Tin đọc nhiều" />
-                <ol className="space-y-3">
-                  {mostRead.length === 0 && <li className="text-sm text-gray-400 italic">Chưa có dữ liệu</li>}
+                <ol className="divide-y divide-gray-200">
+                  {mostRead.length === 0 && (
+                    <li className="py-3 text-sm text-gray-400 italic">Chưa có dữ liệu</li>
+                  )}
                   {mostRead.map((p, i) => (
-                    <li key={p.id} className="flex gap-3 items-start">
-                      <span
-                        className={`flex-shrink-0 w-6 h-6 rounded-sm flex items-center justify-center font-black text-[13px] ${
-                          i < 3 ? 'text-[#FFD700] bg-[#0059b2]' : 'text-[#0059b2] bg-blue-50'
-                        }`}
-                      >
+                    <li key={p.id} className="py-3 flex gap-3 items-start">
+                      <span className="font-['Cinzel',serif] font-bold text-[46px] leading-none text-[#c5d9e8] shrink-0 w-[38px] text-right select-none">
                         {i + 1}
                       </span>
                       <Link
                         href={`/bai-viet/${p.slug}`}
-                        className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] leading-snug hover:text-[#0059b2] line-clamp-3"
+                        className="font-['Roboto',sans-serif] text-[13px] text-[#222] leading-snug hover:text-[#0059b2] pt-1 flex-1"
                       >
                         {p.title}
                       </Link>
@@ -383,39 +381,16 @@ export default function CategoryPage() {
                 )}
               </div>
 
-              {/* Đọc báo in + ads */}
+              {/* Liên kết website + quảng cáo */}
               <aside className="col-span-12 md:col-span-3 order-3">
-                <SidebarHeading label="Đọc Báo In" />
-                {latestBaoIn ? (
-                  <Link href="/bao-in" className="block group">
-                    <div className="overflow-hidden rounded-sm shadow border border-gray-100">
-                      <img
-                        src={latestBaoIn.thumbnail || PLACEHOLDER}
-                        alt={latestBaoIn.title}
-                        className="w-full h-auto object-cover group-hover:scale-[1.02] transition duration-500"
-                      />
-                    </div>
-                    <p className="mt-2 text-[12px] text-[#0059b2] font-bold uppercase">{formatDate(latestBaoIn.published_at || latestBaoIn.created_at)}</p>
-                    <p className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] group-hover:text-[#0059b2] line-clamp-2 leading-snug">
-                      {latestBaoIn.title}
-                    </p>
-                  </Link>
-                ) : (
-                  <div className="bg-blue-50/60 rounded-sm p-4 text-[12px] text-gray-500 italic text-center">
-                    Chưa có ấn phẩm Báo In mới.
-                  </div>
-                )}
+                <WebsiteLinks />
 
-                <div className="mt-4 flex flex-col gap-3">
+                <div className="mt-5 flex flex-col gap-3">
                   {adBlocks.map((ad, i) => (
                     <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition shadow-sm rounded-sm overflow-hidden">
                       <img src={ad.src} className="w-full h-auto object-cover" alt={`Quảng cáo ${i + 1}`} />
                     </a>
                   ))}
-                </div>
-
-                <div className="mt-4">
-                  <WebsiteLinks />
                 </div>
               </aside>
             </section>
@@ -430,7 +405,7 @@ export default function CategoryPage() {
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    <h2 className="font-['Roboto',sans-serif] font-black uppercase text-[16px] text-[#0059b2]">
+                    <h2 className="font-['Cinzel',serif] font-bold uppercase text-[15px] text-[#0059b2]">
                       Chuyên mục khác
                     </h2>
                   </div>
