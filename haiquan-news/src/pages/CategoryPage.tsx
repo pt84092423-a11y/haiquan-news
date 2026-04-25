@@ -42,139 +42,120 @@ function formatDate(iso?: string) {
   return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-/* ── Section title with Cinzel ExtraBold 800 ─────────────────────────────── */
+/* ── Section title (Tin đọc nhiều) ─────────────────────────────────── */
 function SidebarHeading({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 pb-2 mb-4 border-b-2 border-[#0059b2]">
-      <div className="flex shrink-0">
-        <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
-        <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[18deg]" />
+    <h2 className="font-['Playfair_Display',serif] text-[#0059b2] text-[20px] font-black uppercase mb-4 flex items-center">
+      <div className="flex mr-2">
+        <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[20deg] mr-[2px]"></div>
+        <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[20deg]"></div>
       </div>
-      <h3 className="font-['Cinzel',serif] font-[800] uppercase text-[15px] text-[#0059b2] tracking-tighter">
-        {label}
-      </h3>
-    </div>
+      {label}
+    </h2>
   );
 }
 
-/* ── Hero featured post ────────────────────────────────────────────────────── */
+/* ── Hero featured post (Top Left) ─────────────────────────────────────────── */
 function HeroFeatured({ post }: { post: Post }) {
   return (
-    <Link href={`/bai-viet/${post.slug}`} className="group block">
-      <div className="overflow-hidden rounded-sm shadow-sm">
+    <Link href={`/bai-viet/${post.slug}`} className="group block cursor-pointer">
+      <div className="overflow-hidden rounded-[2px] mb-4 relative aspect-[16/9] shadow-sm">
         <img
           src={post.thumbnail || PLACEHOLDER}
           alt={post.title}
-          className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition duration-500"
+          className="w-full h-full object-cover transform transition duration-500 group-hover:scale-105"
         />
       </div>
-      <h2 className="mt-3 font-['Roboto',sans-serif] font-bold text-[19px] md:text-[21px] leading-snug text-[#222] group-hover:text-[#0059b2]">
+      <h2 className="font-['Roboto',sans-serif] text-[26px] md:text-[30px] font-bold leading-tight text-[#222] mb-3 group-hover:text-[#0059b2] transition-colors">
         {post.title}
       </h2>
       {post.excerpt && (
-        <p className="mt-2 text-[13px] text-[#555] leading-relaxed line-clamp-3">{post.excerpt}</p>
+        <p className="font-['Roboto',sans-serif] text-[15px] text-[#555] leading-relaxed line-clamp-3">
+          {post.excerpt}
+        </p>
       )}
     </Link>
   );
 }
 
-/* ── Medium card (2×2 grid) ────────────────────────────────────────────────── */
-function MediumCard({ post }: { post: Post }) {
-  return (
-    <Link href={`/bai-viet/${post.slug}`} className="group block">
-      <div className="overflow-hidden rounded-sm">
-        <img
-          src={post.thumbnail || PLACEHOLDER}
-          alt={post.title}
-          className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-500"
-        />
-      </div>
-      <h3 className="mt-2 font-['Roboto',sans-serif] font-bold text-[13px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-3">
-        {post.title}
-      </h3>
-    </Link>
-  );
-}
-
-/* ── Mini row (thumbnail + title) ──────────────────────────────────────────── */
+/* ── Mini Row for Sidebar Top (Aside Right) ────────────────────────────────── */
 function MiniRow({ post }: { post: Post }) {
   return (
-    <Link href={`/bai-viet/${post.slug}`} className="group flex gap-3">
-      <div className="w-[100px] flex-shrink-0 overflow-hidden rounded-sm">
+    <Link href={`/bai-viet/${post.slug}`} className="flex gap-4 group cursor-pointer pb-4 border-b border-dashed border-[#e1e1e1] last:border-0 last:pb-0">
+      <div className="w-[120px] h-[80px] flex-shrink-0 overflow-hidden rounded-[2px]">
         <img
           src={post.thumbnail || PLACEHOLDER}
           alt={post.title}
-          className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition duration-500"
+          className="w-full h-full object-cover transform transition duration-500 group-hover:scale-105"
         />
       </div>
-      <h4 className="font-['Roboto',sans-serif] text-[13px] font-bold leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-3">
-        {post.title}
-      </h4>
+      <div className="flex-1">
+        <h3 className="font-['Roboto',sans-serif] text-[14px] font-bold leading-snug text-[#222] group-hover:text-[#0059b2] transition-colors line-clamp-3">
+          {post.title}
+        </h3>
+      </div>
     </Link>
   );
 }
 
-/* ── List item (main article list) ─────────────────────────────────────────── */
+/* ── List item (Main vertical list) ────────────────────────────────────────── */
 function ListItem({ post }: { post: Post }) {
   return (
-    <Link
-      href={`/bai-viet/${post.slug}`}
-      className="group grid grid-cols-12 gap-4 pb-5 mb-5 border-b border-gray-100 last:border-b-0"
-    >
-      <div className="col-span-12 sm:col-span-5">
-        <div className="overflow-hidden rounded-sm">
-          <img
-            src={post.thumbnail || PLACEHOLDER}
-            alt={post.title}
-            className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-500"
-          />
-        </div>
+    <Link href={`/bai-viet/${post.slug}`} className="flex gap-4 group cursor-pointer border-b border-[#e1e1e1] pb-5 last:border-0">
+      <div className="w-[180px] md:w-[220px] flex-shrink-0 overflow-hidden rounded-[2px] relative aspect-[3/2]">
+        <img
+          src={post.thumbnail || PLACEHOLDER}
+          alt={post.title}
+          className="w-full h-full object-cover transform transition duration-500 group-hover:scale-105"
+        />
       </div>
-      <div className="col-span-12 sm:col-span-7 flex flex-col">
-        <h3 className="font-['Roboto',sans-serif] font-bold text-[15px] md:text-[16px] leading-snug text-[#222] group-hover:text-[#0059b2]">
+      <div className="flex-1">
+        <h3 className="font-['Roboto',sans-serif] text-[16px] md:text-[17px] font-bold leading-snug text-[#222] group-hover:text-[#0059b2] transition-colors mb-2">
           {post.title}
         </h3>
         {post.excerpt && (
-          <p className="mt-2 text-[13px] text-[#555] leading-relaxed line-clamp-3">{post.excerpt}</p>
+          <p className="text-[13px] text-[#555] font-['Roboto',sans-serif] line-clamp-3">
+            {post.excerpt}
+          </p>
         )}
-        <span className="mt-auto pt-2 text-[11px] text-gray-400">{formatDate(post.published_at || post.created_at)}</span>
+        <div className="mt-2 text-[11px] text-gray-400">{formatDate(post.published_at || post.created_at)}</div>
       </div>
     </Link>
   );
 }
 
-/* ── Other category column ──────────────────────────────────────────────────── */
+/* ── Other category column (Bottom section) ─────────────────────────────────── */
 function OtherCategoryColumn({ cat, posts }: { cat: Category; posts: Post[] }) {
   const [featured, ...rest] = posts;
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       <Link href={`/${cat.slug}`}>
-        <h3 className="font-['Cinzel',serif] text-[12px] font-[800] uppercase text-[#0059b2] pb-2 mb-3 border-b-2 border-[#0059b2] hover:text-[#003e80] transition tracking-tighter">
+        <h3 className="font-['Playfair_Display',serif] text-[16px] font-black uppercase text-[#0059b2] pb-2 border-b-2 border-[#0059b2] hover:text-[#002060] transition">
           {cat.name}
         </h3>
       </Link>
       {featured ? (
         <>
-          <Link href={`/bai-viet/${featured.slug}`} className="group block mb-2">
-            <div className="overflow-hidden rounded-sm mb-2">
+          <Link href={`/bai-viet/${featured.slug}`} className="group block">
+            <div className="overflow-hidden rounded-[2px] aspect-[16/10] mb-2">
               <img
                 src={featured.thumbnail || PLACEHOLDER}
                 alt={featured.title}
-                className="w-full aspect-[16/10] object-cover group-hover:scale-105 transition duration-500"
+                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
               />
             </div>
             <h4 className="font-['Roboto',sans-serif] font-bold text-[13px] leading-snug text-[#222] group-hover:text-[#0059b2] line-clamp-2">
               {featured.title}
             </h4>
           </Link>
-          <ul className="space-y-1.5 mt-2">
+          <ul className="flex flex-col gap-2">
             {rest.map(p => (
               <li key={p.id}>
                 <Link
                   href={`/bai-viet/${p.slug}`}
                   className="font-['Roboto',sans-serif] text-[12.5px] text-[#333] leading-snug hover:text-[#0059b2] line-clamp-2 block"
                 >
-                  {p.title}
+                  • {p.title}
                 </Link>
               </li>
             ))}
@@ -227,10 +208,10 @@ export default function CategoryPage() {
       setMostRead(sortedPopular);
       setAds(settings || {});
 
-      const others = (allCats || []).filter((c: Category) => c.slug !== slug && c.slug !== 'bao-in').slice(0, 5);
+      const others = (allCats || []).filter((c: Category) => c.slug !== slug && c.slug !== 'bao-in').slice(0, 4);
       const withPosts = await Promise.all(
         others.map(async (c: Category) => {
-          const items = await getPublishedPosts({ categorySlug: c.slug, limit: 5 });
+          const items = await getPublishedPosts({ categorySlug: c.slug, limit: 4 });
           return { cat: c, posts: items || [] };
         })
       );
@@ -241,9 +222,8 @@ export default function CategoryPage() {
   }, [slug]);
 
   const featured = posts[0];
-  const middleQuad = posts.slice(1, 5);
-  const rightStack = posts.slice(5, 9);
-  const listPool = posts.slice(9);
+  const sideFeatured = posts.slice(1, 5);
+  const listPool = posts.slice(5);
   const visibleList = listPool.slice(0, visibleListCount);
   const hasMore = visibleListCount < listPool.length;
 
@@ -260,36 +240,16 @@ export default function CategoryPage() {
     <>
       <SEOHead title={title} description={desc} />
 
-      <div className="bg-[#f2f7fb] border-b border-[#e1e1e1] py-2.5">
-        <div className="container mx-auto max-w-[1200px] px-4">
-          <div className="flex items-center gap-2 text-[12px] text-[#555]">
-            <Link href="/" className="hover:text-[#0059b2]">Trang chủ</Link>
-            <span>/</span>
-            <span className="font-['Cinzel',serif] font-[800] text-[#0059b2] uppercase tracking-tighter">{title}</span>
-          </div>
-        </div>
-      </div>
-
-      <main className="container mx-auto max-w-[1200px] px-4 pt-7 pb-12">
-        {/* ── Category title Main (Cinzel 800) ──────────────────────────────── */}
-        <div className="text-center mb-7">
-          <h1 className="font-['Cinzel',serif] text-[30px] md:text-[38px] font-[800] uppercase text-[#0059b2] tracking-tighter">
-            {title}
-          </h1>
-          <div className="mt-2 mx-auto flex items-center justify-center gap-1">
-            <div className="h-[3.5px] w-12 bg-[#0059b2]" />
-            <div className="h-[3.5px] w-4 bg-sky-300" />
-          </div>
-        </div>
+      <div className="container mx-auto max-w-[1200px] px-4 py-6">
+        <h1 className="text-center font-['Playfair_Display',serif] text-[28px] md:text-[32px] font-black uppercase text-[#0059b2] mb-8 tracking-wide">
+          {title}
+        </h1>
 
         {loading ? (
-          <div className="grid grid-cols-12 gap-6 animate-pulse">
-            <div className="col-span-12 md:col-span-5 space-y-3">
-               <div className="aspect-[4/3] bg-blue-50 rounded" />
-               <div className="h-5 bg-blue-50 rounded w-3/4" />
-            </div>
-            <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-4">
-               {[...Array(4)].map((_, i) => <div key={i} className="aspect-[16/10] bg-blue-50 rounded" />)}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 animate-pulse">
+            <div className="md:col-span-8 bg-gray-50 h-96 rounded" />
+            <div className="md:col-span-4 space-y-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-50 rounded" />)}
             </div>
           </div>
         ) : posts.length === 0 ? (
@@ -299,80 +259,81 @@ export default function CategoryPage() {
           </div>
         ) : (
           <>
-            <section className="grid grid-cols-12 gap-6 pb-8 border-b border-gray-200">
-              <div className="col-span-12 md:col-span-5">
+            {/* Top Section: Hero + Sidebar Mini Posts */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10 pb-8 border-b border-[#e1e1e1]">
+              <div className="md:col-span-8">
                 {featured && <HeroFeatured post={featured} />}
               </div>
-              <div className="col-span-12 md:col-span-4 grid grid-cols-2 gap-x-4 gap-y-5">
-                {middleQuad.length > 0 ? middleQuad.map(p => <MediumCard key={p.id} post={p} />) : null}
-              </div>
-              <div className="col-span-12 md:col-span-3 flex flex-col gap-4 border-l border-gray-100 pl-4">
-                {rightStack.length > 0 ? rightStack.map(p => <MiniRow key={p.id} post={p} />) : null}
-              </div>
-            </section>
+              <aside className="md:col-span-4 flex flex-col gap-5">
+                {sideFeatured.map(p => <MiniRow key={p.id} post={p} />)}
+              </aside>
+            </div>
 
-            <section className="grid grid-cols-12 gap-8 mt-8">
-              <aside className="col-span-12 md:col-span-3 order-2 md:order-1">
+            {/* Middle Section: Most Read + Main List + Ads/Links */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-10">
+              {/* Aside Left: Most Read */}
+              <aside className="md:col-span-3">
                 <SidebarHeading label="Tin đọc nhiều" />
-                <ol className="divide-y divide-gray-200">
+                <ul className="flex flex-col">
                   {mostRead.map((p, i) => (
-                    <li key={p.id} className="py-3 flex gap-3 items-start">
-                      {/* Số thứ tự cũng dùng Cinzel 800 với tracking nén */}
-                      <span className="font-['Cinzel',serif] font-[800] text-[42px] leading-none text-[#c5d9e8] shrink-0 w-[40px] text-right select-none tracking-tighter">
+                    <li key={p.id} className="flex gap-4 py-3 border-b border-dashed border-[#e1e1e1] group cursor-pointer items-start">
+                      <div className="font-['Playfair_Display',serif] text-[32px] text-[#aed1ef] font-black leading-none mt-1">
                         {i + 1}
-                      </span>
+                      </div>
                       <Link
                         href={`/bai-viet/${p.slug}`}
-                        className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] leading-snug hover:text-[#0059b2] pt-1 flex-1"
+                        className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222] leading-snug group-hover:text-[#0059b2]"
                       >
                         {p.title}
                       </Link>
                     </li>
                   ))}
-                </ol>
+                </ul>
               </aside>
 
-              <div className="col-span-12 md:col-span-6 order-1 md:order-2">
+              {/* Main Center Column: Article List */}
+              <div className="md:col-span-6 px-0 md:px-2 flex flex-col gap-6">
                 {visibleList.map(p => <ListItem key={p.id} post={p} />)}
+                
                 {hasMore && (
                   <div className="text-center mt-4">
                     <button
                       onClick={() => setVisibleListCount(c => c + PAGE_SIZE)}
                       className="px-8 py-2.5 border-2 border-[#0059b2] text-[#0059b2] font-['Roboto',sans-serif] font-bold text-[13px] rounded-sm hover:bg-[#0059b2] hover:text-white transition"
                     >
-                      Xem Thêm
+                      XEM THÊM
                     </button>
                   </div>
                 )}
               </div>
 
-              <aside className="col-span-12 md:col-span-3 order-3">
+              {/* Aside Right: Ads & Links */}
+              <aside className="md:col-span-3 flex flex-col gap-6">
                 <WebsiteLinks />
-                <div className="mt-5 flex flex-col gap-3">
+                <div className="flex flex-col gap-3">
                   {adBlocks.map((ad, i) => (
-                    <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition shadow-sm rounded-sm overflow-hidden">
+                    <a key={i} href={ad.href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-95 transition shadow-sm rounded-sm overflow-hidden border border-gray-100">
                       <img src={ad.src} className="w-full h-auto object-cover" alt={`Quảng cáo ${i + 1}`} />
                     </a>
                   ))}
                 </div>
               </aside>
-            </section>
+            </div>
 
+            {/* Bottom Section: Other Categories */}
             {otherCats.length > 0 && (
-              <section className="mt-10 pt-8 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
+              <section className="mt-4 pt-10 border-t border-[#e1e1e1]">
+                <div className="flex items-center gap-2 mb-8">
                     <div className="flex shrink-0">
                       <div className="w-[6px] h-[20px] bg-[#0059b2] -skew-x-[18deg] mr-[3px]" />
                       <div className="w-[6px] h-[20px] bg-sky-300 -skew-x-[18deg]" />
                     </div>
-                    <h2 className="font-['Cinzel',serif] font-[800] uppercase text-[18px] text-[#0059b2] tracking-tighter">
+                    <h2 className="font-['Playfair_Display',serif] font-black uppercase text-[20px] text-[#0059b2] tracking-wide">
                       Chuyên mục khác
                     </h2>
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                   {otherCats.map(({ cat, posts: catPosts }) => (
                     <OtherCategoryColumn key={cat.id} cat={cat} posts={catPosts} />
                   ))}
@@ -381,7 +342,7 @@ export default function CategoryPage() {
             )}
           </>
         )}
-      </main>
+      </div>
     </>
   );
 }
