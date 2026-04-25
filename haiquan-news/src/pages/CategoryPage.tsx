@@ -13,6 +13,7 @@ import {
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
 
+// Đã bổ sung thêm các chuyên mục có trên Navbar nhưng bị thiếu: 'cau-truc' và 'chi-huy'
 const CATEGORY_FALLBACK: Record<string, { title: string; desc: string }> = {
   'tin-tuc': { title: 'Tin tức', desc: 'Tin tức thời sự Hải quân Nhân dân Việt Nam' },
   'chinh-tri': { title: 'Chính trị', desc: 'Tin tức chính trị, lãnh đạo Hải quân' },
@@ -25,6 +26,8 @@ const CATEGORY_FALLBACK: Record<string, { title: string; desc: string }> = {
   'phap-luat': { title: 'Pháp luật', desc: 'Tin tức và văn bản pháp luật' },
   'tam-tinh': { title: 'Tâm tình lính biển', desc: 'Câu chuyện của người lính biển' },
   'lich-su': { title: 'Lịch sử', desc: 'Lịch sử Hải quân Nhân dân Việt Nam' },
+  'cau-truc': { title: 'Cấu trúc', desc: 'Cấu trúc và tổ chức Hải quân Nhân dân Việt Nam' },
+  'chi-huy': { title: 'Chỉ huy', desc: 'Lãnh đạo, chỉ huy Hải quân Nhân dân Việt Nam' },
   'nghien-cuu-trao-doi': { title: 'Nghiên cứu - Trao đổi', desc: 'Nghiên cứu, trao đổi chuyên sâu' },
   'van-hoa-the-thao': { title: 'Văn hoá - Thể thao', desc: 'Văn hoá, thể thao Hải quân' },
   'longform': { title: 'Longform', desc: 'Bài viết chuyên sâu dạng dài' },
