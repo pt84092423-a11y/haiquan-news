@@ -231,7 +231,8 @@ export default function CategoryPage() {
 
   const featured = posts[0];
   const sideFeatured = posts.slice(1, 5); // 4 bài cho cột bên phải của Hero
-  const listPool = posts.slice(5);        // Các bài còn lại cho danh sách chính
+  // Cột giữa: hiển thị toàn bộ bài viết của chuyên mục (trừ bài hero) để tránh khoảng trống
+  const listPool = posts.slice(1);
   const visibleList = listPool.slice(0, visibleListCount);
   const hasMore = visibleListCount < listPool.length;
 

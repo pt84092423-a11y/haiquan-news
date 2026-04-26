@@ -14,6 +14,7 @@ export default function ArticlePage() {
   const [post, setPost] = useState<Post | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [mostRead, setMostRead] = useState<Post[]>([]);
+  const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [fontSize, setFontSize] = useState(() => {
@@ -36,13 +37,15 @@ export default function ArticlePage() {
       setLoading(false);
       incrementViewCount(data.id);
 
-      const [related, popular] = await Promise.all([
+      const [related, popular, baoIn] = await Promise.all([
         getRelatedPostsSmart(data.id, data.title, data.category_id || data.category?.id, 8),
         getPublishedPosts({ limit: 8 }),
+        getPublishedPosts({ postType: 'baoin', limit: 1 }),
       ]);
       setRelatedPosts(related || []);
       const sorted = [...(popular || [])].sort((a, b) => b.view_count - a.view_count);
       setMostRead(sorted.filter(p => p.id !== data.id && p.post_type !== 'baoin').slice(0, 8));
+      setLatestBaoIn((baoIn || [])[0] || null);
     });
   }, [slug]);
 
@@ -239,8 +242,42 @@ export default function ArticlePage() {
             </article>
 
             <aside className="lg:col-span-4 mt-8 lg:mt-0">
+              {latestBaoIn && (
+                <div className="mb-8">
+                  <SectionTitle title="ĐỌC BÁO IN" />
+                  <div className="bg-white border border-[#e1e1e1] rounded-[2px] overflow-hidden shadow-sm">
+                    <div className="px-4 py-3 bg-[#f2f7fb] border-b border-[#e1e1e1]">
+                      <p className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#0059b2]">Báo in Hải quân</p>
+                      <p className="font-['Roboto',sans-serif] text-[11px] text-[#888] mt-0.5">Số mới nhất</p>
+                    </div>
+                    <Link href="/bao-in" className="block group">
+                      {latestBaoIn.thumbnail && (
+                        <div className="overflow-hidden">
+                          <img
+                            src={latestBaoIn.thumbnail}
+                            alt={latestBaoIn.title}
+                            className="w-full h-auto object-cover group-hover:opacity-95 transition"
+                          />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <p className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] group-hover:text-[#0059b2] line-clamp-2 leading-snug transition-colors">
+                          {latestBaoIn.title}
+                        </p>
+                      </div>
+                    </Link>
+                    <Link
+                      href="/bao-in"
+                      className="block px-4 py-2.5 bg-[#0059b2] text-white text-center text-[12px] font-bold uppercase tracking-wider hover:bg-[#00305f] transition font-['Roboto',sans-serif]"
+                    >
+                      Xem Báo In →
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               <div className="mb-8">
-                <SectionTitle title="TIN ĐỌC NHIỀU" className="text-[20px]" />
+                <SectionTitle title="TIN ĐỌC NHIỀU" />
                 <ul className="flex flex-col">
                   {mostRead.map((p, i) => (
                     <li key={p.id}>

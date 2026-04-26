@@ -118,7 +118,7 @@ export default function HomePage() {
   }, []);
 
   // Helper class để đồng bộ style tiêu đề in đậm, có chân, in hoa
-  const headingStyle = "font-serif font-bold uppercase text-[#0059b2] tracking-tight";
+  const headingStyle = "font-['Playfair_Display',serif] font-black uppercase text-[#0059b2] tracking-tight";
 
   // Helper cho pill buttons (Nút phân loại mỏng)
   const PillButton = ({ label }: { label: string }) => (
