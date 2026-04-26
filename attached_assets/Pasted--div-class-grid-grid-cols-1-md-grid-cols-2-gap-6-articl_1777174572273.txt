@@ -1,0 +1,29 @@
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <article class="group cursor-pointer">
+                    <div class="overflow-hidden rounded-md aspect-[16/10] relative shadow-md">
+                        <span class="absolute bottom-4 left-4 bg-navy text-white text-xs font-bold px-2 py-1 rounded-sm z-10">Podcast CAST</span>
+                        <img src="https://via.placeholder.com/600x400/00305f/ffffff?text=Big+Multmedia" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    </div>
+                    <h3 class="font-roboto text-[18px] font-bold text-textMain mt-3 group-hover:text-primary">Bản tin tuần số 25 ngày 22/3/2026</h3>
+                </article>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <article class="group cursor-pointer">
+                        <div class="overflow-hidden rounded-md aspect-video relative shadow-sm">
+                            <span class="absolute bottom-2 left-2 bg-navy text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10">Podcast</span>
+                            <img src="https://via.placeholder.com/300x168/e1e1e1/555" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        </div>
+                        <h4 class="font-roboto text-[14px] font-bold text-textMain mt-2 leading-snug group-hover:text-primary">CHUẨN ĐÔ ĐỐC PHẠM MINH TUẤN: TRÁCH NHIỆM CỦA NGƯỜI ĐẠI BIỂU...</h4>
+                    </article>
+                    <article class="group cursor-pointer">
+                        <div class="overflow-hidden rounded-md aspect-video relative shadow-sm">
+                            <span class="absolute bottom-2 left-2 bg-navy text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10">Podcast</span>
+                            <img src="https://via.placeholder.com/300x168/e1e1e1/555" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        </div>
+                        <h4 class="font-roboto text-[14px] font-bold text-textMain mt-2 leading-snug group-hover:text-primary">Tuổi trẻ Hải quân – xung kích, sáng tạo, vững vàng nơi đầu sóng</h4>
+                    </article>
+                    <article class="group cursor-pointer"><img src="https://via.placeholder.com/300x120/0059b2/FFF?text=Cột+Mốc" class="w-full rounded-md shadow-sm"></article>
+                    <article class="group cursor-pointer"><img src="https://via.placeholder.com/300x120/00305f/FFF" class="w-full rounded-md shadow-sm"></article>
+                </div>
+            </div>
+        </section>

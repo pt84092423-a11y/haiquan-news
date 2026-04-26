@@ -571,69 +571,98 @@ export default function HomePage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {loading
-              ? [...Array(4)].map((_, i) => <div key={i} className="h-[340px] bg-gray-100 rounded-xl animate-pulse" />)
-              : podcastPosts.length > 0
-                ? podcastPosts.map(p => (
-                    <Link
-                      key={p.id}
-                      href={`/bai-viet/${p.slug}`}
-                      className="group cursor-pointer block rounded-2xl overflow-hidden bg-gradient-to-b from-[#0a4ea0] to-[#003a7a] shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative"
-                    >
-                      {/* Top: icon + label */}
-                      <div className="px-5 pt-5 pb-3 flex flex-col items-center text-center">
-                        <div className="w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center mb-2.5">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm7 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-2.08A7 7 0 0 0 19 12z" />
-                          </svg>
-                        </div>
-                        <p className="text-[10px] text-white/70 uppercase font-bold tracking-[0.2em] mb-1.5">
-                          {p.category?.name || 'Podcast Hải quân'}
-                        </p>
-                        <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-white leading-snug line-clamp-2 group-hover:text-[#FFD700] transition min-h-[36px]">
-                          {p.title}
-                        </h4>
-                      </div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="aspect-[16/10] bg-gray-100 rounded-md animate-pulse" />
+              <div className="grid grid-cols-2 gap-4">
+                {[...Array(4)].map((_, i) => <div key={i} className="aspect-video bg-gray-100 rounded-md animate-pulse" />)}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Big featured podcast (left) */}
+              {podcastPosts[0] ? (
+                <Link href={`/bai-viet/${podcastPosts[0].slug}`} className="group cursor-pointer block">
+                  <div className="overflow-hidden rounded-md aspect-[16/10] relative shadow-md">
+                    <span className="absolute bottom-4 left-4 bg-[#00305f] text-white text-xs font-bold px-2 py-1 rounded-sm z-10 uppercase">Podcast Cast</span>
+                    <img
+                      src={podcastPosts[0].thumbnail || PLACEHOLDER}
+                      alt={podcastPosts[0].title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                  </div>
+                  <h3 className="font-['Roboto',sans-serif] text-[18px] font-bold text-[#222222] mt-3 group-hover:text-[#0059b2]">
+                    {podcastPosts[0].title}
+                  </h3>
+                </Link>
+              ) : (
+                <div className="aspect-[16/10] bg-gray-100 rounded-md flex items-center justify-center text-gray-400 uppercase font-bold text-[12px]">Chưa có podcast</div>
+              )}
 
-                      {/* Bottom: circular image with play button */}
-                      <div className="relative px-5 pb-6 pt-2 flex flex-col items-center">
-                        <div className="relative w-[140px] h-[140px] rounded-full overflow-hidden ring-4 ring-white/20 shadow-xl">
-                          <img
-                            src={p.thumbnail || PLACEHOLDER}
-                            alt={p.title}
-                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-                          />
-                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-[#FFD700] transition">
-                              <svg className="w-5 h-5 text-[#0059b2] ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="mt-3 text-[11px] text-white/60 font-['Roboto',sans-serif]">
-                          {p.view_count ? `${p.view_count.toLocaleString()} lượt phát` : 'Mới phát hành'}
-                        </p>
-                      </div>
-                    </Link>
-                  ))
-                : [...Array(4)].map((_, i) => (
-                    <div key={i} className="rounded-2xl overflow-hidden bg-gradient-to-b from-[#0a4ea0] to-[#003a7a] shadow-md opacity-60 h-[340px] flex flex-col items-center justify-center">
-                      <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center mb-3">
-                        <svg className="w-5 h-5 text-white/70" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm7 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-2.08A7 7 0 0 0 19 12z" />
-                        </svg>
-                      </div>
-                      <p className="text-[10px] text-white/40 uppercase font-bold tracking-[0.2em] mb-3">Podcast Hải quân</p>
-                      <div className="w-[140px] h-[140px] rounded-full bg-[#003a7a] ring-4 ring-white/10 flex items-center justify-center">
-                        <svg className="w-12 h-12 text-white/20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                      </div>
+              {/* Right grid 2x2: 2 small podcasts + 2 ads */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Small podcast 1 */}
+                {podcastPosts[1] ? (
+                  <Link href={`/bai-viet/${podcastPosts[1].slug}`} className="group cursor-pointer block">
+                    <div className="overflow-hidden rounded-md aspect-video relative shadow-sm">
+                      <span className="absolute bottom-2 left-2 bg-[#00305f] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 uppercase">Podcast</span>
+                      <img
+                        src={podcastPosts[1].thumbnail || PLACEHOLDER}
+                        alt={podcastPosts[1].title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
                     </div>
-                  ))
-            }
-          </div>
+                    <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] mt-2 leading-snug line-clamp-2 group-hover:text-[#0059b2]">
+                      {podcastPosts[1].title}
+                    </h4>
+                  </Link>
+                ) : (
+                  <div className="aspect-video rounded-md bg-gray-100 flex items-center justify-center text-[11px] text-gray-400 uppercase font-bold">Trống</div>
+                )}
+
+                {/* Small podcast 2 */}
+                {podcastPosts[2] ? (
+                  <Link href={`/bai-viet/${podcastPosts[2].slug}`} className="group cursor-pointer block">
+                    <div className="overflow-hidden rounded-md aspect-video relative shadow-sm">
+                      <span className="absolute bottom-2 left-2 bg-[#00305f] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 uppercase">Podcast</span>
+                      <img
+                        src={podcastPosts[2].thumbnail || PLACEHOLDER}
+                        alt={podcastPosts[2].title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                    </div>
+                    <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] mt-2 leading-snug line-clamp-2 group-hover:text-[#0059b2]">
+                      {podcastPosts[2].title}
+                    </h4>
+                  </Link>
+                ) : (
+                  <div className="aspect-video rounded-md bg-gray-100 flex items-center justify-center text-[11px] text-gray-400 uppercase font-bold">Trống</div>
+                )}
+
+                {/* Ad slot 1 */}
+                <a href={ads.home_ad_podcast_1_link || '#'} className="group block">
+                  {ads.home_ad_podcast_1_image ? (
+                    <img src={ads.home_ad_podcast_1_image} alt="Quảng cáo Podcast" className="w-full rounded-md shadow-sm aspect-[5/2] object-cover group-hover:opacity-90 transition" />
+                  ) : (
+                    <div className="w-full rounded-md shadow-sm aspect-[5/2] bg-gradient-to-r from-[#0059b2] to-[#003a7a] flex items-center justify-center text-white text-[11px] font-bold uppercase tracking-wide text-center px-3">
+                      Cột mốc Hải quân
+                    </div>
+                  )}
+                </a>
+
+                {/* Ad slot 2 */}
+                <a href={ads.home_ad_podcast_2_link || '#'} className="group block">
+                  {ads.home_ad_podcast_2_image ? (
+                    <img src={ads.home_ad_podcast_2_image} alt="Quảng cáo" className="w-full rounded-md shadow-sm aspect-[5/2] object-cover group-hover:opacity-90 transition" />
+                  ) : (
+                    <div className="w-full rounded-md shadow-sm aspect-[5/2] bg-[#00305f] flex items-center justify-center text-white text-[11px] font-bold uppercase tracking-wide text-center px-3">
+                      Banner quảng cáo
+                    </div>
+                  )}
+                </a>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* HẢI QUÂN MEDIA */}
