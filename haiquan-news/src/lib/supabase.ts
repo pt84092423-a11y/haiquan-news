@@ -58,7 +58,8 @@ export async function getPublishedPosts(options?: {
     .from('posts')
     .select('*, category:categories(*)')
     .eq('status', 'published')
-    .order('published_at', { ascending: false });
+    .order('published_at', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false });
 
   if (options?.categorySlug) {
     const { data: cat } = await supabase
