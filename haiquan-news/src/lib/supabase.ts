@@ -57,9 +57,16 @@ export async function getPublishedPosts(options?: {
   let query = supabase
     .from('posts')
     .select('*, category:categories(*)')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false, nullsFirst: false })
-    .order('id', { ascending: false });
+    .eq('status', 'published');
+
+  // Báo In: sắp xếp theo số báo (id) giảm dần để số mới nhất luôn ở đầu
+  if (options?.postType === 'baoin') {
+    query = query.order('id', { ascending: false });
+  } else {
+    query = query
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .order('id', { ascending: false });
+  }
 
   if (options?.categorySlug) {
     const { data: cat } = await supabase

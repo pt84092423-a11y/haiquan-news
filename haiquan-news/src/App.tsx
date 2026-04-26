@@ -9,6 +9,7 @@ import StructurePage from "@/pages/StructurePage";
 import CommandPage from "@/pages/CommandPage";
 import ContactPage from "@/pages/ContactPage";
 import CategoryPage from "@/pages/CategoryPage";
+import MediaListingPage, { MEDIA_LISTING_SLUGS } from "@/pages/MediaListingPage";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import PostEditor from "@/pages/admin/PostEditor";
 import PostList from "@/pages/admin/PostList";
@@ -100,6 +101,13 @@ function Router() {
       <Route path="/tim-kiem" component={() => (
         <PublicLayout><SearchPage /></PublicLayout>
       )} />
+
+      {/* Các trang đa phương tiện chuyên biệt (Longform / Phóng sự ảnh / Podcast / Short Video / Hải quân Media) */}
+      {MEDIA_LISTING_SLUGS.map(slug => (
+        <Route key={slug} path={`/${slug}`} component={() => (
+          <PublicLayout><MediaListingPage /></PublicLayout>
+        )} />
+      ))}
 
       {/* Category + other pages - /:slug phải đứng CUỐI */}
       <Route path="/:slug" component={() => (
