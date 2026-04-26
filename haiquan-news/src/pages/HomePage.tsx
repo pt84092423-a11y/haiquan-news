@@ -52,8 +52,9 @@ export default function HomePage() {
 
   useEffect(() => {
     async function load() {
-      const [all, media, shorts, podcasts, baoIn, tamTinh, lichSu, settings, commandRaw] = await Promise.all([
-        getPublishedPosts({ limit: 40 }), // Tăng limit lên một chút để đủ bài cho các mục mới
+      // Dùng allSettled để 1 lỗi nhỏ không treo toàn bộ trang
+      const results = await Promise.allSettled([
+        getPublishedPosts({ limit: 40 }),
         getPublishedPosts({ postType: 'video', limit: 6 }),
         getPublishedPosts({ postType: 'video', limit: 5 }),
         getPublishedPosts({ postType: 'podcast', limit: 4 }),
@@ -63,6 +64,22 @@ export default function HomePage() {
         getAllSettings(),
         getSiteSetting('command_page_data'),
       ]);
+      const pick = <T,>(i: number, fallback: T): T => {
+        const r = results[i];
+        return r.status === 'fulfilled' && r.value != null ? (r.value as T) : fallback;
+      };
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') console.warn(`HomePage load[${i}] failed:`, r.reason);
+      });
+      const all = pick<Post[]>(0, []);
+      const media = pick<Post[]>(1, []);
+      const shorts = pick<Post[]>(2, []);
+      const podcasts = pick<Post[]>(3, []);
+      const baoIn = pick<Post[]>(4, []);
+      const tamTinh = pick<Post[]>(5, []);
+      const lichSu = pick<Post[]>(6, []);
+      const settings = pick<Record<string, string>>(7, {});
+      const commandRaw = pick<string | null>(8, null);
       const posts = all || [];
       const articles = posts.filter(p => p.post_type !== 'baoin');
       
