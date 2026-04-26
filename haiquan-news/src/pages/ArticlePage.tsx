@@ -243,6 +243,20 @@ export default function ArticlePage() {
 
             <aside className="lg:col-span-4 mt-8 lg:mt-0">
               
+              <div className="mb-8">
+                <SectionTitle title="TIN ĐỌC NHIỀU" />
+                <ul className="flex flex-col">
+                  {mostRead.map((p, i) => (
+                    <li key={p.id}>
+                      <Link href={`/bai-viet/${p.slug}`} className="flex gap-4 py-3 border-b border-dashed border-[#e1e1e1] group cursor-pointer items-start">
+                        <div className="font-['Playfair_Display',serif] text-[32px] text-[#aed1ef] font-black leading-none mt-1 w-6 text-center">{i + 1}</div>
+                        <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] leading-snug group-hover:text-[#0059b2] flex-1">{p.title}</h4>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
               {/* KHỐI ĐỌC BÁO IN MỚI (UPDATE THEO ẢNH 2) */}
               {latestBaoIn && (
                 <div className="mb-8">
@@ -283,20 +297,6 @@ export default function ArticlePage() {
                 </div>
               )}
               {/* KẾT THÚC KHỐI ĐỌC BÁO IN MỚI */}
-
-              <div className="mb-8">
-                <SectionTitle title="TIN ĐỌC NHIỀU" />
-                <ul className="flex flex-col">
-                  {mostRead.map((p, i) => (
-                    <li key={p.id}>
-                      <Link href={`/bai-viet/${p.slug}`} className="flex gap-4 py-3 border-b border-dashed border-[#e1e1e1] group cursor-pointer items-start">
-                        <div className="font-['Playfair_Display',serif] text-[32px] text-[#aed1ef] font-black leading-none mt-1 w-6 text-center">{i + 1}</div>
-                        <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] leading-snug group-hover:text-[#0059b2] flex-1">{p.title}</h4>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
 
               <div className="mb-8">
                 <SectionTitle title="LIÊN KẾT WEBSITE" className="text-[20px]" />
