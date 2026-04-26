@@ -13,7 +13,6 @@ import {
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
 
-// Đã bổ sung thêm các chuyên mục có trên Navbar nhưng bị thiếu: 'cau-truc' và 'chi-huy'
 const CATEGORY_FALLBACK: Record<string, { title: string; desc: string }> = {
   'tin-tuc': { title: 'Tin tức', desc: 'Tin tức thời sự Hải quân Nhân dân Việt Nam' },
   'chinh-tri': { title: 'Chính trị', desc: 'Tin tức chính trị, lãnh đạo Hải quân' },
@@ -50,8 +49,8 @@ function SidebarHeading({ label }: { label: string }) {
   return (
     <h2 className="font-['Playfair_Display',serif] text-[#0059b2] text-[20px] md:text-[22px] font-black uppercase mb-5 flex items-center">
       <div className="flex mr-2.5">
-        <div className="w-[5px] h-[18px] bg-[#0059b2] -skew-x-[20deg] mr-[2px]" />
-        <div className="w-[5px] h-[18px] bg-sky-300 -skew-x-[20deg]" />
+        <div className="w-[6px] h-[22px] bg-[#0059b2] -skew-x-[20deg] mr-[3px]" />
+        <div className="w-[6px] h-[22px] bg-sky-300 -skew-x-[20deg]" />
       </div>
       {label}
     </h2>
@@ -215,7 +214,6 @@ export default function CategoryPage() {
       setMostRead(sortedPopular);
       setAds(settings || {});
 
-      // Lấy 4 chuyên mục cho footer
       const others = (allCats || []).filter((c: Category) => c.slug !== slug && c.slug !== 'bao-in').slice(0, 4);
       const withPosts = await Promise.all(
         others.map(async (c: Category) => {
@@ -230,8 +228,7 @@ export default function CategoryPage() {
   }, [slug]);
 
   const featured = posts[0];
-  const sideFeatured = posts.slice(1, 5); // 4 bài cho cột bên phải của Hero
-  // Cột giữa: hiển thị toàn bộ bài viết của chuyên mục (trừ bài hero) để tránh khoảng trống
+  const sideFeatured = posts.slice(1, 5); 
   const listPool = posts.slice(1);
   const visibleList = listPool.slice(0, visibleListCount);
   const hasMore = visibleListCount < listPool.length;
@@ -287,7 +284,6 @@ export default function CategoryPage() {
           </div>
         ) : (
           <>
-            {/* Top Grid: Hero (Left 8 cols) + Side Stack (Right 4 cols) */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12 pb-10 border-b border-[#e1e1e1]">
               <div className="md:col-span-8">
                 {featured && <HeroFeatured post={featured} />}
@@ -297,7 +293,6 @@ export default function CategoryPage() {
               </aside>
             </div>
 
-            {/* Middle Content Layout: Most Read (3) + Main List (6) + Ads (3) */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
               
               {/* Left Column: Most Read */}
@@ -339,31 +334,30 @@ export default function CategoryPage() {
               {/* Right Column: BaoIn + Links & Ads */}
               <aside className="md:col-span-3 order-3">
                 
-                {/* KHỐI ĐỌC BÁO IN MỚI */}
+                {/* KHỐI ĐỌC BÁO IN MỚI GIỐNG ẢNH 2 */}
                 {latestBaoIn && (
                   <div className="mb-8">
                     <SidebarHeading label="ĐỌC BÁO IN" />
-                    <div className="bg-[#f4f7f9] border border-[#e0e6ed] rounded-lg p-4 shadow-sm">
+                    <div className="bg-[#f4f7fb] border border-[#e8ecef] rounded-lg p-5">
                       <div className="mb-4">
                         <h3 className="font-['Roboto',sans-serif] text-[18px] font-bold text-[#0059b2] leading-tight">
                           Báo in Hải quân
                         </h3>
-                        <p className="font-['Roboto',sans-serif] text-[13px] text-[#555] mt-1">
+                        <p className="font-['Roboto',sans-serif] text-[14px] text-[#666] mt-1">
                           Số mới nhất
                         </p>
                       </div>
                       
-                      <div className="bg-[#e9ecef] shadow-inner rounded-sm overflow-hidden min-h-[280px]">
-                        <Link href="/bao-in" className="block w-full h-full group">
-                          {latestBaoIn.thumbnail && (
-                            <img
-                              src={latestBaoIn.thumbnail}
-                              alt={latestBaoIn.title}
-                              className="w-full h-auto object-cover group-hover:scale-[1.02] transition duration-300 min-h-[280px]"
-                            />
-                          )}
-                        </Link>
-                      </div>
+                      <Link href="/bao-in" className="block w-full group relative">
+                        {/* Đảm bảo khung luôn giữ tỷ lệ để hiện background xám ngay cả khi chưa load xong ảnh */}
+                        <div className="w-full bg-[#e9ecef] rounded-sm overflow-hidden aspect-[3/4] relative border border-gray-100 shadow-sm">
+                           <img
+                             src={latestBaoIn.thumbnail || PLACEHOLDER}
+                             alt={latestBaoIn.title}
+                             className="w-full h-full object-cover absolute inset-0 group-hover:scale-[1.02] transition duration-300"
+                           />
+                        </div>
+                      </Link>
                     </div>
                   </div>
                 )}
