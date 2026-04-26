@@ -66,19 +66,19 @@ export default function ArticlePage() {
   return (
     <>
       {post && (
-  <SEOHead
-    title={post.meta_title || post.title}
-    description={post.meta_description || post.excerpt}
-    ogTitle={ogPayload.title}
-    ogImage={ogPayload.image || ogPayload.gallery?.[0] || post.thumbnail}
-    ogType="article"
-    author={post.author}
-    publishedDate={post.published_at}
-    modifiedDate={post.updated_at || post.published_at}
-    tags={post.category?.name}
-    canonicalUrl={`https://baohaiquansrov.xo.je/bai-viet/${post.slug}`}
-  />
-)}
+        <SEOHead
+          title={post.meta_title || post.title}
+          description={post.meta_description || post.excerpt}
+          ogTitle={ogPayload.title}
+          ogImage={ogPayload.image || ogPayload.gallery?.[0] || post.thumbnail}
+          ogType="article"
+          author={post.author}
+          publishedDate={post.published_at}
+          modifiedDate={post.updated_at || post.published_at}
+          tags={post.category?.name}
+          canonicalUrl={`https://baohaiquansrov.xo.je/bai-viet/${post.slug}`}
+        />
+      )}
 
       <main className="flex-grow pt-8 pb-12">
         <div className="container mx-auto max-w-[1200px] px-4">
@@ -244,13 +244,38 @@ export default function ArticlePage() {
             <aside className="lg:col-span-4 mt-8 lg:mt-0">
               {latestBaoIn && (
                 <div className="mb-8">
-                  <SectionTitle title="ĐỌC BÁO IN" />
                   <div className="bg-white border border-[#e1e1e1] rounded-[2px] overflow-hidden shadow-sm">
-                    <div className="px-4 py-3 bg-[#f2f7fb] border-b border-[#e1e1e1]">
-                      <p className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#0059b2]">Báo in Hải quân</p>
-                      <p className="font-['Roboto',sans-serif] text-[11px] text-[#888] mt-0.5">Số mới nhất</p>
+                    {/* Header theo ảnh */}
+                    <div className="px-4 py-3 bg-[#f8f9fa] border-b border-[#e1e1e1]">
+                      <h3 className="font-['Roboto',sans-serif] text-[18px] font-bold text-[#0059b2] uppercase">Báo in Hải quân</h3>
+                      <p className="font-['Roboto',sans-serif] text-[13px] text-[#888] mt-0.5">Số mới nhất</p>
                     </div>
+
                     <Link href="/bao-in" className="block group">
+                      {/* Banner header Báo Hải Quân fake */}
+                      <div className="flex justify-between items-center px-2 py-2 border-b-4 border-[#0059b2] bg-white">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-[35px] h-[35px] bg-[#0059b2] rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-bold text-[9px]">SROV</span>
+                          </div>
+                          <div className="flex flex-col justify-center">
+                            <h2 className="text-[#0059b2] font-black text-[18px] sm:text-[22px] leading-none m-0 p-0 flex items-center tracking-tighter">
+                              BÁO HẢI QUÂN <span className="text-red-500 ml-1 text-sm">★</span>
+                            </h2>
+                            <p className="text-[6px] sm:text-[7px] font-bold text-[#333] m-0 p-0 uppercase tracking-tighter mt-0.5">
+                              Cơ quan ngôn luận đầu tiên của hải quân nhân dân việt nam
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end text-[#0059b2] leading-none text-right flex-shrink-0">
+                          <span className="text-[8px] italic mb-0.5">Năm thứ 26</span>
+                          <span className="text-[8px] italic mb-0.5">Số 5</span>
+                          <span className="text-[12px] font-bold mb-0.5">Thứ Năm</span>
+                          <span className="text-[9px] font-bold">26-02-2026</span>
+                        </div>
+                      </div>
+
+                      {/* Main Thumbnail */}
                       {latestBaoIn.thumbnail && (
                         <div className="overflow-hidden">
                           <img
@@ -260,17 +285,55 @@ export default function ArticlePage() {
                           />
                         </div>
                       )}
-                      <div className="p-3">
-                        <p className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] group-hover:text-[#0059b2] line-clamp-2 leading-snug transition-colors">
+
+                      {/* Nội dung Footer Newspaper theo ảnh */}
+                      <div className="px-4 pt-5 pb-3 bg-white">
+                        <div className="flex justify-between items-stretch gap-3 mb-4">
+                          <div className="flex-1 text-[11px] text-[#222]">
+                            <div className="font-black text-center text-[14px] mb-2 uppercase font-['Playfair_Display',serif]">Góc Độc Giả</div>
+                            <div className="mb-3">
+                              <span className="italic">"gâu gâu gâu, gâu gâu, gâu gâu gâu."</span><br />
+                              <span className="mt-1 block">-Zenywastaken</span>
+                            </div>
+                            <div>
+                              <span className="font-bold">DK IU MAHIRU</span><br />
+                              <span className="mt-1 block">-No one</span>
+                            </div>
+                          </div>
+
+                          <div className="w-[75px] flex-shrink-0 flex items-center justify-center">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://baohaiquansrov.xo.je" alt="QR Code" className="w-full h-auto" />
+                          </div>
+
+                          <div className="w-[100px] flex-shrink-0 border border-[#222] p-1.5 flex flex-col justify-between">
+                            <div className="text-[10px] font-black text-center mb-1.5 uppercase font-['Playfair_Display',serif] leading-tight">Ảnh của ngày hôm nay</div>
+                            <img src={latestBaoIn.thumbnail || PLACEHOLDER} alt="Ảnh ngày hôm nay" className="w-full h-[60px] object-cover" />
+                          </div>
+                        </div>
+
+                        {/* Slogan báo in */}
+                        <div className="relative flex items-center justify-center mt-5 mb-1">
+                          <div className="h-px bg-gray-400 flex-1"></div>
+                          <span className="px-2 text-[10px] text-[#222] uppercase tracking-wide">Đảo là nhà, biển cả là quê hương</span>
+                          <div className="h-px bg-gray-400 flex-1"></div>
+                        </div>
+                        <div className="text-center text-[8px] text-[#555] uppercase pb-4 border-b border-gray-400 mb-4 tracking-wider">
+                          Chiến đấu anh dũng, mưu trí sáng tạo, làm chủ vùng biển, quyết chiến quyết thắng
+                        </div>
+
+                        {/* Text: Báo số Hải quân số 5 (Lấy tự động từ title bài viết) */}
+                        <p className="font-['Roboto',sans-serif] text-[22px] font-bold text-[#222] group-hover:text-[#0059b2] transition-colors mb-2">
                           {latestBaoIn.title}
                         </p>
                       </div>
                     </Link>
+
+                    {/* Nút Xem báo in */}
                     <Link
                       href="/bao-in"
-                      className="block px-4 py-2.5 bg-[#0059b2] text-white text-center text-[12px] font-bold uppercase tracking-wider hover:bg-[#00305f] transition font-['Roboto',sans-serif]"
+                      className="block px-4 py-3.5 bg-[#0059b2] text-white text-center text-[16px] font-bold tracking-wide hover:bg-[#004a94] transition font-['Roboto',sans-serif]"
                     >
-                      Xem Báo In →
+                      XEM BÁO IN →
                     </Link>
                   </div>
                 </div>
