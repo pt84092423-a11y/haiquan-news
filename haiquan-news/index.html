@@ -6,6 +6,13 @@
     <meta name="theme-color" content="#0059b2" />
     <title>Báo Hải Quân Việt Nam - SROV</title>
 
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Báo Hải Quân" />
+    <link rel="apple-touch-icon" href="/logo-srov.png" />
+
     <!-- Default SEO -->
     <meta name="description" content="Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam" />
     <meta name="author" content="Báo Hải Quân Việt Nam - SROV" />
@@ -35,13 +42,20 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
-    <!-- Roboto bold/black weights from Google Fonts (700, 900 not in local files) -->
+    <!-- Google Fonts: Roboto + Oswald + Playfair Display + Cinzel (all with Vietnamese subset) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Oswald:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400;1,700&subset=vietnamese&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

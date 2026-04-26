@@ -26,6 +26,7 @@ import AdminAds from "@/pages/admin/AdminAds";
 import NavManager from "@/pages/admin/NavManager";
 import HadminPanel from "@/pages/admin/HadminPanel";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
+import SearchPage from "@/pages/SearchPage";
 import { getSession, can } from "@/lib/auth";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,11 @@ function Router() {
       <Route path="/lien-he" component={() => <PublicLayout><ContactPage /></PublicLayout>} />
       <Route path="/bai-viet/:slug" component={() => (
         <PublicLayout><ArticlePage /></PublicLayout>
+      )} />
+
+      {/* Search page */}
+      <Route path="/tim-kiem" component={() => (
+        <PublicLayout><SearchPage /></PublicLayout>
       )} />
 
       {/* Category + other pages - /:slug phải đứng CUỐI */}

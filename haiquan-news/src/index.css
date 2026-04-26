@@ -255,6 +255,35 @@
   background-repeat: no-repeat;
 }
 
+/* Article reading mode — dark */
+.reading-dark {
+  background: #111827;
+  color: #e0e0e0;
+  border-radius: 8px;
+  padding: 2rem;
+}
+.reading-dark .article-content { color: #e0e0e0; }
+.reading-dark .article-content h2,
+.reading-dark .article-content h3 { color: #cbd5e1; }
+.reading-dark .article-content a { color: #7dd3fc; }
+.reading-dark .article-content blockquote { border-color: #7dd3fc; color: #cbd5e1; }
+.reading-dark .article-content .hq-quote { background: #1e293b; color: #e0e0e0; }
+.reading-dark .article-content .hq-text-box { background: #1e293b; }
+
+/* Longform full-bleed images */
+.longform-content img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.longform-content .full-bleed {
+  width: 100vw;
+  max-width: none;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 /* Print styles */
 @media print {
   header, footer, aside, .no-print { display: none !important; }

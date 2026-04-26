@@ -182,6 +182,7 @@ export default function CategoryPage() {
   const [mostRead, setMostRead] = useState<Post[]>([]);
   const [otherCats, setOtherCats] = useState<Array<{ cat: Category; posts: Post[] }>>([]);
   const [ads, setAds] = useState<Record<string, string>>({});
+  const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
   const [visibleListCount, setVisibleListCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
 
@@ -205,6 +206,7 @@ export default function CategoryPage() {
       ]);
       setCategory(cat || null);
       setPosts(mainPosts || []);
+      setLatestBaoIn((baoIn || [])[0] || null);
 
       const sortedPopular = [...(popular || [])]
         .filter((p: Post) => p.post_type !== 'baoin')
@@ -333,8 +335,41 @@ export default function CategoryPage() {
                 )}
               </div>
 
-              {/* Right Column: Links & Ads */}
+              {/* Right Column: BaoIn + Links & Ads */}
               <aside className="md:col-span-3 order-3">
+                {latestBaoIn && (
+                  <div className="mb-6">
+                    <SidebarHeading label="ĐỌC BÁO IN" />
+                    <div className="bg-white border border-[#e1e1e1] rounded-[2px] overflow-hidden shadow-sm">
+                      <div className="px-4 py-3 bg-[#f2f7fb] border-b border-[#e1e1e1]">
+                        <p className="font-['Roboto',sans-serif] text-[12px] font-bold text-[#0059b2] uppercase">Báo in Hải quân</p>
+                        <p className="font-['Roboto',sans-serif] text-[11px] text-[#888] mt-0.5">Số mới nhất</p>
+                      </div>
+                      <Link href="/bao-in" className="block group">
+                        {latestBaoIn.thumbnail && (
+                          <div className="overflow-hidden">
+                            <img
+                              src={latestBaoIn.thumbnail}
+                              alt={latestBaoIn.title}
+                              className="w-full h-auto object-cover group-hover:opacity-95 transition"
+                            />
+                          </div>
+                        )}
+                        <div className="p-3">
+                          <p className="font-['Roboto',sans-serif] text-[13px] font-bold text-[#222] group-hover:text-[#0059b2] line-clamp-2 leading-snug transition-colors">
+                            {latestBaoIn.title}
+                          </p>
+                        </div>
+                      </Link>
+                      <Link
+                        href="/bao-in"
+                        className="block px-4 py-2.5 bg-[#0059b2] text-white text-center text-[12px] font-bold uppercase tracking-wider hover:bg-[#00305f] transition font-['Roboto',sans-serif]"
+                      >
+                        Xem Báo In →
+                      </Link>
+                    </div>
+                  </div>
+                )}
                 <WebsiteLinks />
                 <div className="flex flex-col gap-4 mt-6">
                   {adBlocks.map((ad, i) => (

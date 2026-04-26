@@ -326,6 +326,86 @@ export function generateSlug(title: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+export async function searchPostsSuggestions(query: string, limit = 6): Promise<Post[]> {
+  if (!query || query.trim().length < 2) return [];
+  const q = query.trim();
+  const { data } = await supabase
+    .from('posts')
+    .select('id, title, slug, thumbnail, excerpt, published_at, category:categories(id, name, slug)')
+    .eq('status', 'published')
+    .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%`)
+    .order('published_at', { ascending: false })
+    .limit(limit);
+  return (data as Post[]) || [];
+}
+
+export async function searchPostsFull(query: string, options?: {
+  categorySlug?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ posts: Post[]; count: number }> {
+  if (!query || query.trim().length < 1) return { posts: [], count: 0 };
+  const q = query.trim();
+  let dbQuery = supabase
+    .from('posts')
+    .select('*, category:categories(*)', { count: 'exact' })
+    .eq('status', 'published')
+    .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,content.ilike.%${q}%`)
+    .order('published_at', { ascending: false });
+
+  if (options?.categorySlug) {
+    const { data: cat } = await supabase.from('categories').select('id').eq('slug', options.categorySlug).single();
+    if (cat) dbQuery = dbQuery.eq('category_id', cat.id);
+  }
+  if (options?.limit) dbQuery = dbQuery.limit(options.limit);
+  if (options?.offset) dbQuery = dbQuery.range(options.offset, (options.offset + (options.limit || 10)) - 1);
+
+  const { data, count, error } = await dbQuery;
+  if (error) return { posts: [], count: 0 };
+  return { posts: (data as Post[]) || [], count: count ?? 0 };
+}
+
+export async function getRelatedPostsSmart(postId: number, title: string, categoryId?: number, limit = 6): Promise<Post[]> {
+  const stopWords = new Set(['của', 'trong', 'với', 'và', 'hay', 'hoặc', 'cho', 'về', 'này', 'các', 'một', 'được', 'những', 'đã', 'đang', 'sẽ', 'đến', 'tại', 'theo', 'đây']);
+  const keywords = title
+    .split(/[\s,./()-]+/)
+    .filter(w => w.length > 3 && !stopWords.has(w.toLowerCase()))
+    .slice(0, 3);
+
+  let smartPosts: Post[] = [];
+  if (keywords.length > 0) {
+    const orFilter = keywords.map(w => `title.ilike.%${w}%`).join(',');
+    const { data } = await supabase
+      .from('posts')
+      .select('*, category:categories(*)')
+      .eq('status', 'published')
+      .neq('id', postId)
+      .neq('post_type', 'baoin')
+      .or(orFilter)
+      .order('published_at', { ascending: false })
+      .limit(limit);
+    smartPosts = (data as Post[]) || [];
+  }
+
+  if (smartPosts.length < limit && categoryId) {
+    const needed = limit - smartPosts.length;
+    const existingIds = new Set(smartPosts.map(p => p.id));
+    existingIds.add(postId);
+    const { data: catPosts } = await supabase
+      .from('posts')
+      .select('*, category:categories(*)')
+      .eq('status', 'published')
+      .eq('category_id', categoryId)
+      .neq('post_type', 'baoin')
+      .order('published_at', { ascending: false })
+      .limit(needed + existingIds.size);
+    const filtered = ((catPosts as Post[]) || []).filter(p => !existingIds.has(p.id)).slice(0, needed);
+    smartPosts = [...smartPosts, ...filtered];
+  }
+
+  return smartPosts.slice(0, limit);
+}
+
 export const SQL_SCHEMA = `
 -- Bảng Categories (Danh mục đa cấp)
 CREATE TABLE IF NOT EXISTS categories (

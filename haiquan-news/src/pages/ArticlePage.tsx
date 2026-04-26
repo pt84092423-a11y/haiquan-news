@@ -3,7 +3,7 @@ import { useParams, Link } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getAllSettings, getPostBySlug, getPublishedPosts, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
+import { getAllSettings, getPostBySlug, getPublishedPosts, getRelatedPostsSmart, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
 import { formatDateLong, timeAgo } from '@/lib/utils';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Hải+Quân';
@@ -16,7 +16,13 @@ export default function ArticlePage() {
   const [mostRead, setMostRead] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [fontSize, setFontSize] = useState(15);
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('hq-fontSize');
+    return saved ? parseInt(saved, 10) : 15;
+  });
+  const [readingMode, setReadingMode] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('hq-readingMode') as 'light' | 'dark') || 'light';
+  });
   const [ads, setAds] = useState<Record<string, string>>({});
   const ogPayload = parseOgPayload(post?.og_image);
 
@@ -31,10 +37,10 @@ export default function ArticlePage() {
       incrementViewCount(data.id);
 
       const [related, popular] = await Promise.all([
-        getPublishedPosts({ categorySlug: data.category?.slug, limit: 8 }),
+        getRelatedPostsSmart(data.id, data.title, data.category_id || data.category?.id, 8),
         getPublishedPosts({ limit: 8 }),
       ]);
- setRelatedPosts((related || []).filter(p => p.id !== data.id && p.post_type !== 'baoin').slice(0, 8));
+      setRelatedPosts(related || []);
       const sorted = [...(popular || [])].sort((a, b) => b.view_count - a.view_count);
       setMostRead(sorted.filter(p => p.id !== data.id && p.post_type !== 'baoin').slice(0, 8));
     });
@@ -122,14 +128,56 @@ export default function ArticlePage() {
                     </figure>
                   )}
 
-                  <div className="flex items-center gap-2 mb-4 text-[12px] text-[#555555]">
-                    <span>Cỡ chữ:</span>
-                    <button onClick={() => setFontSize(f => Math.max(12, f - 1))} className="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold">A-</button>
-                    <button onClick={() => setFontSize(f => Math.min(22, f + 1))} className="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold">A+</button>
+                  {/* Accessibility Toolbar */}
+                  <div className="flex items-center gap-3 mb-5 p-3 bg-[#f8f9fa] border border-[#e1e1e1] rounded-lg">
+                    <span className="text-[11px] text-[#888] uppercase font-bold tracking-wide mr-1">Cỡ chữ:</span>
+                    <button
+                      onClick={() => { const nf = Math.max(12, fontSize - 1); setFontSize(nf); localStorage.setItem('hq-fontSize', String(nf)); }}
+                      className="w-7 h-7 bg-white border border-[#d1d5db] hover:border-[#0059b2] hover:text-[#0059b2] rounded flex items-center justify-center text-[12px] font-bold text-[#555] transition"
+                      title="Giảm cỡ chữ"
+                    >A-</button>
+                    <span className="text-[12px] font-mono text-[#888] w-6 text-center">{fontSize}</span>
+                    <button
+                      onClick={() => { const nf = Math.min(22, fontSize + 1); setFontSize(nf); localStorage.setItem('hq-fontSize', String(nf)); }}
+                      className="w-7 h-7 bg-white border border-[#d1d5db] hover:border-[#0059b2] hover:text-[#0059b2] rounded flex items-center justify-center text-[12px] font-bold text-[#555] transition"
+                      title="Tăng cỡ chữ"
+                    >A+</button>
+                    <div className="w-px h-5 bg-[#e1e1e1] mx-1" />
+                    <button
+                      onClick={() => { const m = readingMode === 'light' ? 'dark' : 'light'; setReadingMode(m); localStorage.setItem('hq-readingMode', m); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition border ${readingMode === 'dark' ? 'bg-[#111827] text-white border-[#111827]' : 'bg-white text-[#555] border-[#d1d5db] hover:border-[#0059b2]'}`}
+                      title="Chế độ đọc ban đêm"
+                    >
+                      {readingMode === 'dark' ? (
+                        <>☀️ <span>Sáng</span></>
+                      ) : (
+                        <>🌙 <span>Tối</span></>
+                      )}
+                    </button>
                   </div>
 
+                  {/* Longform parallax hero */}
+                  {(post.post_type === 'longform' || post.post_type === 'photo_story') && post.thumbnail && (
+                    <div
+                      className="relative w-full h-[65vh] min-h-[380px] mb-10 overflow-hidden rounded-[2px] -mx-4 md:-mx-0 longform-hero"
+                      style={{ backgroundImage: `url('${post.thumbnail}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-8">
+                        {post.category && (
+                          <span className="inline-block text-[11px] font-bold uppercase text-white bg-[#0059b2] px-3 py-1 rounded mb-3">
+                            {post.category.name}
+                          </span>
+                        )}
+                        <h1 className="font-['Playfair_Display',serif] text-[28px] md:text-[38px] font-bold text-white leading-tight drop-shadow-lg">
+                          {post.title}
+                        </h1>
+                      </div>
+                    </div>
+                  )}
+
                   <div
-                    className="article-content font-['Roboto',sans-serif] text-[#333333] leading-relaxed mb-6"
+                    className={`article-content font-['Roboto',sans-serif] leading-relaxed mb-6 transition-all duration-300 ${readingMode === 'dark' ? 'reading-dark' : 'text-[#333333]'} ${(post.post_type === 'longform' || post.post_type === 'photo_story') ? 'longform-content' : ''}`}
                     style={{ fontSize: `${fontSize}px` }}
                     dangerouslySetInnerHTML={{ __html: post.content || '' }}
                   />

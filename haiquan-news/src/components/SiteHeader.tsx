@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import { realtimeClock } from '@/lib/utils';
-import { getSiteSetting, parseJsonSetting } from '@/lib/supabase';
+import { getSiteSetting, parseJsonSetting, searchPostsSuggestions, type Post } from '@/lib/supabase';
 import logoImg from '@assets/logo_haiquan.png';
 
 export type NavItem = { href: string; label: string; icon?: boolean };
@@ -23,8 +23,11 @@ export default function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<Post[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [navItems, setNavItems] = useState<NavItem[]>(DEFAULT_NAV_ITEMS);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setClock(realtimeClock()), 1000);
@@ -48,12 +51,29 @@ export default function SiteHeader() {
     });
   }, []);
 
+  const handleSearchQueryChange = (val: string) => {
+    setSearchQuery(val);
+    if (suggestTimer.current) clearTimeout(suggestTimer.current);
+    if (val.trim().length >= 2) {
+      suggestTimer.current = setTimeout(async () => {
+        const results = await searchPostsSuggestions(val, 6);
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+      }, 320);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/tin-tuc?q=${encodeURIComponent(searchQuery.trim())}`;
+      window.location.href = `/tim-kiem?q=${encodeURIComponent(searchQuery.trim())}`;
       setSearchOpen(false);
       setSearchQuery('');
+      setSuggestions([]);
+      setShowSuggestions(false);
     }
   };
 
@@ -154,15 +174,44 @@ export default function SiteHeader() {
       {searchOpen && (
         <div className="bg-[#001540] border-t border-white/10">
           <div className="container mx-auto max-w-[1200px] px-4 py-3">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm tin tức..."
-                className="flex-1 bg-white/10 text-white placeholder-white/50 border border-white/20 rounded px-4 py-2 text-[14px] focus:outline-none focus:border-white/50"
-              />
+            <form onSubmit={handleSearch} className="flex gap-2 relative">
+              <div className="flex-1 relative">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => handleSearchQueryChange(e.target.value)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  placeholder="Tìm kiếm tin tức..."
+                  className="w-full bg-white/10 text-white placeholder-white/50 border border-white/20 rounded px-4 py-2 text-[14px] focus:outline-none focus:border-white/50"
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white text-[#222] shadow-xl rounded-b-lg z-50 overflow-hidden border border-[#e1e1e1]">
+                    {suggestions.map(s => (
+                      <a
+                        key={s.id}
+                        href={`/bai-viet/${s.slug}`}
+                        onClick={() => { setSearchOpen(false); setSearchQuery(''); setShowSuggestions(false); }}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f2f7fb] transition border-b border-[#f0f0f0] last:border-0"
+                      >
+                        {s.thumbnail && (
+                          <img src={s.thumbnail} alt={s.title} className="w-10 h-7 object-cover rounded flex-shrink-0" />
+                        )}
+                        <span className="text-[13px] font-['Roboto',sans-serif] font-medium line-clamp-1 flex-1">{s.title}</span>
+                        <svg className="w-3.5 h-3.5 text-[#aaa] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </a>
+                    ))}
+                    <a
+                      href={`/tim-kiem?q=${encodeURIComponent(searchQuery)}`}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-bold text-[#0059b2] hover:bg-[#f2f7fb] transition"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                      Xem tất cả kết quả cho "{searchQuery}"
+                    </a>
+                  </div>
+                )}
+              </div>
               <button
                 type="submit"
                 className="bg-[#FFD700] text-[#002060] font-bold px-5 py-2 rounded hover:bg-yellow-300 transition text-[13px]"
@@ -171,7 +220,7 @@ export default function SiteHeader() {
               </button>
               <button
                 type="button"
-                onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                onClick={() => { setSearchOpen(false); setSearchQuery(''); setSuggestions([]); setShowSuggestions(false); }}
                 className="bg-white/10 text-white px-3 py-2 rounded hover:bg-white/20 transition"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
