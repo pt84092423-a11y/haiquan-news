@@ -52,61 +52,82 @@ export default function HomePage() {
 
   useEffect(() => {
     async function load() {
-      // Dùng allSettled để 1 lỗi nhỏ không treo toàn bộ trang
-      const results = await Promise.allSettled([
-        getPublishedPosts({ limit: 40 }),
-        getPublishedPosts({ postType: 'video', limit: 6 }),
-        getPublishedPosts({ postType: 'video', limit: 5 }),
-        getPublishedPosts({ postType: 'podcast', limit: 4 }),
-        getPublishedPosts({ postType: 'baoin', limit: 1 }),
-        getPublishedPosts({ categorySlug: 'tam-tinh', limit: 4 }),
-        getPublishedPosts({ categorySlug: 'lich-su', limit: 4 }),
-        getAllSettings(),
-        getSiteSetting('command_page_data'),
-      ]);
-      const pick = <T,>(i: number, fallback: T): T => {
-        const r = results[i];
-        return r.status === 'fulfilled' && r.value != null ? (r.value as T) : fallback;
-      };
-      results.forEach((r, i) => {
-        if (r.status === 'rejected') console.warn(`HomePage load[${i}] failed:`, r.reason);
-      });
-      const all = pick<Post[]>(0, []);
-      const media = pick<Post[]>(1, []);
-      const shorts = pick<Post[]>(2, []);
-      const podcasts = pick<Post[]>(3, []);
-      const baoIn = pick<Post[]>(4, []);
-      const tamTinh = pick<Post[]>(5, []);
-      const lichSu = pick<Post[]>(6, []);
-      const settings = pick<Record<string, string>>(7, {});
-      const commandRaw = pick<string | null>(8, null);
-      const posts = all || [];
-      const articles = posts.filter(p => p.post_type !== 'baoin');
-      
-      setSpotlight(articles.slice(0, 3));
-      setNewPosts(articles.slice(0, 4));
-      
-      const sorted = [...articles].sort((a, b) => b.view_count - a.view_count);
-      setMostRead(sorted.slice(0, 6));
-      
-      setGeneralPosts(articles.slice(3, 7));
-      setChuQuyenPosts(articles.slice(11, 16)); // 5 bài cho Vì chủ quyền biển đảo
-      
-      setTamTinhPosts(tamTinh || []);
-      setLichSuPosts(lichSu || []);
+      try {
+        console.log('[HomePage] load() start');
+        // Mỗi call có timeout 8s để không bị treo nếu một query nào đó chậm/hang.
+        const withTimeout = <T,>(p: Promise<T>, label: string, ms = 8000): Promise<T> =>
+          Promise.race<T>([
+            p,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} timeout ${ms}ms`)), ms)),
+          ]);
+        const results = await Promise.allSettled([
+          withTimeout(getPublishedPosts({ limit: 40 }), 'all'),
+          withTimeout(getPublishedPosts({ postType: 'video', limit: 6 }), 'video6'),
+          withTimeout(getPublishedPosts({ postType: 'video', limit: 5 }), 'video5'),
+          withTimeout(getPublishedPosts({ postType: 'podcast', limit: 4 }), 'podcast'),
+          withTimeout(getPublishedPosts({ postType: 'baoin', limit: 1 }), 'baoin'),
+          withTimeout(getPublishedPosts({ categorySlug: 'tam-tinh', limit: 4 }), 'tam-tinh'),
+          withTimeout(getPublishedPosts({ categorySlug: 'lich-su', limit: 4 }), 'lich-su'),
+          withTimeout(getAllSettings(), 'settings'),
+          withTimeout(getSiteSetting('command_page_data'), 'command'),
+        ]);
+        console.log('[HomePage] allSettled done', results.map(r => r.status));
+        function pickAt<T>(i: number, fallback: T): T {
+          const r = results[i];
+          return r.status === 'fulfilled' && r.value != null ? (r.value as T) : fallback;
+        }
+        results.forEach((r, i) => {
+          if (r.status === 'rejected') console.warn(`HomePage load[${i}] failed:`, r.reason);
+        });
+        const all = pickAt<Post[]>(0, []);
+        const media = pickAt<Post[]>(1, []);
+        const shorts = pickAt<Post[]>(2, []);
+        const podcasts = pickAt<Post[]>(3, []);
+        const baoIn = pickAt<Post[]>(4, []);
+        const tamTinh = pickAt<Post[]>(5, []);
+        const lichSu = pickAt<Post[]>(6, []);
+        const settings = pickAt<Record<string, string>>(7, {});
+        const commandRaw = pickAt<string | null>(8, null);
+        const posts = all || [];
+        const articles = posts.filter(p => p.post_type !== 'baoin');
 
-      const command = parseJsonSetting<CommandData>(commandRaw, DEFAULT_COMMAND_DATA);
-      const sortedCommanders = [...command.people]
-        .filter(p => p.group === 'navy')
-        .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
-      setCommanders(sortedCommanders);
-      setMediaPosts((media || []).slice(0, 4));
-      setPodcastPosts((podcasts || []).slice(0, 4));
-      setVideoPosts((media || []).slice(0, 3));
-      setShortVideos((shorts || []).slice(0, 5));
-      setLatestBaoIn((baoIn || [])[0] || null);
-      setAds(settings || {});
-      setLoading(false);
+        setSpotlight(articles.slice(0, 3));
+        setNewPosts(articles.slice(0, 4));
+
+        const sorted = [...articles].sort((a, b) => b.view_count - a.view_count);
+        setMostRead(sorted.slice(0, 6));
+
+        setGeneralPosts(articles.slice(3, 7));
+        setChuQuyenPosts(articles.slice(11, 16));
+
+        setTamTinhPosts(tamTinh || []);
+        setLichSuPosts(lichSu || []);
+
+        try {
+          const command = parseJsonSetting<CommandData>(commandRaw, DEFAULT_COMMAND_DATA);
+          const peopleArr = Array.isArray(command?.people) ? command.people : DEFAULT_COMMAND_DATA.people;
+          const sortedCommanders = [...peopleArr]
+            .filter(p => p.group === 'navy')
+            .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+          setCommanders(sortedCommanders);
+        } catch (e) {
+          console.warn('[HomePage] command parse failed', e);
+          setCommanders([]);
+        }
+
+        setMediaPosts((media || []).slice(0, 4));
+        setPodcastPosts((podcasts || []).slice(0, 4));
+        setVideoPosts((media || []).slice(0, 3));
+        setShortVideos((shorts || []).slice(0, 5));
+        setLatestBaoIn((baoIn || [])[0] || null);
+        setAds(settings || {});
+        console.log('[HomePage] state set, articles=', articles.length);
+      } catch (e) {
+        console.error('[HomePage] load() crashed', e);
+      } finally {
+        setLoading(false);
+        console.log('[HomePage] loading=false');
+      }
     }
     load();
   }, []);
@@ -581,105 +602,80 @@ export default function HomePage() {
 
         {/* PODCAST */}
         <section className="mb-8 border-b border-[#e1e1e1] pb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-5">
             <SectionTitle title="PODCAST" className={`text-[24px] ${headingStyle}`} />
-            <Link href="/podcast" className="text-[13px] font-bold text-[#0059b2] hover:underline flex items-center gap-1 uppercase">
-              Xem thêm
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </Link>
+            <div className="flex items-center gap-2">
+              <button aria-label="Trước" className="w-8 h-8 rounded-full border border-[#cfdef0] text-[#0059b2] flex items-center justify-center hover:bg-[#f2f7fb] transition">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <button aria-label="Sau" className="w-8 h-8 rounded-full border border-[#cfdef0] text-[#0059b2] flex items-center justify-center hover:bg-[#f2f7fb] transition">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
           </div>
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="aspect-[16/10] bg-gray-100 rounded-md animate-pulse" />
-              <div className="grid grid-cols-2 gap-4">
-                {[...Array(4)].map((_, i) => <div key={i} className="aspect-video bg-gray-100 rounded-md animate-pulse" />)}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Big featured podcast (left) */}
-              {podcastPosts[0] ? (
-                <Link href={`/bai-viet/${podcastPosts[0].slug}`} className="group cursor-pointer block">
-                  <div className="overflow-hidden rounded-md aspect-[16/10] relative shadow-md">
-                    <span className="absolute bottom-4 left-4 bg-[#00305f] text-white text-xs font-bold px-2 py-1 rounded-sm z-10 uppercase">Podcast Cast</span>
-                    <img
-                      src={podcastPosts[0].thumbnail || PLACEHOLDER}
-                      alt={podcastPosts[0].title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-                  </div>
-                  <h3 className="font-['Roboto',sans-serif] text-[18px] font-bold text-[#222222] mt-3 group-hover:text-[#0059b2]">
-                    {podcastPosts[0].title}
-                  </h3>
-                </Link>
-              ) : (
-                <div className="aspect-[16/10] bg-gray-100 rounded-md flex items-center justify-center text-gray-400 uppercase font-bold text-[12px]">Chưa có podcast</div>
-              )}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {loading
+              ? [...Array(4)].map((_, i) => <div key={i} className="h-[340px] bg-gray-100 rounded-2xl animate-pulse" />)
+              : Array.from({ length: 4 }).map((_, idx) => {
+                  const post = podcastPosts[idx];
+                  const subtitle = post?.title || 'Đang cập nhật nội dung podcast mới';
+                  const category = post?.category?.name || 'Tin tức, sự kiện';
+                  const href = post ? `/bai-viet/${post.slug}` : '/podcast';
+                  return (
+                    <Link
+                      key={post?.id ?? `pod-${idx}`}
+                      href={href}
+                      className={`group relative cursor-pointer block rounded-2xl overflow-hidden bg-[#0059b2] shadow-md ${post ? 'hover:shadow-2xl hover:-translate-y-1' : 'opacity-90'} transition-all duration-300`}
+                    >
+                      {/* Sound wave decorations on sides */}
+                      <svg className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-32 text-white/15 pointer-events-none" viewBox="0 0 12 100" fill="currentColor" preserveAspectRatio="none">
+                        <rect x="0" y="35" width="2" height="30" rx="1" /><rect x="4" y="20" width="2" height="60" rx="1" /><rect x="8" y="10" width="2" height="80" rx="1" />
+                      </svg>
+                      <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-32 text-white/15 pointer-events-none" viewBox="0 0 12 100" fill="currentColor" preserveAspectRatio="none">
+                        <rect x="0" y="10" width="2" height="80" rx="1" /><rect x="4" y="20" width="2" height="60" rx="1" /><rect x="8" y="35" width="2" height="30" rx="1" />
+                      </svg>
 
-              {/* Right grid 2x2: 2 small podcasts + 2 ads */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Small podcast 1 */}
-                {podcastPosts[1] ? (
-                  <Link href={`/bai-viet/${podcastPosts[1].slug}`} className="group cursor-pointer block">
-                    <div className="overflow-hidden rounded-md aspect-video relative shadow-sm">
-                      <span className="absolute bottom-2 left-2 bg-[#00305f] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 uppercase">Podcast</span>
-                      <img
-                        src={podcastPosts[1].thumbnail || PLACEHOLDER}
-                        alt={podcastPosts[1].title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      />
-                    </div>
-                    <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] mt-2 leading-snug line-clamp-2 group-hover:text-[#0059b2]">
-                      {podcastPosts[1].title}
-                    </h4>
-                  </Link>
-                ) : (
-                  <div className="aspect-video rounded-md bg-gray-100 flex items-center justify-center text-[11px] text-gray-400 uppercase font-bold">Trống</div>
-                )}
+                      {/* Top: small globe/icon circle */}
+                      <div className="px-5 pt-5">
+                        <div className="w-9 h-9 rounded-full border border-white/40 flex items-center justify-center mb-3">
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+                          </svg>
+                        </div>
+                        <h4 className="font-['Roboto',sans-serif] text-[15px] font-bold text-white leading-tight mb-1">
+                          {category}
+                        </h4>
+                        <p className="font-['Roboto',sans-serif] text-[12px] text-white/85 leading-snug line-clamp-2 min-h-[32px]">
+                          {subtitle}
+                        </p>
+                      </div>
 
-                {/* Small podcast 2 */}
-                {podcastPosts[2] ? (
-                  <Link href={`/bai-viet/${podcastPosts[2].slug}`} className="group cursor-pointer block">
-                    <div className="overflow-hidden rounded-md aspect-video relative shadow-sm">
-                      <span className="absolute bottom-2 left-2 bg-[#00305f] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm z-10 uppercase">Podcast</span>
-                      <img
-                        src={podcastPosts[2].thumbnail || PLACEHOLDER}
-                        alt={podcastPosts[2].title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      />
-                    </div>
-                    <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] mt-2 leading-snug line-clamp-2 group-hover:text-[#0059b2]">
-                      {podcastPosts[2].title}
-                    </h4>
-                  </Link>
-                ) : (
-                  <div className="aspect-video rounded-md bg-gray-100 flex items-center justify-center text-[11px] text-gray-400 uppercase font-bold">Trống</div>
-                )}
-
-                {/* Ad slot 1 */}
-                <a href={ads.home_ad_podcast_1_link || '#'} className="group block">
-                  {ads.home_ad_podcast_1_image ? (
-                    <img src={ads.home_ad_podcast_1_image} alt="Quảng cáo Podcast" className="w-full rounded-md shadow-sm aspect-[5/2] object-cover group-hover:opacity-90 transition" />
-                  ) : (
-                    <div className="w-full rounded-md shadow-sm aspect-[5/2] bg-gradient-to-r from-[#0059b2] to-[#003a7a] flex items-center justify-center text-white text-[11px] font-bold uppercase tracking-wide text-center px-3">
-                      Cột mốc Hải quân
-                    </div>
-                  )}
-                </a>
-
-                {/* Ad slot 2 */}
-                <a href={ads.home_ad_podcast_2_link || '#'} className="group block">
-                  {ads.home_ad_podcast_2_image ? (
-                    <img src={ads.home_ad_podcast_2_image} alt="Quảng cáo" className="w-full rounded-md shadow-sm aspect-[5/2] object-cover group-hover:opacity-90 transition" />
-                  ) : (
-                    <div className="w-full rounded-md shadow-sm aspect-[5/2] bg-[#00305f] flex items-center justify-center text-white text-[11px] font-bold uppercase tracking-wide text-center px-3">
-                      Banner quảng cáo
-                    </div>
-                  )}
-                </a>
-              </div>
-            </div>
-          )}
+                      {/* Bottom: circular thumbnail with play button */}
+                      <div className="px-5 pb-6 pt-4 flex justify-center">
+                        <div className="relative w-[140px] h-[140px] rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg">
+                          {post?.thumbnail ? (
+                            <img src={post.thumbnail} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                          ) : (
+                            <div className="w-full h-full bg-[#003a7a] flex items-center justify-center">
+                              <svg className="w-12 h-12 text-white/30" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/15 group-hover:bg-black/5 transition" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-white/95 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-[#FFD700] transition">
+                              <svg className="w-5 h-5 text-[#0059b2] ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })
+            }
+          </div>
         </section>
 
         {/* HẢI QUÂN MEDIA */}
