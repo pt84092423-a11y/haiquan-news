@@ -67,7 +67,9 @@ export default function MediaListingPage() {
       </div>
 
       <main className="container mx-auto max-w-[1200px] px-4 pt-8 pb-16">
-        <SectionTitle title={cfg.title.toUpperCase()} className="text-[26px] md:text-[28px] mb-8" />
+        <div className="flex justify-center mb-8">
+          <SectionTitle title={cfg.title.toUpperCase()} className="text-[22px] sm:text-[26px] md:text-[28px] mb-0" />
+        </div>
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
