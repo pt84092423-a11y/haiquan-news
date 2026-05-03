@@ -378,13 +378,19 @@ export default function DiscordBot() {
           <span className="text-[#5865F2]">{DISCORD_ICON}</span>Bot Đăng Bài Discord
         </h2>
         <p className="text-[#555] text-[13px] mt-1">Đăng bài viết lên Discord bằng Bot Token hoặc Webhook.</p>
-        <button
-          onClick={() => setTab('roles')}
-          className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#5865F2] text-white text-[13px] font-bold hover:bg-[#4752c4] transition"
-          data-testid="button-open-account-manager"
-        >
-          🛡️ Mở quản lý tài khoản
-        </button>
+        <div className="mt-3 p-4 rounded-2xl border border-[#5865F2]/20 bg-[#5865F2]/5">
+          <p className="text-[13px] font-bold text-[#222]">Quản lý tài khoản Discord</p>
+          <p className="text-[12px] text-gray-500 mt-1">
+            Chọn server, xem danh sách member và thêm/xoá role <span className="font-mono text-[#5865F2]">&lt;@&amp;1432579300623777852&gt;</span>.
+          </p>
+          <button
+            onClick={() => setTab('roles')}
+            className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#5865F2] text-white text-[13px] font-bold hover:bg-[#4752c4] transition"
+            data-testid="button-open-account-manager"
+          >
+            Mở quản lý tài khoản
+          </button>
+        </div>
       </div>
 
       {/* ── GitHub Token Configuration ── */}
