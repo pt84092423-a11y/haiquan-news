@@ -107,6 +107,12 @@ export default function DiscordBot() {
   const [selectedGuildId, setSelectedGuildId] = useState('');
   const [selectedChannelId, setSelectedChannelId] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [channelSearch, setChannelSearch] = useState('');
+
+  const [manualBotName, setManualBotName] = useState('');
+  const [manualBotServer, setManualBotServer] = useState('');
+  const [manualBotChannel, setManualBotChannel] = useState('');
+  const [manualBotChannelId, setManualBotChannelId] = useState('');
 
   const fetchGuilds = async () => {
     setLoadingGuilds(true);
@@ -134,7 +140,23 @@ export default function DiscordBot() {
     const updated = [...channels, ch];
     setChannels(updated);
     await upsertSetting('discord_bot_channels', JSON.stringify(updated));
-    setSelectedGuildId(''); setSelectedChannelId(''); setDisplayName('');
+    setSelectedGuildId(''); setSelectedChannelId(''); setDisplayName(''); setChannelSearch('');
+  };
+
+  const handleAddManualBot = async () => {
+    if (!manualBotName || !manualBotServer || !manualBotChannel || !manualBotChannelId) return;
+    const ch: Channel = {
+      id: Date.now().toString(),
+      name: manualBotName,
+      server: manualBotServer,
+      channel: manualBotChannel,
+      mode: 'bot',
+      channelId: manualBotChannelId,
+    };
+    const updated = [...channels, ch];
+    setChannels(updated);
+    await upsertSetting('discord_bot_channels', JSON.stringify(updated));
+    setManualBotName(''); setManualBotServer(''); setManualBotChannel(''); setManualBotChannelId('');
   };
 
   useEffect(() => {
@@ -520,17 +542,47 @@ export default function DiscordBot() {
                         ))}
                       </select>
                     </div>
-                    {/* Channel picker */}
+                    {/* Channel picker with search */}
                     <div>
-                      <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Chọn kênh *</label>
-                      <select value={selectedChannelId} onChange={e => setSelectedChannelId(e.target.value)}
-                        disabled={!selectedGuildId}
-                        className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] bg-white disabled:opacity-40">
-                        <option value="">— Chọn kênh —</option>
-                        {(selectedGuild?.channels || []).map(c => (
-                          <option key={c.id} value={c.id}>#{c.name}</option>
-                        ))}
-                      </select>
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Tìm & chọn kênh *</label>
+                      <div className={`border rounded-lg overflow-hidden ${!selectedGuildId ? 'opacity-40 pointer-events-none' : 'border-gray-200'}`}>
+                        <div className="flex items-center gap-2 px-2.5 py-2 border-b border-gray-100 bg-gray-50">
+                          <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          <input
+                            value={channelSearch}
+                            onChange={e => setChannelSearch(e.target.value)}
+                            placeholder="Tìm kênh theo tên..."
+                            className="flex-1 text-[13px] bg-transparent outline-none placeholder-gray-400"
+                          />
+                          {channelSearch && (
+                            <button onClick={() => setChannelSearch('')} className="text-gray-300 hover:text-gray-500">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-[160px] overflow-y-auto">
+                          {(selectedGuild?.channels || [])
+                            .filter(c => c.name.toLowerCase().includes(channelSearch.toLowerCase()))
+                            .length === 0 ? (
+                            <p className="text-[12px] text-gray-400 text-center py-3">Không tìm thấy kênh nào</p>
+                          ) : (
+                            (selectedGuild?.channels || [])
+                              .filter(c => c.name.toLowerCase().includes(channelSearch.toLowerCase()))
+                              .map(c => (
+                                <button key={c.id} onClick={() => setSelectedChannelId(c.id)}
+                                  className={`w-full text-left px-3 py-2 text-[13px] transition border-b border-gray-50 last:border-0 flex items-center gap-2 ${selectedChannelId === c.id ? 'bg-indigo-50 text-[#5865F2] font-bold' : 'hover:bg-gray-50 text-[#222]'}`}>
+                                  <span className="text-gray-400">#</span>
+                                  <span>{c.name}</span>
+                                  {selectedChannelId === c.id && (
+                                    <svg className="w-3.5 h-3.5 ml-auto text-[#5865F2]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                  )}
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -551,6 +603,52 @@ export default function DiscordBot() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* ── Manual Bot Channel ── */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100">
+              <p className="text-[13px] font-bold text-[#555] uppercase tracking-wider">🤖 Thêm kênh Bot thủ công (nhập Channel ID)</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">Dùng khi kênh không xuất hiện trong danh sách tự động — copy Channel ID từ Discord (bật Developer Mode → chuột phải kênh → Copy Channel ID).</p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Tên hiển thị *</label>
+                  <input value={manualBotName} onChange={e => setManualBotName(e.target.value)}
+                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2]"
+                    placeholder="VD: Kênh tin tức" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Tên máy chủ *</label>
+                  <input value={manualBotServer} onChange={e => setManualBotServer(e.target.value)}
+                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2]"
+                    placeholder="VD: SROV Official" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Tên kênh *</label>
+                  <input value={manualBotChannel} onChange={e => setManualBotChannel(e.target.value)}
+                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2]"
+                    placeholder="VD: announcements" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Channel ID *</label>
+                  <input value={manualBotChannelId} onChange={e => setManualBotChannelId(e.target.value)}
+                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] font-mono"
+                    placeholder="VD: 1234567890123456789" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={handleAddManualBot}
+                  disabled={!manualBotName || !manualBotServer || !manualBotChannel || !manualBotChannelId}
+                  className="px-6 py-2.5 bg-[#5865F2] text-white rounded-lg font-bold text-[13px] hover:bg-[#4752c4] transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  + Thêm kênh Bot
+                </button>
+                {manualBotChannelId && (
+                  <p className="text-[11px] text-gray-400 font-mono">ID: {manualBotChannelId}</p>
+                )}
+              </div>
             </div>
           </div>
 
