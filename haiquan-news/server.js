@@ -141,6 +141,10 @@ app.get('/api/discord/ping', (req, res) => {
 });
 
 // ── YouTube: fetch videos via RSS feed ──
+// In-memory YouTube cache: channelId → { videos, ts }
+const ytCache = {};
+const YT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 app.get('/api/youtube/feed', async (req, res) => {
   const channelId = req.query.channelId;
   const handle = req.query.handle;
@@ -150,16 +154,31 @@ app.get('/api/youtube/feed', async (req, res) => {
     'UCyV_AKZjCqd1bkUbEHGcTyA': 'TGM_Kuroma',
   };
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  const cacheKey = channelId || handle || 'unknown';
+
+  // Serve from cache if fresh
+  if (ytCache[cacheKey] && (Date.now() - ytCache[cacheKey].ts) < YT_CACHE_TTL) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.json({ videos: ytCache[cacheKey].videos });
+  }
 
   function clean(t) {
     return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
   }
 
+  function fetchWithTimeout(url, opts, ms = 8000) {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(tid));
+  }
+
+  // Method 1: Direct YouTube RSS
   async function fetchRSS(chId) {
     try {
-      const rssRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`, {
-        headers: { 'User-Agent': UA },
-      });
+      const rssRes = await fetchWithTimeout(
+        `https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`,
+        { headers: { 'User-Agent': UA } }, 8000
+      );
       if (!rssRes.ok) return [];
       const xml = await rssRes.text();
       const entries = [];
@@ -191,9 +210,39 @@ app.get('/api/youtube/feed', async (req, res) => {
     } catch { return []; }
   }
 
+  // Method 2: rss2json.com (works even when direct YouTube RSS is blocked)
+  async function fetchRss2Json(chId) {
+    try {
+      const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`;
+      const r = await fetchWithTimeout(
+        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`,
+        {}, 10000
+      );
+      if (!r.ok) return [];
+      const j = await r.json();
+      if (j.status !== 'ok' || !Array.isArray(j.items) || j.items.length === 0) return [];
+      return j.items.map(item => {
+        const videoId = item.link?.split('v=')?.[1]?.split('&')?.[0] || '';
+        return {
+          videoId,
+          title: item.title || '',
+          published: item.pubDate || '',
+          channel: '',
+          thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          url: item.link || '',
+          embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        };
+      }).filter(v => v.videoId);
+    } catch { return []; }
+  }
+
+  // Method 3: HTML scrape by handle
   async function scrapeByHandle(hdl) {
     try {
-      const pageRes = await fetch(`https://www.youtube.com/@${hdl.replace('@','')}/videos`, { headers: { 'User-Agent': UA } });
+      const pageRes = await fetchWithTimeout(
+        `https://www.youtube.com/@${hdl.replace('@','')}/videos`,
+        { headers: { 'User-Agent': UA } }, 10000
+      );
       if (!pageRes.ok) return [];
       const html = await pageRes.text();
       const entries = [];
@@ -223,9 +272,16 @@ app.get('/api/youtube/feed', async (req, res) => {
   if (!channelId && !handle) return res.status(400).json({ error: 'Thiếu channelId hoặc handle' });
   try {
     let videos = [];
+    // Try Method 1: direct RSS
     if (channelId) videos = await fetchRSS(channelId);
+    // Try Method 2: rss2json.com (server-to-server, bypasses blocking)
+    if (videos.length === 0 && channelId) videos = await fetchRss2Json(channelId);
+    // Try Method 3: HTML scrape
     const resolvedHandle = handle || (channelId ? HANDLE_MAP[channelId] : null);
     if (videos.length === 0 && resolvedHandle) videos = await scrapeByHandle(resolvedHandle);
+    // Cache the result if we got videos
+    if (videos.length > 0) ytCache[cacheKey] = { videos, ts: Date.now() };
+    res.setHeader('X-Cache', 'MISS');
     return res.json({ videos });
   } catch (e) {
     return res.status(500).json({ error: e.message });

@@ -134,6 +134,10 @@ function discordBotApiPlugin() {
       });
 
       // ── YouTube: fetch videos by scraping channel page (RSS blocked from server IPs) ──
+      // In-memory YouTube cache (shared across dev requests)
+      const ytCacheDev: Record<string, { videos: any[]; ts: number }> = {};
+      const YT_CACHE_TTL_DEV = 30 * 60 * 1000;
+
       server.middlewares.use('/api/youtube/feed', async (req: any, res: any, next: any) => {
         if (req.method !== 'GET') return next();
         const qs = new URL(req.url || '/', 'http://localhost').searchParams;
@@ -147,22 +151,31 @@ function discordBotApiPlugin() {
           'UCyV_AKZjCqd1bkUbEHGcTyA': 'TGM_Kuroma',
         };
         const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+        const cacheKey = channelId || handle || 'unknown';
+
+        if (ytCacheDev[cacheKey] && (Date.now() - ytCacheDev[cacheKey].ts) < YT_CACHE_TTL_DEV) {
+          res.setHeader('X-Cache', 'HIT');
+          return res.end(JSON.stringify({ videos: ytCacheDev[cacheKey].videos }));
+        }
 
         function clean(t: string) {
           return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
         }
 
-        // Primary: YouTube RSS feed (no API key, reliable)
+        function fetchWT(url: string, opts: any = {}, ms = 8000) {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), ms);
+          return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(tid));
+        }
+
+        // Method 1: Direct YouTube RSS
         async function fetchRSS(chId: string): Promise<any[]> {
           try {
-            const rssRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`, {
-              headers: { 'User-Agent': UA },
-            });
+            const rssRes = await fetchWT(`https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`, { headers: { 'User-Agent': UA } }, 8000);
             if (!rssRes.ok) return [];
             const xml = await rssRes.text();
             const entries: any[] = [];
             const seen = new Set<string>();
-            // Extract <yt:videoId> and <title> from each <entry>
             const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
             let em: RegExpExecArray | null;
             while ((em = entryRe.exec(xml)) !== null) {
@@ -190,10 +203,25 @@ function discordBotApiPlugin() {
           } catch { return []; }
         }
 
-        // Fallback: HTML scrape by handle
+        // Method 2: rss2json.com (works even when direct YouTube RSS is blocked)
+        async function fetchRss2Json(chId: string): Promise<any[]> {
+          try {
+            const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`;
+            const r = await fetchWT(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`, {}, 10000);
+            if (!r.ok) return [];
+            const j = await r.json();
+            if (j.status !== 'ok' || !Array.isArray(j.items) || j.items.length === 0) return [];
+            return j.items.map((item: any) => {
+              const videoId = item.link?.split('v=')?.[1]?.split('&')?.[0] || '';
+              return { videoId, title: item.title || '', published: item.pubDate || '', channel: '', thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, url: item.link || '', embedUrl: `https://www.youtube.com/embed/${videoId}` };
+            }).filter((v: any) => v.videoId);
+          } catch { return []; }
+        }
+
+        // Method 3: HTML scrape by handle
         async function scrapeByHandle(hdl: string): Promise<any[]> {
           try {
-            const pageRes = await fetch(`https://www.youtube.com/@${hdl.replace('@','')}/videos`, { headers: { 'User-Agent': UA } });
+            const pageRes = await fetchWT(`https://www.youtube.com/@${hdl.replace('@','')}/videos`, { headers: { 'User-Agent': UA } }, 10000);
             if (!pageRes.ok) return [];
             const html = await pageRes.text();
             const entries: any[] = [];
@@ -205,14 +233,7 @@ function discordBotApiPlugin() {
               const title = mm[2];
               if (!seen.has(videoId) && title.length > 3) {
                 seen.add(videoId);
-                entries.push({
-                  videoId,
-                  title: clean(title),
-                  published: '', channel: '',
-                  thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-                  url: `https://www.youtube.com/watch?v=${videoId}`,
-                  embedUrl: `https://www.youtube.com/embed/${videoId}`,
-                });
+                entries.push({ videoId, title: clean(title), published: '', channel: '', thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, url: `https://www.youtube.com/watch?v=${videoId}`, embedUrl: `https://www.youtube.com/embed/${videoId}` });
               }
               if (entries.length >= 15) break;
             }
@@ -224,10 +245,11 @@ function discordBotApiPlugin() {
           if (!channelId && !handle) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'Thiếu channelId hoặc handle' })); }
           let videos: any[] = [];
           if (channelId) videos = await fetchRSS(channelId);
+          if (videos.length === 0 && channelId) videos = await fetchRss2Json(channelId);
           const resolvedHandle = handle || (channelId ? HANDLE_MAP[channelId] : null);
-          if (videos.length === 0 && resolvedHandle) {
-            videos = await scrapeByHandle(resolvedHandle);
-          }
+          if (videos.length === 0 && resolvedHandle) videos = await scrapeByHandle(resolvedHandle);
+          if (videos.length > 0) ytCacheDev[cacheKey] = { videos, ts: Date.now() };
+          res.setHeader('X-Cache', 'MISS');
           return res.end(JSON.stringify({ videos }));
         } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
       });
