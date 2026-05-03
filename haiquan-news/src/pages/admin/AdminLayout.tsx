@@ -129,7 +129,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   return (
     <div className="bg-gradient-to-br from-[#f8fafc] via-[#eef5ff] to-[#f4f6f8] font-['Roboto',sans-serif] text-[#222222] h-screen flex overflow-hidden">
       <aside className={`${sidebarOpen ? 'w-[260px]' : 'w-0 overflow-hidden'} bg-[#02183b] text-white flex flex-col h-full shadow-[4px_0_24px_rgba(0,0,0,0.15)] z-20 flex-shrink-0 transition-all duration-300`}>
-        <div className="h-20 flex items-center px-6 border-b border-white/5 bg-[#01122e]">
+        <div className="h-20 flex items-center justify-center border-b border-white/5 bg-[#01122e]">
           <img src={logoImg} alt="Logo Báo Hải Quân" className="h-10 w-auto object-contain" />
         </div>
 
