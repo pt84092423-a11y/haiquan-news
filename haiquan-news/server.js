@@ -314,6 +314,56 @@ app.get('/api/discord/messages', async (req, res) => {
   }
 });
 
+// ── Admin: Categories CRUD (server-side to bypass RLS issues) ──
+app.get('/api/admin/categories', async (req, res) => {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/categories?select=*&order=name`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    const data = await r.json();
+    if (!r.ok) return res.status(r.status).json({ error: data });
+    return res.json(data);
+  } catch (e) { return res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/categories', async (req, res) => {
+  const { name, slug, description, parent_id } = req.body || {};
+  if (!name || !slug) return res.status(400).json({ error: 'Thiếu name hoặc slug' });
+  const payload = { name, slug };
+  if (description) payload.description = description;
+  if (parent_id) payload.parent_id = parent_id;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/categories`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!r.ok) return res.status(r.status).json({ error: data?.message || data?.error || JSON.stringify(data) });
+    return res.json(Array.isArray(data) ? data[0] : data);
+  } catch (e) { return res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/categories?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      return res.status(r.status).json({ error: data?.message || 'Xóa thất bại' });
+    }
+    return res.json({ ok: true });
+  } catch (e) { return res.status(500).json({ error: e.message }); }
+});
+
 app.use(express.static(DIST_DIR, { index: false }));
 
 app.get('/bai-viet/:slug', async (req, res) => {

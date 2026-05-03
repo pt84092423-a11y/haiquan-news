@@ -1,7 +1,39 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAllCategories, createCategory, generateSlug, type Category } from '@/lib/supabase';
-import { supabase } from '@/lib/supabase';
+import { generateSlug } from '@/lib/supabase';
+
+type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  parent_id?: number | null;
+};
+
+async function fetchCategories(): Promise<Category[]> {
+  const r = await fetch('/api/admin/categories');
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function apiCreateCategory(payload: object): Promise<Category> {
+  const r = await fetch('/api/admin/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d?.error || JSON.stringify(d));
+  return d;
+}
+
+async function apiDeleteCategory(id: number): Promise<void> {
+  const r = await fetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    throw new Error(d?.error || 'Xóa thất bại');
+  }
+}
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -13,7 +45,10 @@ export default function CategoryManager() {
 
   const load = () => {
     setLoading(true);
-    getAllCategories().then(cats => { setCategories(cats); setLoading(false); });
+    fetchCategories()
+      .then(cats => setCategories(cats))
+      .catch(e => setError('Không tải được danh sách: ' + e.message))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
@@ -25,22 +60,19 @@ export default function CategoryManager() {
     if (!form.name.trim()) { setError('Vui lòng nhập tên chuyên mục'); return; }
     setSaving(true);
     try {
-      const payload: any = {
+      const payload: Record<string, any> = {
         name: form.name.trim(),
         slug: (form.slug || generateSlug(form.name)).trim(),
-        description: form.description.trim() || null,
       };
+      if (form.description.trim()) payload.description = form.description.trim();
       if (form.parent_id) payload.parent_id = Number(form.parent_id);
-      console.log('[CategoryManager] creating:', payload);
-      await createCategory(payload);
+      await apiCreateCategory(payload);
       setForm({ name: '', slug: '', description: '', parent_id: '' });
       setSuccess('Đã tạo chuyên mục thành công!');
       load();
       setTimeout(() => setSuccess(''), 4000);
     } catch (e: any) {
-      console.error('[CategoryManager] create error:', e);
-      const msg = e?.message || e?.error_description || JSON.stringify(e);
-      setError('Lỗi: ' + msg);
+      setError('Lỗi: ' + (e?.message || String(e)));
     } finally {
       setSaving(false);
     }
@@ -48,8 +80,12 @@ export default function CategoryManager() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Xóa chuyên mục này?')) return;
-    await supabase.from('categories').delete().eq('id', id);
-    load();
+    try {
+      await apiDeleteCategory(id);
+      load();
+    } catch (e: any) {
+      setError('Xóa thất bại: ' + e.message);
+    }
   };
 
   return (
@@ -62,8 +98,18 @@ export default function CategoryManager() {
         <div className="md:col-span-2">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="font-bold text-[15px] text-[#222222] mb-4">Thêm chuyên mục mới</h3>
-            {error && <div className="mb-3 p-2 bg-red-50 text-red-600 text-[13px] rounded">{error}</div>}
-            {success && <div className="mb-3 p-2 bg-green-50 text-green-600 text-[13px] rounded">{success}</div>}
+            {error && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 text-red-700 text-[13px] rounded-lg flex items-start gap-2">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>{error}</span>
+              </div>
+            )}
+            {success && (
+              <div className="mb-3 p-3 bg-green-50 border border-green-200 text-green-700 text-[13px] rounded-lg flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                {success}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-[12px] font-bold text-[#555555] mb-1">Tên chuyên mục *</label>
@@ -104,8 +150,10 @@ export default function CategoryManager() {
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <button type="submit" disabled={saving} className="w-full py-3 bg-[#0059b2] text-white font-bold text-[14px] rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-                {saving ? 'Đang lưu...' : '+ Thêm chuyên mục'}
+              <button type="submit" disabled={saving} className="w-full py-3 bg-[#0059b2] text-white font-bold text-[14px] rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {saving ? (
+                  <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Đang lưu...</>
+                ) : '+ Thêm chuyên mục'}
               </button>
             </form>
           </div>
@@ -114,19 +162,26 @@ export default function CategoryManager() {
         <div className="md:col-span-3">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-5 border-b border-gray-100">
-              <h3 className="font-bold text-[15px] text-[#222222]">Danh sách chuyên mục</h3>
+              <h3 className="font-bold text-[15px] text-[#222222]">Danh sách chuyên mục ({categories.length})</h3>
             </div>
             <div className="divide-y divide-gray-100">
               {loading ? (
-                [...Array(6)].map((_, i) => <div key={i} className="p-4 h-12 animate-pulse bg-gray-50" />)
+                [...Array(6)].map((_, i) => <div key={i} className="p-4 h-14 animate-pulse bg-gray-50" />)
+              ) : categories.length === 0 ? (
+                <div className="p-8 text-center text-gray-400 text-[13px]">Chưa có chuyên mục nào.</div>
               ) : categories.map(cat => (
-                <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition">
                   <div>
                     <p className="font-bold text-[14px] text-[#222222]">{cat.name}</p>
                     <p className="text-[11px] text-gray-400 font-mono">/{cat.slug}</p>
                     {cat.description && <p className="text-[12px] text-[#555555] mt-0.5">{cat.description}</p>}
                   </div>
-                  <button onClick={() => handleDelete(cat.id)} className="text-red-400 hover:text-red-600 transition text-[12px]">Xóa</button>
+                  <button
+                    onClick={() => handleDelete(cat.id)}
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50 transition text-[12px] px-2 py-1 rounded"
+                  >
+                    Xóa
+                  </button>
                 </div>
               ))}
             </div>

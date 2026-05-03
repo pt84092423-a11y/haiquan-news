@@ -45,32 +45,76 @@ const DEFAULT_YT_TV_CHANNELS = [
   { channelId: 'UC7W8ubM1PB8DzLMP7JSrHyg', handle: 'srov4' },
 ];
 
+function parseYoutubeXml(xml: string, handle: string): YTVideo[] {
+  const results: YTVideo[] = [];
+  const seen = new Set<string>();
+  const clean = (t: string) => t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
+  const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
+  let em: RegExpExecArray | null;
+  while ((em = entryRe.exec(xml)) !== null) {
+    const block = em[1];
+    const vidMatch = block.match(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/);
+    const titleMatch = block.match(/<title>([^<]+)<\/title>/);
+    const pubMatch = block.match(/<published>([^<]+)<\/published>/);
+    const thumbMatch = block.match(/<media:thumbnail url="([^"]+)"/);
+    if (!vidMatch || !titleMatch) continue;
+    const videoId = vidMatch[1];
+    if (seen.has(videoId)) continue;
+    seen.add(videoId);
+    results.push({
+      videoId,
+      title: clean(titleMatch[1]),
+      published: pubMatch ? pubMatch[1] : '',
+      thumbnail: thumbMatch ? thumbMatch[1] : `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      embedUrl: `https://www.youtube.com/embed/${videoId}`,
+      channel: handle,
+    });
+    if (results.length >= 15) break;
+  }
+  return results;
+}
+
 async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): Promise<YTVideo[]> {
-  // Method 1: rss2json.com — browser-direct, bypasses server IP blocks from YouTube
+  const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
+
+  // Method 1: allorigins.win CORS proxy — parse XML ourselves (most reliable)
   try {
-    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
-    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`;
-    const r = await fetch(apiUrl);
-    const j = await r.json();
-    if (j.status === 'ok' && Array.isArray(j.items) && j.items.length > 0) {
-      return j.items.map((item: any) => {
-        const videoId = item.link?.split('v=')?.[1]?.split('&')?.[0] || '';
-        return {
-          videoId,
-          title: item.title || '',
-          published: item.pubDate || '',
-          thumbnail: item.thumbnail || item.enclosure?.link || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-          url: item.link || '',
-          embedUrl: `https://www.youtube.com/embed/${videoId}`,
-          channel: ch.handle,
-        } as YTVideo;
-      }).filter((v: YTVideo) => v.videoId);
+    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const xml = await r.text();
+      const parsed = parseYoutubeXml(xml, ch.handle);
+      if (parsed.length > 0) return parsed;
     }
   } catch { /* fall through */ }
 
-  // Method 2: server-side proxy (works on Replit dev, may fail on production)
+  // Method 2: corsproxy.io — alternative CORS proxy
   try {
-    const r = await fetch(`/api/youtube/feed?channelId=${ch.channelId}&handle=${ch.handle}`);
+    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const xml = await r.text();
+      const parsed = parseYoutubeXml(xml, ch.handle);
+      if (parsed.length > 0) return parsed;
+    }
+  } catch { /* fall through */ }
+
+  // Method 3: rss2json.com — returns JSON (no XML parsing needed)
+  try {
+    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const j = await r.json();
+      if (j.status === 'ok' && Array.isArray(j.items) && j.items.length > 0) {
+        return j.items.map((item: any) => {
+          const videoId = item.link?.split('v=')?.[1]?.split('&')?.[0] || '';
+          return { videoId, title: item.title || '', published: item.pubDate || '', thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, url: item.link || '', embedUrl: `https://www.youtube.com/embed/${videoId}`, channel: ch.handle } as YTVideo;
+        }).filter((v: YTVideo) => v.videoId);
+      }
+    }
+  } catch { /* fall through */ }
+
+  // Method 4: server-side proxy (works on Replit dev)
+  try {
+    const r = await fetch(`/api/youtube/feed?channelId=${ch.channelId}&handle=${ch.handle}`, { signal: AbortSignal.timeout(10000) });
     if (r.ok) {
       const j = await r.json();
       if ((j.videos || []).length > 0) return j.videos as YTVideo[];

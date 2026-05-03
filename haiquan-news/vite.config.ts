@@ -53,6 +53,51 @@ function discordBotApiPlugin() {
         });
       });
 
+      // ── Admin: Categories CRUD proxy (dev) ──
+      const SUPABASE_URL_DEV = process.env.VITE_SUPABASE_URL || 'https://gqxrptccptfbzfdmaoyl.supabase.co';
+      const SUPABASE_KEY_DEV = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHJwdGNjcHRmYnpmZG1hb3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjIyNzAsImV4cCI6MjA5MDA5ODI3MH0.7lyAtlXFyRBHd3oFAhhxxdqs1rn2GhHdGOuMgEuk-SE';
+
+      server.middlewares.use('/api/admin/categories', async (req: any, res: any, next: any) => {
+        res.setHeader('Content-Type', 'application/json');
+        const headers = { apikey: SUPABASE_KEY_DEV, Authorization: `Bearer ${SUPABASE_KEY_DEV}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+
+        if (req.method === 'GET') {
+          try {
+            const r = await fetch(`${SUPABASE_URL_DEV}/rest/v1/categories?select=*&order=name`, { headers });
+            const d = await r.json();
+            if (!r.ok) { res.statusCode = r.status; return res.end(JSON.stringify({ error: d })); }
+            return res.end(JSON.stringify(d));
+          } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+        }
+
+        if (req.method === 'POST') {
+          const chunks: Buffer[] = [];
+          req.on('data', (c: Buffer) => chunks.push(c));
+          req.on('end', async () => {
+            try {
+              const body = JSON.parse(Buffer.concat(chunks).toString());
+              const r = await fetch(`${SUPABASE_URL_DEV}/rest/v1/categories`, { method: 'POST', headers, body: JSON.stringify(body) });
+              const d = await r.json();
+              if (!r.ok) { res.statusCode = r.status; return res.end(JSON.stringify({ error: d?.message || JSON.stringify(d) })); }
+              return res.end(JSON.stringify(Array.isArray(d) ? d[0] : d));
+            } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+          });
+          return;
+        }
+
+        // DELETE /api/admin/categories/:id
+        if (req.method === 'DELETE') {
+          const id = req.url?.split('/').pop();
+          try {
+            const r = await fetch(`${SUPABASE_URL_DEV}/rest/v1/categories?id=eq.${id}`, { method: 'DELETE', headers });
+            if (!r.ok) { const d = await r.json().catch(() => ({})); res.statusCode = r.status; return res.end(JSON.stringify({ error: d?.message || 'Xóa thất bại' })); }
+            return res.end(JSON.stringify({ ok: true }));
+          } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+        }
+
+        next();
+      });
+
       // ── YouTube: resolve channel handle → channel ID ──
       server.middlewares.use('/api/youtube/resolve', async (req: any, res: any, next: any) => {
         if (req.method !== 'GET') return next();
