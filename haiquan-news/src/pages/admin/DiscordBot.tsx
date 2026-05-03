@@ -83,7 +83,7 @@ function Img({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function DiscordBot() {
-  const [tab, setTab] = useState<'guide' | 'post' | 'channels' | 'config'>('guide');
+  const [tab, setTab] = useState<'guide' | 'post' | 'channels' | 'config'>('post');
   const [guideTab, setGuideTab] = useState<'bot' | 'webhook'>('bot');
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -245,7 +245,6 @@ export default function DiscordBot() {
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit flex-wrap">
         {[
-          { id: 'guide', label: 'Hướng dẫn', icon: '📖' },
           { id: 'post', label: 'Đăng bài', icon: '📤' },
           { id: 'channels', label: 'Kênh Discord', icon: '🔗' },
           { id: 'config', label: 'Cấu hình', icon: '⚙️' },
