@@ -26,6 +26,7 @@ import CommandManager from "@/pages/admin/CommandManager";
 import AdminAds from "@/pages/admin/AdminAds";
 import NavManager from "@/pages/admin/NavManager";
 import HadminPanel from "@/pages/admin/HadminPanel";
+import DiscordBot from "@/pages/admin/DiscordBot";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import SearchPage from "@/pages/SearchPage";
 import { getSession, can } from "@/lib/auth";
@@ -86,6 +87,7 @@ function Router() {
       <Route path="/admin/quang-cao" component={() => <ProtectedRoute component={AdminAds} />} />
       <Route path="/admin/thanh-dieu-huong" component={() => <ProtectedRoute component={NavManager} />} />
       <Route path="/admin/hadmin" component={() => <ProtectedRoute component={HadminPanel} action="view_hadmin_panel" />} />
+      <Route path="/admin/discord-bot" component={() => <ProtectedRoute component={DiscordBot} />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />

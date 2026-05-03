@@ -90,6 +90,7 @@ export default function PostEditor() {
   const isEditor = session?.role === 'EDITOR';
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [showPreview, setShowPreview] = useState(false);
@@ -131,10 +132,17 @@ export default function PostEditor() {
   useEffect(() => { getAllCategories().then(setCategories); }, []);
 
   useEffect(() => {
+    if (form.category_id && selectedCategoryIds.length === 0) {
+      setSelectedCategoryIds([form.category_id]);
+    }
+  }, [form.category_id]);
+
+  useEffect(() => {
     if (!isNew && params.id) {
       supabase.from('posts').select('*, category:categories(*)').eq('id', params.id).single().then(({ data }) => {
         if (data) {
           setForm(data);
+          if (data.category_id) setSelectedCategoryIds([data.category_id]);
           const ogPayload = parseOgPayload(data.og_image);
           setOgTitle(ogPayload.title || '');
           setOgImage(ogPayload.image || '');
@@ -305,6 +313,7 @@ export default function PostEditor() {
 
       const payload: Partial<Post> = {
         ...form,
+        category_id: selectedCategoryIds[0] ?? form.category_id,
         content: quillRef.current?.root.innerHTML || form.content || '',
         status: actualStatus,
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
@@ -809,13 +818,23 @@ export default function PostEditor() {
                     <li key={c.id}>
                       <label className="flex items-center gap-2.5 cursor-pointer hover:bg-gray-50 p-1.5 rounded-lg">
                         <input
-                          type="radio"
-                          name="category"
-                          checked={form.category_id === c.id}
-                          onChange={() => setForm(f => ({ ...f, category_id: c.id }))}
-                          className="w-3.5 h-3.5 accent-[#0059b2]"
+                          type="checkbox"
+                          checked={selectedCategoryIds.includes(c.id)}
+                          onChange={() => {
+                            setSelectedCategoryIds(prev =>
+                              prev.includes(c.id)
+                                ? prev.filter(id => id !== c.id)
+                                : [...prev, c.id]
+                            );
+                          }}
+                          className="w-3.5 h-3.5 accent-[#0059b2] rounded"
                         />
-                        <span className={`text-[13px] ${form.category_id === c.id ? 'text-[#0059b2] font-bold' : 'text-gray-700'}`}>{c.name}</span>
+                        <span className={`text-[13px] ${selectedCategoryIds.includes(c.id) ? 'text-[#0059b2] font-bold' : 'text-gray-700'}`}>
+                          {c.name}
+                          {selectedCategoryIds[0] === c.id && selectedCategoryIds.length > 1 && (
+                            <span className="ml-1 text-[10px] bg-[#0059b2] text-white px-1.5 py-0.5 rounded-full">Chính</span>
+                          )}
+                        </span>
                       </label>
                     </li>
                   ))}
