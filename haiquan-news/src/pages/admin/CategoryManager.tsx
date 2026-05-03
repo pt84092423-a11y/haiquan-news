@@ -20,21 +20,27 @@ export default function CategoryManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError('Nhập tên chuyên mục'); return; }
+    setError('');
+    setSuccess('');
+    if (!form.name.trim()) { setError('Vui lòng nhập tên chuyên mục'); return; }
     setSaving(true);
     try {
-      await createCategory({
-        name: form.name,
-        slug: form.slug || generateSlug(form.name),
-        description: form.description || undefined,
-        parent_id: form.parent_id ? Number(form.parent_id) : null,
-      });
+      const payload: any = {
+        name: form.name.trim(),
+        slug: (form.slug || generateSlug(form.name)).trim(),
+        description: form.description.trim() || null,
+      };
+      if (form.parent_id) payload.parent_id = Number(form.parent_id);
+      console.log('[CategoryManager] creating:', payload);
+      await createCategory(payload);
       setForm({ name: '', slug: '', description: '', parent_id: '' });
-      setSuccess('Đã tạo chuyên mục!');
+      setSuccess('Đã tạo chuyên mục thành công!');
       load();
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (e: any) {
-      setError(e.message);
+      console.error('[CategoryManager] create error:', e);
+      const msg = e?.message || e?.error_description || JSON.stringify(e);
+      setError('Lỗi: ' + msg);
     } finally {
       setSaving(false);
     }
