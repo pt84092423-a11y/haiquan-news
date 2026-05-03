@@ -378,6 +378,13 @@ export default function DiscordBot() {
           <span className="text-[#5865F2]">{DISCORD_ICON}</span>Bot Đăng Bài Discord
         </h2>
         <p className="text-[#555] text-[13px] mt-1">Đăng bài viết lên Discord bằng Bot Token hoặc Webhook.</p>
+        <button
+          onClick={() => setTab('roles')}
+          className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#5865F2] text-white text-[13px] font-bold hover:bg-[#4752c4] transition"
+          data-testid="button-open-account-manager"
+        >
+          🛡️ Mở quản lý tài khoản
+        </button>
       </div>
 
       {/* ── GitHub Token Configuration ── */}
