@@ -127,6 +127,7 @@ export default function DiscordBot() {
   const [ghTokenInput, setGhTokenInput] = useState('');
   const [savingGhToken, setSavingGhToken] = useState(false);
   const [ghTokenSaved, setGhTokenSaved] = useState(false);
+  const [ghTokenKey] = useState('GITHUB_PERSONAL_ACCESS_TOKEN');
 
   const GH_REPO = 'pt84092423-a11y/haiquan-news';
 
@@ -327,6 +328,7 @@ export default function DiscordBot() {
           Tạo GitHub Personal Access Token (classic) với quyền <strong>repo</strong> tại{' '}
           <a href="https://github.com/settings/tokens" target="_blank" rel="noreferrer" className="text-[#5865F2] underline font-bold">github.com/settings/tokens</a>.
           {' '}Sau đó thêm <strong>DISCORD_BOT_TOKEN</strong> vào{' '}
+          <span className="font-mono text-[#5865F2]">{ghTokenKey}</span> trong{' '}
           <a href={`https://github.com/${GH_REPO}/settings/secrets/actions`} target="_blank" rel="noreferrer" className="text-[#5865F2] underline font-bold">GitHub Secrets</a>.
           Tin nhắn sẽ gửi sau ~60 giây qua GitHub Actions.
         </p>
@@ -351,6 +353,7 @@ export default function DiscordBot() {
         {ghToken && (
           <p className="text-[11px] text-green-600 mt-1.5 font-medium">✓ Token đã được cấu hình</p>
         )}
+        <p className="text-[11px] text-gray-400 mt-1.5">Biến dùng trong web: <span className="font-mono">{ghTokenKey}</span></p>
       </div>
 
       {botTokenConfigured === null && (
