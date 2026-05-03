@@ -132,6 +132,41 @@ function injectOgIntoHtml(html, ogHtml) {
   return cleaned.replace('</head>', `${ogHtml}\n  </head>`);
 }
 
+app.use(express.json());
+
+// Discord Bot proxy — keeps the token server-side
+app.post('/api/discord/send', async (req, res) => {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) {
+    return res.status(500).json({ error: 'DISCORD_BOT_TOKEN chưa được cấu hình trên máy chủ.' });
+  }
+  const { channelId, content, embedImage } = req.body;
+  if (!channelId || !content) {
+    return res.status(400).json({ error: 'Thiếu channelId hoặc content.' });
+  }
+  const payload = { content };
+  if (embedImage) {
+    payload.embeds = [{ image: { url: embedImage }, color: 0x0059b2 }];
+  }
+  try {
+    const discordRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (discordRes.ok || discordRes.status === 204) {
+      return res.json({ ok: true });
+    }
+    const err = await discordRes.text();
+    return res.status(discordRes.status).json({ error: err });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 app.use(express.static(DIST_DIR, { index: false }));
 
 app.get('/bai-viet/:slug', async (req, res) => {
