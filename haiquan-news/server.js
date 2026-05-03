@@ -134,6 +134,16 @@ function injectOgIntoHtml(html, ogHtml) {
 
 app.use(express.json());
 
+// ── CORS — allow InfinityFree frontend (or any configured origin) to call this API ──
+app.use((req, res, next) => {
+  const allowedOrigin = process.env.CORS_ORIGIN || '*';
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
 // ── Discord: ping to check bot token ──
 app.get('/api/discord/ping', (req, res) => {
   const configured = !!process.env.DISCORD_BOT_TOKEN;
