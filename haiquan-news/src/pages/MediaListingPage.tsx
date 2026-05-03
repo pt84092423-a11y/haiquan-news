@@ -71,9 +71,8 @@ function formatViews(n?: number) {
   return `${n.toLocaleString()} lượt xem`;
 }
 
-export default function MediaListingPage() {
-  const [location] = useLocation();
-  const slug = location.replace(/^\//, '').split('/')[0] || '';
+export default function MediaListingPage({ slug: slugProp }: { slug?: string }) {
+  const slug = slugProp || window.location.pathname.replace(/^\//, '').split('/')[0] || '';
   const cfg = SLUG_CONFIG[slug] || { title: slug.replace(/-/g, ' '), layout: 'article' as LayoutKind };
 
   const [posts, setPosts] = useState<Post[]>([]);

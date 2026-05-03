@@ -109,7 +109,7 @@ function Router() {
       {/* Các trang đa phương tiện chuyên biệt (Longform / Phóng sự ảnh / Podcast / Short Video / Hải quân Media) */}
       {MEDIA_LISTING_SLUGS.map(slug => (
         <Route key={slug} path={`/${slug}`} component={() => (
-          <PublicLayout><MediaListingPage /></PublicLayout>
+          <PublicLayout><MediaListingPage key={slug} slug={slug} /></PublicLayout>
         )} />
       ))}
 

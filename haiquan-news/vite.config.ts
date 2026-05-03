@@ -88,39 +88,32 @@ function discordBotApiPlugin() {
 
           const entries: any[] = [];
           const seen = new Set<string>();
+          const s = JSON.stringify(data);
 
           function clean(t: string) {
             return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
           }
 
-          // Walk the JSON tree and collect videoRenderer objects
-          function walk(node: any) {
-            if (!node || typeof node !== 'object' || entries.length >= 15) return;
-            if (node.videoRenderer) {
-              const vr = node.videoRenderer;
-              const videoId: string = vr.videoId || '';
-              const titleText: string =
-                vr.title?.runs?.[0]?.text ||
-                vr.title?.simpleText ||
-                vr.title?.content || '';
-              if (videoId && titleText && !seen.has(videoId)) {
-                seen.add(videoId);
-                entries.push({
-                  videoId,
-                  title: clean(titleText),
-                  published: '', channel: '',
-                  thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-                  url: `https://www.youtube.com/watch?v=${videoId}`,
-                  embedUrl: `https://www.youtube.com/embed/${videoId}`,
-                });
-              }
-              return;
+          // Targeted regex: find "videoRenderer":{"videoId":"ID","thumbnail"...,"title":{"runs":[{"text":"TITLE"}
+          // This is the canonical structure YouTube uses for all video listings
+          const re = /"videoRenderer":\{"videoId":"([a-zA-Z0-9_-]{11})","thumbnail"[\s\S]{0,2000}?"title":\{"runs":\[\{"text":"([^"]{2,200})"/g;
+          let mm: RegExpExecArray | null;
+          while ((mm = re.exec(s)) !== null) {
+            const videoId = mm[1];
+            const title = mm[2];
+            if (!seen.has(videoId)) {
+              seen.add(videoId);
+              entries.push({
+                videoId,
+                title: clean(title),
+                published: '', channel: '',
+                thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                url: `https://www.youtube.com/watch?v=${videoId}`,
+                embedUrl: `https://www.youtube.com/embed/${videoId}`,
+              });
             }
-            if (Array.isArray(node)) { for (const item of node) walk(item); }
-            else { for (const val of Object.values(node)) walk(val); }
+            if (entries.length >= 15) break;
           }
-
-          walk(data);
           return entries;
         }
         try {
