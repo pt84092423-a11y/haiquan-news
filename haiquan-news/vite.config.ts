@@ -45,6 +45,58 @@ function discordBotApiPlugin() {
         });
       });
 
+      // ── YouTube: resolve channel handle → channel ID ──
+      server.middlewares.use('/api/youtube/resolve', async (req: any, res: any, next: any) => {
+        if (req.method !== 'GET') return next();
+        const qs = new URL(req.url, 'http://localhost').searchParams;
+        const handle = qs.get('handle');
+        res.setHeader('Content-Type', 'application/json');
+        try {
+          if (!handle) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'Thiếu handle' })); }
+          const pageRes = await fetch(`https://www.youtube.com/@${handle.replace('@', '')}`, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+          });
+          const html = await pageRes.text();
+          const match = html.match(/"externalId":"(UC[a-zA-Z0-9_-]+)"/);
+          if (match) return res.end(JSON.stringify({ channelId: match[1] }));
+          res.statusCode = 404; return res.end(JSON.stringify({ error: 'Không tìm thấy channel ID' }));
+        } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+      });
+
+      // ── YouTube: fetch RSS feed by channel ID ──
+      server.middlewares.use('/api/youtube/feed', async (req: any, res: any, next: any) => {
+        if (req.method !== 'GET') return next();
+        const qs = new URL(req.url, 'http://localhost').searchParams;
+        const channelId = qs.get('channelId');
+        res.setHeader('Content-Type', 'application/json');
+        try {
+          if (!channelId) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'Thiếu channelId' })); }
+          const rssRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+          });
+          if (!rssRes.ok) { res.statusCode = rssRes.status; return res.end(JSON.stringify({ error: 'Không thể tải RSS' })); }
+          const xml = await rssRes.text();
+          const entries: any[] = [];
+          const re = /<entry>([\s\S]*?)<\/entry>/g;
+          let m;
+          while ((m = re.exec(xml)) !== null) {
+            const e = m[1];
+            const videoId   = (e.match(/<yt:videoId>(.*?)<\/yt:videoId>/)      || [])[1];
+            const title     = (e.match(/<title>(.*?)<\/title>/)                || [])[1];
+            const published = (e.match(/<published>(.*?)<\/published>/)         || [])[1];
+            const thumbnail = (e.match(/<media:thumbnail url="(.*?)"/)         || [])[1];
+            const channel   = (e.match(/<name>(.*?)<\/name>/)                  || [])[1];
+            if (videoId && title) entries.push({
+              videoId, published, thumbnail, channel: channel || '',
+              title: title.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"),
+              url: `https://www.youtube.com/watch?v=${videoId}`,
+              embedUrl: `https://www.youtube.com/embed/${videoId}`,
+            });
+          }
+          return res.end(JSON.stringify({ videos: entries }));
+        } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+      });
+
       // Auto-discover guilds and channels from bot token
       server.middlewares.use('/api/discord/guilds', async (req: any, res: any, next: any) => {
         if (req.method !== 'GET') return next();

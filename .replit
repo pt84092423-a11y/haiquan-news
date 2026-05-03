@@ -27,7 +27,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd haiquan-news && (node discord-bot.js &) && npm run dev"
+args = "cd haiquan-news && (node discord-bot.js &) && (node video-sync.js &) && npm run dev"
 waitForPort = 5000
 
 [[ports]]

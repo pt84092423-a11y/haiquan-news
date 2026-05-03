@@ -8,6 +8,7 @@ import {
 } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { getSession, createApprovalRequest } from '@/lib/auth';
+import { detectPlatform, toEmbedUrl, isShortFormat, isAudioPlatform, PLATFORM_META } from '@/lib/mediaEmbed';
 
 const CONTENT_TYPES = [
   {
@@ -407,19 +408,44 @@ export default function PostEditor() {
               style={{ fontSize: '16px', lineHeight: '1.9' }}
               dangerouslySetInnerHTML={{ __html: form.content || '<p style="color:#aaa">Nội dung bài viết chưa được nhập...</p>' }}
             />
-            {/* Audio */}
-            {form.audio_url && (
-              <div className="mt-8 p-4 bg-[#f0f5ff] rounded-xl border border-blue-100">
-                <p className="text-[13px] font-bold text-[#0059b2] mb-2">🎙 Nghe Podcast</p>
-                <audio controls className="w-full" src={form.audio_url} />
-              </div>
-            )}
-            {/* Video */}
-            {form.video_url && (
-              <div className="mt-8 aspect-video rounded-xl overflow-hidden shadow-lg">
-                <iframe src={form.video_url} className="w-full h-full" allowFullScreen title="Video" />
-              </div>
-            )}
+            {/* Audio preview */}
+            {form.audio_url && (() => {
+              const plat = detectPlatform(form.audio_url);
+              if (plat === 'soundcloud') return (
+                <div className="mt-8 rounded-xl overflow-hidden border border-gray-200 h-[200px]">
+                  <iframe src={toEmbedUrl(form.audio_url)} className="w-full h-full" allow="autoplay" scrolling="no" />
+                </div>
+              );
+              if (plat === 'zingmp3') return (
+                <div className="mt-8 rounded-xl overflow-hidden border border-gray-200 h-[200px]">
+                  <iframe src={form.audio_url} className="w-full h-full" allow="autoplay" scrolling="no" />
+                </div>
+              );
+              return (
+                <div className="mt-8 p-4 bg-[#f0f5ff] rounded-xl border border-blue-100">
+                  <p className="text-[13px] font-bold text-[#0059b2] mb-2">🎙 Nghe Podcast</p>
+                  <audio controls className="w-full" src={form.audio_url} />
+                </div>
+              );
+            })()}
+            {/* Video preview */}
+            {form.video_url && (() => {
+              const embedUrl = toEmbedUrl(form.video_url);
+              const isShort = isShortFormat(form.video_url);
+              const plat = detectPlatform(form.video_url);
+              if (isShort || plat === 'tiktok') return (
+                <div className="mt-8 flex justify-center">
+                  <div className="rounded-xl overflow-hidden bg-black shadow-lg" style={{ width: 300, aspectRatio: '9/16' }}>
+                    <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="autoplay" />
+                  </div>
+                </div>
+              );
+              return (
+                <div className="mt-8 aspect-video rounded-xl overflow-hidden shadow-lg">
+                  <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                </div>
+              );
+            })()}
             {/* Tags */}
             <div className="mt-8 pt-6 border-t border-gray-200">
               <p className="text-[12px] text-gray-400 mb-2 font-bold uppercase">URL bài viết</p>
@@ -598,38 +624,68 @@ export default function PostEditor() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-6 py-3 border-b border-gray-100 flex items-center gap-2">
                 <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-                <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">File Âm Thanh Podcast</span>
+                <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Nguồn Âm Thanh Podcast</span>
               </div>
-              <div className="p-6">
-                {form.audio_url && (
-                  <div className="mb-4 p-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center gap-3">
-                    <svg className="w-5 h-5 text-purple-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                    <span className="text-[12px] text-purple-700 truncate flex-1">{form.audio_url}</span>
-                    <button onClick={() => setForm(f => ({ ...f, audio_url: '' }))} className="text-red-400 hover:text-red-600 text-xs font-bold">Xóa</button>
-                  </div>
-                )}
-                {!form.audio_url && (
-                  <label className="flex flex-col items-center justify-center w-full h-[130px] border-2 border-dashed border-purple-300 rounded-xl cursor-pointer hover:bg-purple-50 transition">
-                    <input type="file" accept=".mp3,.wav,.ogg,.m4a" onChange={handleAudioUpload} className="hidden" />
-                    {audioUploading ? (
-                      <span className="text-[13px] text-purple-500">Đang tải lên...</span>
-                    ) : (
-                      <>
-                        <svg className="w-9 h-9 text-purple-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        <span className="text-[13px] font-bold text-purple-500">Tải file âm thanh (.mp3, .wav)</span>
-                        <span className="text-[11px] text-gray-400 mt-1">Tối đa 50MB</span>
-                      </>
-                    )}
-                  </label>
-                )}
-                <div className="mt-3">
-                  <label className="block text-[12px] text-gray-500 mb-1">Hoặc dán URL âm thanh</label>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[12px] text-gray-500 mb-2 font-bold uppercase">Dán link âm thanh (ZingMP3, SoundCloud, URL trực tiếp...)</label>
                   <input
                     value={form.audio_url}
                     onChange={e => setForm(f => ({ ...f, audio_url: e.target.value }))}
-                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-purple-400"
-                    placeholder="https://..."
+                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-purple-400 font-mono"
+                    placeholder="https://zingmp3.vn/... hoặc https://soundcloud.com/... hoặc URL file .mp3"
                   />
+                  {form.audio_url && (() => {
+                    const plat = detectPlatform(form.audio_url);
+                    const meta = PLATFORM_META[plat];
+                    return (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded" style={{ background: meta.bg, color: meta.color }}>{meta.name}</span>
+                        {plat === 'soundcloud' && <span className="text-[11px] text-gray-400">→ Sẽ nhúng SoundCloud Player</span>}
+                        {plat === 'zingmp3' && <span className="text-[11px] text-gray-400">→ Sẽ nhúng ZingMP3 Player</span>}
+                        {plat === 'direct' && <span className="text-[11px] text-gray-400">→ File âm thanh trực tiếp</span>}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {form.audio_url && detectPlatform(form.audio_url) === 'soundcloud' && (
+                  <div className="rounded-xl overflow-hidden border border-gray-200 h-[200px]">
+                    <iframe src={toEmbedUrl(form.audio_url)} className="w-full h-full" allow="autoplay" scrolling="no" />
+                  </div>
+                )}
+                {form.audio_url && detectPlatform(form.audio_url) === 'zingmp3' && (
+                  <div className="rounded-xl overflow-hidden border border-gray-200 h-[200px]">
+                    <iframe src={form.audio_url} className="w-full h-full" allow="autoplay" scrolling="no" />
+                  </div>
+                )}
+                {form.audio_url && detectPlatform(form.audio_url) === 'direct' && (
+                  <audio controls className="w-full" src={form.audio_url} />
+                )}
+
+                <div className="border-t border-gray-100 pt-4">
+                  <label className="block text-[12px] text-gray-500 mb-2 font-bold uppercase">Hoặc tải file âm thanh lên</label>
+                  {!form.audio_url && (
+                    <label className="flex flex-col items-center justify-center w-full h-[120px] border-2 border-dashed border-purple-300 rounded-xl cursor-pointer hover:bg-purple-50 transition">
+                      <input type="file" accept=".mp3,.wav,.ogg,.m4a" onChange={handleAudioUpload} className="hidden" />
+                      {audioUploading ? (
+                        <span className="text-[13px] text-purple-500">Đang tải lên...</span>
+                      ) : (
+                        <>
+                          <svg className="w-9 h-9 text-purple-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                          <span className="text-[13px] font-bold text-purple-500">Tải file âm thanh (.mp3, .wav)</span>
+                          <span className="text-[11px] text-gray-400 mt-1">Tối đa 50MB</span>
+                        </>
+                      )}
+                    </label>
+                  )}
+                  {form.audio_url && detectPlatform(form.audio_url) === 'unknown' && (
+                    <div className="flex items-center gap-3 p-3 bg-purple-50 border border-purple-100 rounded-lg">
+                      <svg className="w-5 h-5 text-purple-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                      <span className="text-[12px] text-purple-700 truncate flex-1">{form.audio_url}</span>
+                      <button onClick={() => setForm(f => ({ ...f, audio_url: '' }))} className="text-red-400 hover:text-red-600 text-xs font-bold">Xóa</button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -642,36 +698,59 @@ export default function PostEditor() {
                 <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                 <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Nguồn Video</span>
               </div>
-              <div className="p-6">
-                <div className="flex gap-2 mb-4">
-                  <button
-                    onClick={() => setVideoSource('embed')}
-                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold border transition ${videoSource === 'embed' ? 'bg-[#0059b2] text-white border-[#0059b2]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}
-                  >Nhúng từ nền tảng</button>
-                  <button
-                    onClick={() => setVideoSource('upload')}
-                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold border transition ${videoSource === 'upload' ? 'bg-[#0059b2] text-white border-[#0059b2]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}
-                  >Tải file trực tiếp</button>
+              <div className="p-6 space-y-4">
+                <div className="flex gap-2">
+                  <button onClick={() => setVideoSource('embed')}
+                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold border transition ${videoSource === 'embed' ? 'bg-[#0059b2] text-white border-[#0059b2]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                    🔗 Nhúng từ nền tảng
+                  </button>
+                  <button onClick={() => setVideoSource('upload')}
+                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold border transition ${videoSource === 'upload' ? 'bg-[#0059b2] text-white border-[#0059b2]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                    📁 Tải file trực tiếp
+                  </button>
                 </div>
 
                 {videoSource === 'embed' ? (
-                  <div>
-                    <label className="block text-[12px] text-gray-500 mb-2">Nhúng từ nền tảng (Youtube/Facebook)</label>
-                    <input
-                      value={form.video_url}
-                      onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
-                      className="w-full p-3 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]"
-                      placeholder="Dán link video vào đây..."
-                    />
-                    {form.video_url && (
-                      <div className="mt-3 aspect-video rounded-lg overflow-hidden bg-gray-100">
-                        <iframe
-                          src={form.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
-                          className="w-full h-full"
-                          allowFullScreen
-                        />
-                      </div>
-                    )}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[12px] text-gray-500 mb-2 font-bold uppercase">Dán link video (YouTube, TikTok, Facebook, Vimeo...)</label>
+                      <input
+                        value={form.video_url}
+                        onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
+                        className="w-full p-3 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2] font-mono"
+                        placeholder="https://www.youtube.com/watch?v=... hoặc https://www.tiktok.com/@user/video/..."
+                      />
+                      {form.video_url && (() => {
+                        const plat = detectPlatform(form.video_url);
+                        const meta = PLATFORM_META[plat];
+                        const short = isShortFormat(form.video_url);
+                        return (
+                          <div className="mt-2 flex items-center gap-2 flex-wrap">
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded" style={{ background: meta.bg, color: meta.color }}>{meta.name}</span>
+                            {short && <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-black text-white">SHORT / VERTICAL</span>}
+                            <span className="text-[11px] text-gray-400 font-mono truncate max-w-[300px]">{toEmbedUrl(form.video_url)}</span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {form.video_url && (() => {
+                      const plat = detectPlatform(form.video_url);
+                      const embedUrl = toEmbedUrl(form.video_url);
+                      const isShort = isShortFormat(form.video_url);
+                      if (plat === 'tiktok' || isShort) return (
+                        <div className="flex justify-center">
+                          <div className="rounded-xl overflow-hidden border border-gray-200 bg-black" style={{ width: 320, aspectRatio: '9/16' }}>
+                            <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="autoplay" />
+                          </div>
+                        </div>
+                      );
+                      return (
+                        <div className="aspect-video rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                          <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div>

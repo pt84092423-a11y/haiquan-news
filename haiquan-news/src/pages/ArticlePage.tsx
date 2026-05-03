@@ -5,6 +5,7 @@ import SectionTitle from '@/components/SectionTitle';
 import WebsiteLinks from '@/components/WebsiteLinks';
 import { getAllSettings, getPostBySlug, getPublishedPosts, getRelatedPostsSmart, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
 import { formatDateLong, timeAgo } from '@/lib/utils';
+import { detectPlatform, toEmbedUrl, isShortFormat } from '@/lib/mediaEmbed';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Hải+Quân';
 
@@ -125,7 +126,45 @@ export default function ArticlePage() {
                     </p>
                   )}
 
-                  {post.thumbnail && (
+                  {post.video_url && (() => {
+                    const embedUrl = toEmbedUrl(post.video_url);
+                    const isShort = isShortFormat(post.video_url);
+                    const plat = detectPlatform(post.video_url);
+                    if (isShort || plat === 'tiktok') return (
+                      <div className="mb-6 flex justify-center">
+                        <div className="rounded-xl overflow-hidden bg-black border border-gray-200 shadow-lg" style={{ width: '100%', maxWidth: 360, aspectRatio: '9/16' }}>
+                          <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                        </div>
+                      </div>
+                    );
+                    return (
+                      <div className="mb-6 aspect-video rounded-xl overflow-hidden shadow-lg bg-black border border-gray-100">
+                        <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media" />
+                      </div>
+                    );
+                  })()}
+
+                  {post.audio_url && (() => {
+                    const plat = detectPlatform(post.audio_url);
+                    if (plat === 'soundcloud') return (
+                      <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 shadow-sm h-[200px]">
+                        <iframe src={toEmbedUrl(post.audio_url)} className="w-full h-full" allow="autoplay" scrolling="no" />
+                      </div>
+                    );
+                    if (plat === 'zingmp3') return (
+                      <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 shadow-sm h-[200px]">
+                        <iframe src={post.audio_url} className="w-full h-full" allow="autoplay" scrolling="no" />
+                      </div>
+                    );
+                    return (
+                      <div className="mb-6 p-4 bg-[#f0f5ff] rounded-xl border border-blue-100">
+                        <p className="text-[13px] font-bold text-[#0059b2] mb-2">🎙 Nghe Podcast</p>
+                        <audio controls className="w-full" src={post.audio_url} />
+                      </div>
+                    );
+                  })()}
+
+                  {post.thumbnail && !post.video_url && (
                     <figure className="mb-6">
                       <img src={post.thumbnail} alt={post.title} className="w-full h-auto rounded-[2px]" />
                     </figure>
