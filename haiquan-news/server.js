@@ -294,6 +294,26 @@ app.post('/api/discord/send', async (req, res) => {
   }
 });
 
+// ── Discord: read channel messages (TP67 only) ──
+app.get('/api/discord/messages', async (req, res) => {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) return res.status(500).json({ error: 'DISCORD_BOT_TOKEN chưa được cấu hình.' });
+  const channelId = req.query.channelId;
+  if (!channelId) return res.status(400).json({ error: 'Thiếu channelId.' });
+  const limit = Math.min(parseInt(req.query.limit || '50'), 100);
+  const before = req.query.before;
+  try {
+    let url = `https://discord.com/api/v10/channels/${channelId}/messages?limit=${limit}`;
+    if (before) url += `&before=${before}`;
+    const r = await fetch(url, { headers: { Authorization: `Bot ${token}` } });
+    if (!r.ok) { const err = await r.text(); return res.status(r.status).json({ error: err }); }
+    const messages = await r.json();
+    return res.json({ messages });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 app.use(express.static(DIST_DIR, { index: false }));
 
 app.get('/bai-viet/:slug', async (req, res) => {

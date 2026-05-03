@@ -61,16 +61,37 @@ A full-featured Vietnamese Navy news portal (Báo Hải Quân Việt Nam – SRO
 - `baoin` — print newspaper edition
 
 ## Admin Roles
-- `superadmin` — all permissions
-- `editor` — can write, approve, manage categories
-- `journalist` — can write posts (pending approval)
-- `viewer` — read-only admin access
+- `HADMIN` — super admin, all permissions (default: TP67)
+- `ADMIN` — can publish/approve, manage users
+- `EDITOR` — can write posts (pending approval)
+
+## Admin Pages
+| Route | File | Access |
+|-------|------|--------|
+| `/admin/discord-bot` | DiscordBot.tsx | All roles |
+| `/admin/ip-monitor` | IpMonitor.tsx | HADMIN only (via HADMIN section) |
+| `/admin/discord-reader` | DiscordReader.tsx | TP67 username only |
+| `/admin/audit-log` | AuditLog.tsx | HADMIN, ADMIN |
+| `/admin/hadmin` | HadminPanel.tsx | HADMIN only |
 
 ## Supabase Schema
 See `SQL_SCHEMA` export in `src/lib/supabase.ts` for full DDL.
-Tables: `categories`, `posts`, `settings`, `users`, `audit_logs`, `nav_items`
+Tables: `categories`, `posts`, `settings`, `admin_users`, `audit_logs`, `approval_requests`
 Storage bucket: `haiquan-media` (audio, video, PDF)
+Settings keys used: `discord_bot_channels`, `discord_bot_config`, `discord_send_history`
+
+## Discord Features
+- **Discord Bot**: `discord-bot.js` runs as background process; sends formatted messages via bot token or webhook
+- **Send History**: stored as JSON in `settings` key `discord_send_history` (max 100 entries)
+- **Discord Reader** (TP67 only): reads any channel the bot has access to via `/api/discord/messages?channelId=X&limit=50&before=ID`
+- API endpoint in both `vite.config.ts` (dev) and `server.js` (prod)
+
+## IP Monitoring
+- On login, `Login.tsx` fetches `https://ipapi.co/json/` (non-blocking) and logs `LOGIN_IP` action to `audit_logs`
+- IP info stored as JSON in `detail` field: `{ ip, city, region, country_name, org }`
+- Viewed in `/admin/ip-monitor` (HADMIN section only)
 
 ## Environment Variables
 - `VITE_SUPABASE_URL` — Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` — Supabase anon key
+- `DISCORD_BOT_TOKEN` — Discord bot token (server-side only)

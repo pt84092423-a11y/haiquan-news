@@ -28,6 +28,8 @@ import NavManager from "@/pages/admin/NavManager";
 import HadminPanel from "@/pages/admin/HadminPanel";
 import DiscordBot from "@/pages/admin/DiscordBot";
 import ImportVideo from "@/pages/admin/ImportVideo";
+import DiscordReader from "@/pages/admin/DiscordReader";
+import IpMonitor from "@/pages/admin/IpMonitor";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import SearchPage from "@/pages/SearchPage";
 import { getSession, can } from "@/lib/auth";
@@ -90,6 +92,8 @@ function Router() {
       <Route path="/admin/hadmin" component={() => <ProtectedRoute component={HadminPanel} action="view_hadmin_panel" />} />
       <Route path="/admin/discord-bot" component={() => <ProtectedRoute component={DiscordBot} />} />
       <Route path="/admin/import-video" component={() => <ProtectedRoute component={ImportVideo} action="write_post" />} />
+      <Route path="/admin/discord-reader" component={() => <ProtectedRoute component={DiscordReader} />} />
+      <Route path="/admin/ip-monitor" component={() => <ProtectedRoute component={IpMonitor} action="view_audit_log" />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />

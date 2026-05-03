@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { getAllPosts, getSiteSetting, upsertSetting, parseJsonSetting, type Post } from '@/lib/supabase';
+import { getSession } from '@/lib/auth';
+
+interface SendHistoryEntry {
+  id: string;
+  postTitle: string;
+  postSlug: string;
+  channelName: string;
+  serverName: string;
+  sentBy: string;
+  sentAt: string;
+  success: boolean;
+  error?: string;
+}
 
 type ChannelMode = 'bot' | 'webhook';
 
@@ -84,7 +97,8 @@ function Img({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function DiscordBot() {
-  const [tab, setTab] = useState<'guide' | 'post' | 'channels' | 'config'>('post');
+  const [tab, setTab] = useState<'guide' | 'post' | 'channels' | 'config' | 'history'>('post');
+  const [sendHistory, setSendHistory] = useState<SendHistoryEntry[]>([]);
   const [guideTab, setGuideTab] = useState<'bot' | 'webhook'>('bot');
 
   const [posts, setPosts] = useState<Post[]>([]);
@@ -177,6 +191,7 @@ export default function DiscordBot() {
     getAllPosts({ limit: 100, status: 'published' }).then(r => { setPosts(r.posts); setLoadingPosts(false); });
     getSiteSetting('discord_bot_channels').then(v => setChannels(parseJsonSetting<Channel[]>(v, [])));
     getSiteSetting('discord_bot_config').then(v => setConfig({ ...DEFAULT_CONFIG, ...parseJsonSetting<BotConfig>(v, DEFAULT_CONFIG) }));
+    getSiteSetting('discord_send_history').then(v => setSendHistory(parseJsonSetting<SendHistoryEntry[]>(v, [])));
     checkBotToken();
   }, []);
 
@@ -185,6 +200,8 @@ export default function DiscordBot() {
     setSending(true);
     setSendResult(null);
     const content = formatDiscordMessage(selectedPost, config);
+    let success = false;
+    let errorMsg = '';
     try {
       if (selectedChannel.mode === 'bot') {
         const res = await fetch('/api/discord/send', {
@@ -193,19 +210,37 @@ export default function DiscordBot() {
           body: JSON.stringify({ channelId: selectedChannel.channelId, content, embedImage: selectedPost.thumbnail }),
         });
         const data = await res.json();
-        if (data.ok) setSendResult({ ok: true, msg: `Đã đăng thành công qua Bot lên #${selectedChannel.channel}!` });
-        else setSendResult({ ok: false, msg: `Lỗi Bot: ${data.error}` });
+        if (data.ok) { success = true; setSendResult({ ok: true, msg: `Đã đăng thành công qua Bot lên #${selectedChannel.channel}!` }); }
+        else { errorMsg = data.error || 'Lỗi không xác định'; setSendResult({ ok: false, msg: `Lỗi Bot: ${errorMsg}` }); }
       } else {
         const payload: any = { content };
         if (selectedPost.thumbnail) payload.embeds = [{ image: { url: selectedPost.thumbnail }, color: 0x0059b2 }];
         const res = await fetch(selectedChannel.webhookUrl!, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (res.ok || res.status === 204) setSendResult({ ok: true, msg: `Đã đăng thành công qua Webhook lên #${selectedChannel.channel}!` });
-        else setSendResult({ ok: false, msg: `Lỗi Webhook: ${res.status} — ${await res.text()}` });
+        if (res.ok || res.status === 204) { success = true; setSendResult({ ok: true, msg: `Đã đăng thành công qua Webhook lên #${selectedChannel.channel}!` }); }
+        else { errorMsg = `HTTP ${res.status}`; setSendResult({ ok: false, msg: `Lỗi Webhook: ${res.status} — ${await res.text()}` }); }
       }
     } catch (e: any) {
+      errorMsg = e.message;
       setSendResult({ ok: false, msg: `Lỗi: ${e.message}` });
     } finally {
       setSending(false);
+      const session = getSession();
+      const entry: SendHistoryEntry = {
+        id: Date.now().toString(),
+        postTitle: selectedPost.title,
+        postSlug: (selectedPost as any).slug || '',
+        channelName: selectedChannel.channel,
+        serverName: selectedChannel.server,
+        sentBy: session?.display_name || session?.username || '?',
+        sentAt: new Date().toISOString(),
+        success,
+        error: success ? undefined : errorMsg,
+      };
+      setSendHistory(prev => {
+        const updated = [entry, ...prev].slice(0, 100);
+        upsertSetting('discord_send_history', JSON.stringify(updated));
+        return updated;
+      });
     }
   };
 
@@ -275,6 +310,7 @@ export default function DiscordBot() {
           { id: 'post', label: 'Đăng bài', icon: '📤' },
           { id: 'channels', label: 'Kênh Discord', icon: '🔗' },
           { id: 'config', label: 'Cấu hình', icon: '⚙️' },
+          { id: 'history', label: 'Lịch sử gửi', icon: '📋' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             className={`px-5 py-2 rounded-lg text-[13px] font-bold transition ${tab === t.id ? 'bg-white shadow text-[#5865F2]' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -807,6 +843,69 @@ export default function DiscordBot() {
                 ].join('\n')}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LỊCH SỬ GỬI ── */}
+      {tab === 'history' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Lịch sử đăng bài ({sendHistory.length})</span>
+            {sendHistory.length > 0 && (
+              <button
+                onClick={async () => { setSendHistory([]); await upsertSetting('discord_send_history', '[]'); }}
+                className="text-[12px] text-red-400 hover:text-red-600 transition font-medium"
+              >
+                Xóa tất cả
+              </button>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="bg-[#f8f9fa] border-b border-gray-100">
+                  <th className="text-left px-4 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Thời gian</th>
+                  <th className="text-left px-4 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Bài viết</th>
+                  <th className="text-left px-4 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Kênh / Server</th>
+                  <th className="text-left px-4 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Người gửi</th>
+                  <th className="text-left px-4 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sendHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+                      Chưa có lịch sử gửi nào. Lịch sử sẽ được ghi lại sau mỗi lần đăng bài.
+                    </td>
+                  </tr>
+                ) : sendHistory.map(h => (
+                  <tr key={h.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+                    <td className="px-4 py-3 text-[#888] whitespace-nowrap">
+                      {new Date(h.sentAt).toLocaleString('vi-VN')}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-[#222] max-w-[220px] truncate" title={h.postTitle}>
+                      {h.postTitle}
+                    </td>
+                    <td className="px-4 py-3 text-[#555]">
+                      <span className="font-medium">#{h.channelName}</span>
+                      <span className="text-gray-400 ml-1 text-[11px]">— {h.serverName}</span>
+                    </td>
+                    <td className="px-4 py-3 text-[#555]">{h.sentBy}</td>
+                    <td className="px-4 py-3">
+                      {h.success ? (
+                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-green-100 text-green-700">✓ Thành công</span>
+                      ) : (
+                        <div>
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-700">✗ Lỗi</span>
+                          {h.error && <p className="text-[11px] text-red-400 mt-0.5 truncate max-w-[160px]">{h.error}</p>}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

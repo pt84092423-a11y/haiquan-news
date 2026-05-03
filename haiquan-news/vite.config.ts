@@ -205,6 +205,27 @@ function discordBotApiPlugin() {
           return res.end(JSON.stringify({ error: e.message }));
         }
       });
+
+      // ── Discord: read channel messages (TP67 only) ──
+      server.middlewares.use('/api/discord/messages', async (req: any, res: any, next: any) => {
+        if (req.method !== 'GET') return next();
+        const qs = new URL(req.url || '/', 'http://localhost').searchParams;
+        const channelId = qs.get('channelId');
+        const limit = Math.min(parseInt(qs.get('limit') || '50'), 100);
+        const before = qs.get('before');
+        res.setHeader('Content-Type', 'application/json');
+        try {
+          const token = process.env.DISCORD_BOT_TOKEN;
+          if (!token) { res.statusCode = 500; return res.end(JSON.stringify({ error: 'DISCORD_BOT_TOKEN chưa được cấu hình.' })); }
+          if (!channelId) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'Thiếu channelId.' })); }
+          let url = `https://discord.com/api/v10/channels/${channelId}/messages?limit=${limit}`;
+          if (before) url += `&before=${before}`;
+          const r = await fetch(url, { headers: { Authorization: `Bot ${token}` } });
+          if (!r.ok) { const err = await r.text(); res.statusCode = r.status; return res.end(JSON.stringify({ error: err })); }
+          const messages = await r.json();
+          return res.end(JSON.stringify({ messages }));
+        } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+      });
     }
   };
 }

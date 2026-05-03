@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { login } from '@/lib/auth';
+import { login, addAuditLog } from '@/lib/auth';
 import logoImg from '@assets/logo_haiquan.png';
 
 export default function Login() {
@@ -20,6 +20,13 @@ export default function Login() {
     if (!user) {
       setError('Sai tên đăng nhập hoặc mật khẩu');
     } else {
+      fetch('https://ipapi.co/json/')
+        .then(r => r.json())
+        .then(d => {
+          if (d.ip) addAuditLog('LOGIN_IP', 'ip_info', null,
+            JSON.stringify({ ip: d.ip, city: d.city, region: d.region, country_name: d.country_name, org: d.org }),
+            user);
+        }).catch(() => {});
       setLocation('/admin');
     }
   };
