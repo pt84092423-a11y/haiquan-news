@@ -353,7 +353,8 @@ export default function DiscordBot() {
                       <div className="pt-1.5 space-y-1">
                         <p className="text-[#dcddde]">Nội dung sapo bài viết...</p>
                         <p className="text-[#00b0f4]">{config.site_url}/bai-viet/...</p>
-                        <p className="text-[#dcddde] pt-1">Kính mong các đồng chí chú ý!</p>
+                        <p className="text-[#dcddde] pt-1">Chi tiết trong đường link</p>
+                        <p className="text-[#dcddde]">Kính mong các đồng chí chú ý!</p>
                         <p className="text-[#dcddde]">Trân trọng,</p>
                         <p className="text-[#dcddde]">Đồng chí {config.signature_name}</p>
                         <p className="text-[#72767d] text-[11px]">{config.contact_line1}</p>
@@ -771,6 +772,7 @@ export default function DiscordBot() {
                   '',
                   `${config.site_url}/bai-viet/slug-bai-viet`,
                   '',
+                  'Chi tiết trong đường link',
                   'Kính mong các đồng chí chú ý!',
                   'Trân trọng,',
                   `Đồng chí ${config.signature_name}`,
