@@ -16,7 +16,7 @@ export default function NavyGalleryStrip() {
       <div className="container mx-auto max-w-[1200px] px-4">
         <div className="grid grid-cols-4 gap-3">
           {IMGS.map((img, i) => (
-            <div key={i} className="overflow-hidden rounded-sm shadow-sm aspect-[4/3] relative group">
+            <div key={i} className="overflow-hidden aspect-[4/3] relative group">
               <img
                 src={img.src}
                 alt={img.alt}
