@@ -1,0 +1,132 @@
+/**
+ * fetch-youtube.mjs
+ * Chạy lúc build time trong GitHub Actions để tạo youtube-cache.json.
+ * File JSON này được deploy cùng site → frontend đọc không cần server/CORS.
+ */
+
+import { writeFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const CHANNELS = [
+  { channelId: 'UCyV_AKZjCqd1bkUbEHGcTyA', handle: 'TGM_Kuroma' },
+  { channelId: 'UC4MXnZXKnKu9Cg6mNts1aPQ', handle: 'srov24h' },
+  { channelId: 'UC7W8ubM1PB8DzLMP7JSrHyg', handle: 'srov4' },
+];
+
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+function clean(t) {
+  return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
+}
+
+function fetchWithTimeout(url, opts = {}, ms = 12000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(tid));
+}
+
+async function fetchRSS(channelId) {
+  try {
+    const r = await fetchWithTimeout(
+      `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`,
+      { headers: { 'User-Agent': UA } }
+    );
+    if (!r.ok) return [];
+    const xml = await r.text();
+    const entries = [];
+    const seen = new Set();
+    const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
+    let em;
+    while ((em = entryRe.exec(xml)) !== null) {
+      const block = em[1];
+      const vidMatch = block.match(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/);
+      const titleMatch = block.match(/<title>([^<]+)<\/title>/);
+      const pubMatch = block.match(/<published>([^<]+)<\/published>/);
+      const thumbMatch = block.match(/<media:thumbnail url="([^"]+)"/);
+      if (!vidMatch || !titleMatch) continue;
+      const videoId = vidMatch[1];
+      if (seen.has(videoId)) continue;
+      seen.add(videoId);
+      entries.push({
+        videoId,
+        title: clean(titleMatch[1]),
+        published: pubMatch ? pubMatch[1] : '',
+        thumbnail: thumbMatch ? thumbMatch[1] : `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        channel: '',
+      });
+      if (entries.length >= 15) break;
+    }
+    return entries;
+  } catch (e) {
+    console.warn(`  RSS failed for ${channelId}:`, e.message);
+    return [];
+  }
+}
+
+async function fetchRss2Json(channelId) {
+  try {
+    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+    const r = await fetchWithTimeout(
+      `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`,
+      {}, 12000
+    );
+    if (!r.ok) return [];
+    const j = await r.json();
+    if (j.status !== 'ok' || !Array.isArray(j.items) || j.items.length === 0) return [];
+    return j.items.map(item => {
+      const videoId = item.link?.split('v=')?.[1]?.split('&')?.[0] || '';
+      return {
+        videoId,
+        title: item.title || '',
+        published: item.pubDate || '',
+        thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        url: item.link || '',
+        embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        channel: '',
+      };
+    }).filter(v => v.videoId);
+  } catch (e) {
+    console.warn(`  rss2json failed for ${channelId}:`, e.message);
+    return [];
+  }
+}
+
+async function fetchChannel(ch) {
+  console.log(`Fetching ${ch.handle} (${ch.channelId})...`);
+  let videos = await fetchRSS(ch.channelId);
+  if (videos.length > 0) {
+    console.log(`  ✓ RSS: ${videos.length} videos`);
+    return videos;
+  }
+  videos = await fetchRss2Json(ch.channelId);
+  if (videos.length > 0) {
+    console.log(`  ✓ rss2json: ${videos.length} videos`);
+    return videos;
+  }
+  console.warn(`  ✗ No videos found for ${ch.handle}`);
+  return [];
+}
+
+async function main() {
+  console.log('🎬 Fetching YouTube data for static cache...\n');
+  const cache = { generatedAt: new Date().toISOString() };
+  for (const ch of CHANNELS) {
+    const videos = await fetchChannel(ch);
+    cache[ch.channelId] = videos;
+  }
+
+  const outDir = join(__dirname, '../public');
+  mkdirSync(outDir, { recursive: true });
+  const outPath = join(outDir, 'youtube-cache.json');
+  writeFileSync(outPath, JSON.stringify(cache, null, 2), 'utf8');
+
+  const total = CHANNELS.reduce((s, ch) => s + (cache[ch.channelId]?.length || 0), 0);
+  console.log(`\n✅ Saved ${total} videos total → public/youtube-cache.json`);
+}
+
+main().catch(e => { console.error('Fatal:', e); process.exit(1); });
