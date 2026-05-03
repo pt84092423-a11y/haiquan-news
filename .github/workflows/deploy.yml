@@ -9,21 +9,32 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: 🚚 Get latest code
-        uses: actions/checkout@v3
+      - name: Get latest code
+        uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20  
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: haiquan-news/package-lock.json
 
-      - name: 📦 Install and Build
+      - name: Install dependencies
         run: |
           cd haiquan-news
-          npm install
+          npm ci
+
+      - name: Pre-fetch YouTube data (baked into static build)
+        run: |
+          cd haiquan-news
+          node scripts/fetch-youtube.mjs
+
+      - name: Build frontend
+        run: |
+          cd haiquan-news
           npm run build
 
-      - name: 📂 Sync to InfinityFree
+      - name: Deploy to InfinityFree via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -33,5 +44,4 @@ jobs:
           port: 21
           timeout: 60000
           local-dir: ./haiquan-news/dist/
-          # Đổi vị trí htdocs vào bên trong thư mục tên miền
           server-dir: /baohaiquansrov.xo.je/htdocs/
