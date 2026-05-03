@@ -101,6 +101,42 @@ export default function DiscordBot() {
   const [configSaved, setConfigSaved] = useState(false);
   const [botTokenConfigured, setBotTokenConfigured] = useState<boolean | null>(null);
 
+  interface DiscordGuild { id: string; name: string; icon: string | null; channels: { id: string; name: string }[]; }
+  const [discoveredGuilds, setDiscoveredGuilds] = useState<DiscordGuild[]>([]);
+  const [loadingGuilds, setLoadingGuilds] = useState(false);
+  const [selectedGuildId, setSelectedGuildId] = useState('');
+  const [selectedChannelId, setSelectedChannelId] = useState('');
+  const [displayName, setDisplayName] = useState('');
+
+  const fetchGuilds = async () => {
+    setLoadingGuilds(true);
+    try {
+      const res = await fetch('/api/discord/guilds');
+      const data = await res.json();
+      if (data.guilds) setDiscoveredGuilds(data.guilds);
+    } catch {}
+    setLoadingGuilds(false);
+  };
+
+  const selectedGuild = discoveredGuilds.find(g => g.id === selectedGuildId);
+  const selectedDiscordChannel = selectedGuild?.channels.find(c => c.id === selectedChannelId);
+
+  const handleAddFromDiscovery = async () => {
+    if (!selectedGuild || !selectedDiscordChannel) return;
+    const ch: Channel = {
+      id: Date.now().toString(),
+      name: displayName || `#${selectedDiscordChannel.name} — ${selectedGuild.name}`,
+      server: selectedGuild.name,
+      channel: selectedDiscordChannel.name,
+      mode: 'bot',
+      channelId: selectedDiscordChannel.id,
+    };
+    const updated = [...channels, ch];
+    setChannels(updated);
+    await upsertSetting('discord_bot_channels', JSON.stringify(updated));
+    setSelectedGuildId(''); setSelectedChannelId(''); setDisplayName('');
+  };
+
   useEffect(() => {
     getAllPosts({ limit: 100, status: 'published' }).then(r => { setPosts(r.posts); setLoadingPosts(false); });
     getSiteSetting('discord_bot_channels').then(v => setChannels(parseJsonSetting<Channel[]>(v, [])));
@@ -451,24 +487,80 @@ export default function DiscordBot() {
       {/* ── KÊNH DISCORD ── */}
       {tab === 'channels' && (
         <div className="space-y-6">
+          {/* ── Auto-discovery (Bot) ── */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-bold text-[#555] uppercase tracking-wider">🤖 Thêm kênh từ Bot (tự động)</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Bot tự lấy danh sách tất cả server và kênh — không cần copy ID thủ công.</p>
+              </div>
+              <button onClick={fetchGuilds} disabled={loadingGuilds}
+                className="flex items-center gap-2 px-4 py-2 bg-[#5865F2] text-white rounded-lg text-[12px] font-bold hover:bg-[#4752c4] transition disabled:opacity-50">
+                {loadingGuilds
+                  ? <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Đang tải...</>
+                  : <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Tải danh sách từ bot</>}
+              </button>
+            </div>
+            <div className="p-5">
+              {discoveredGuilds.length === 0 && !loadingGuilds ? (
+                <div className="text-center py-6 text-gray-400">
+                  <p className="text-[13px]">Nhấn <strong className="text-[#5865F2]">"Tải danh sách từ bot"</strong> để bot tự lấy danh sách server và kênh.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Server picker */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Chọn máy chủ *</label>
+                      <select value={selectedGuildId} onChange={e => { setSelectedGuildId(e.target.value); setSelectedChannelId(''); }}
+                        className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] bg-white">
+                        <option value="">— Chọn server —</option>
+                        {discoveredGuilds.map(g => (
+                          <option key={g.id} value={g.id}>{g.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* Channel picker */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Chọn kênh *</label>
+                      <select value={selectedChannelId} onChange={e => setSelectedChannelId(e.target.value)}
+                        disabled={!selectedGuildId}
+                        className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] bg-white disabled:opacity-40">
+                        <option value="">— Chọn kênh —</option>
+                        {(selectedGuild?.channels || []).map(c => (
+                          <option key={c.id} value={c.id}>#{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {selectedDiscordChannel && (
+                    <div className="flex items-center gap-3 p-3 bg-indigo-50 border border-[#5865F2]/20 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-bold text-[#5865F2]">#{selectedDiscordChannel.name} — {selectedGuild?.name}</p>
+                        <p className="text-[10px] text-gray-400 font-mono">Channel ID: {selectedDiscordChannel.id}</p>
+                      </div>
+                      <input value={displayName} onChange={e => setDisplayName(e.target.value)}
+                        placeholder="Tên hiển thị (tuỳ chọn)"
+                        className="w-44 p-2 text-[12px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2]" />
+                      <button onClick={handleAddFromDiscovery}
+                        className="px-4 py-2 bg-[#5865F2] text-white rounded-lg text-[12px] font-bold hover:bg-[#4752c4] transition whitespace-nowrap">
+                        + Thêm kênh này
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Manual (Webhook) ── */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100">
-              <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Thêm kênh mới</span>
+              <p className="text-[13px] font-bold text-[#555] uppercase tracking-wider">🔗 Thêm kênh qua Webhook (thủ công)</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">Dùng khi không có bot token hoặc muốn dùng webhook riêng.</p>
             </div>
             <div className="p-5 space-y-4">
-              {/* Mode switcher */}
-              <div>
-                <label className="block text-[11px] font-bold text-gray-400 uppercase mb-2">Chế độ gửi</label>
-                <div className="flex gap-2">
-                  {(['bot', 'webhook'] as ChannelMode[]).map(m => (
-                    <button key={m} onClick={() => setNewChannel(p => ({ ...p, mode: m }))}
-                      className={`px-4 py-2 rounded-lg text-[12px] font-bold border transition ${newChannel.mode === m ? 'bg-[#5865F2] text-white border-[#5865F2]' : 'bg-white text-gray-500 border-gray-200'}`}>
-                      {m === 'bot' ? '🤖 Bot Token' : '🔗 Webhook'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { key: 'name', label: 'Tên hiển thị *', placeholder: 'VD: Kênh thông báo' },
@@ -477,31 +569,20 @@ export default function DiscordBot() {
                 ].map(f => (
                   <div key={f.key}>
                     <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">{f.label}</label>
-                    <input value={(newChannel as any)[f.key] || ''} onChange={e => setNewChannel(p => ({ ...p, [f.key]: e.target.value }))}
+                    <input value={(newChannel as any)[f.key] || ''} onChange={e => setNewChannel(p => ({ ...p, [f.key]: e.target.value, mode: 'webhook' }))}
                       className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2]" placeholder={f.placeholder} />
                   </div>
                 ))}
               </div>
-
-              {newChannel.mode === 'bot' ? (
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Channel ID *</label>
-                  <input value={newChannel.channelId || ''} onChange={e => setNewChannel(p => ({ ...p, channelId: e.target.value }))}
-                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] font-mono" placeholder="VD: 1234567890123456789" />
-                  <p className="text-[11px] text-gray-400 mt-1">Discord Settings → Advanced → Developer Mode ✓ → Chuột phải vào kênh → Copy Channel ID</p>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Webhook URL *</label>
-                  <input value={newChannel.webhookUrl || ''} onChange={e => setNewChannel(p => ({ ...p, webhookUrl: e.target.value }))}
-                    className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] font-mono" placeholder="https://discord.com/api/webhooks/..." />
-                </div>
-              )}
-
+              <div>
+                <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Webhook URL *</label>
+                <input value={newChannel.webhookUrl || ''} onChange={e => setNewChannel(p => ({ ...p, webhookUrl: e.target.value, mode: 'webhook' }))}
+                  className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] font-mono" placeholder="https://discord.com/api/webhooks/..." />
+              </div>
               <button onClick={handleAddChannel}
-                disabled={!newChannel.name || !newChannel.server || !newChannel.channel || (newChannel.mode === 'bot' ? !newChannel.channelId : !newChannel.webhookUrl)}
-                className="px-6 py-2.5 bg-[#5865F2] text-white rounded-lg font-bold text-[13px] hover:bg-[#4752c4] transition disabled:opacity-40 disabled:cursor-not-allowed">
-                + Thêm kênh
+                disabled={!newChannel.name || !newChannel.server || !newChannel.channel || !newChannel.webhookUrl}
+                className="px-6 py-2.5 bg-gray-700 text-white rounded-lg font-bold text-[13px] hover:bg-gray-900 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                + Thêm Webhook
               </button>
             </div>
           </div>

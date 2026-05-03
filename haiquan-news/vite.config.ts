@@ -44,6 +44,41 @@ function discordBotApiPlugin() {
           }
         });
       });
+
+      // Auto-discover guilds and channels from bot token
+      server.middlewares.use('/api/discord/guilds', async (req: any, res: any, next: any) => {
+        if (req.method !== 'GET') return next();
+        res.setHeader('Content-Type', 'application/json');
+        try {
+          const token = process.env.DISCORD_BOT_TOKEN;
+          if (!token) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ error: 'DISCORD_BOT_TOKEN chưa được cấu hình.' }));
+          }
+          const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+            headers: { Authorization: `Bot ${token}` },
+          });
+          if (!guildsRes.ok) {
+            res.statusCode = guildsRes.status;
+            return res.end(JSON.stringify({ error: await guildsRes.text() }));
+          }
+          const guilds: any[] = await guildsRes.json();
+          const result = await Promise.all(guilds.map(async (g: any) => {
+            const chRes = await fetch(`https://discord.com/api/v10/guilds/${g.id}/channels`, {
+              headers: { Authorization: `Bot ${token}` },
+            });
+            const channels = chRes.ok ? await chRes.json() : [];
+            const textChannels = channels
+              .filter((c: any) => c.type === 0)
+              .map((c: any) => ({ id: c.id, name: c.name }));
+            return { id: g.id, name: g.name, icon: g.icon, channels: textChannels };
+          }));
+          return res.end(JSON.stringify({ guilds: result }));
+        } catch (e: any) {
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ error: e.message }));
+        }
+      });
     }
   };
 }
