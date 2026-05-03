@@ -349,6 +349,29 @@ app.post('/api/admin/categories', async (req, res) => {
   } catch (e) { return res.status(500).json({ error: e.message }); }
 });
 
+app.patch('/api/admin/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, slug, description } = req.body || {};
+  if (!name || !slug) return res.status(400).json({ error: 'Thiếu name hoặc slug' });
+  const payload = { name, slug };
+  if (description !== undefined) payload.description = description || null;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/categories?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!r.ok) return res.status(r.status).json({ error: data?.message || JSON.stringify(data) });
+    return res.json(Array.isArray(data) ? data[0] : data);
+  } catch (e) { return res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/admin/categories/:id', async (req, res) => {
   const { id } = req.params;
   try {

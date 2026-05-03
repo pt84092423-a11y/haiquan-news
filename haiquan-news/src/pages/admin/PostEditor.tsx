@@ -92,6 +92,10 @@ export default function PostEditor() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatSaving, setNewCatSaving] = useState(false);
+  const [newCatError, setNewCatError] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [showPreview, setShowPreview] = useState(false);
@@ -130,7 +134,8 @@ export default function PostEditor() {
     og_image: '',
   });
 
-  useEffect(() => { getAllCategories().then(setCategories); }, []);
+  const loadCategories = () => fetch('/api/admin/categories').then(r => r.json()).then(setCategories).catch(() => getAllCategories().then(setCategories));
+  useEffect(() => { loadCategories(); }, []);
 
   useEffect(() => {
     if (form.category_id && selectedCategoryIds.length === 0) {
@@ -886,11 +891,72 @@ export default function PostEditor() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
               <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Chuyên mục đăng bài</span>
-              <button className="text-[11px] text-[#0059b2] font-bold hover:underline">+ Thêm chuyên mục mới</button>
+              <button
+                type="button"
+                onClick={() => { setShowAddCategory(v => !v); setNewCatName(''); setNewCatError(''); }}
+                className="text-[11px] text-[#0059b2] font-bold hover:underline"
+              >
+                {showAddCategory ? '✕ Đóng' : '+ Thêm mới'}
+              </button>
             </div>
+
+            {/* Mini inline create form */}
+            {showAddCategory && (
+              <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+                {newCatError && <p className="text-[11px] text-red-600 mb-1.5">{newCatError}</p>}
+                <input
+                  autoFocus
+                  value={newCatName}
+                  onChange={e => setNewCatName(e.target.value)}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (!newCatName.trim()) return;
+                      setNewCatSaving(true); setNewCatError('');
+                      try {
+                        const r = await fetch('/api/admin/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newCatName.trim(), slug: generateSlug(newCatName) }) });
+                        const d = await r.json();
+                        if (!r.ok) throw new Error(d?.error || 'Lỗi tạo chuyên mục');
+                        await loadCategories();
+                        if (d?.id) setSelectedCategoryIds(prev => [...prev, d.id]);
+                        setNewCatName(''); setShowAddCategory(false);
+                      } catch (err: any) { setNewCatError(err.message); }
+                      finally { setNewCatSaving(false); }
+                    }
+                  }}
+                  placeholder="Tên chuyên mục... (Enter để lưu)"
+                  className="w-full p-2 text-[12px] border border-blue-200 rounded-lg focus:outline-none focus:border-[#0059b2] bg-white mb-2"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={newCatSaving || !newCatName.trim()}
+                    onClick={async () => {
+                      if (!newCatName.trim()) return;
+                      setNewCatSaving(true); setNewCatError('');
+                      try {
+                        const r = await fetch('/api/admin/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newCatName.trim(), slug: generateSlug(newCatName) }) });
+                        const d = await r.json();
+                        if (!r.ok) throw new Error(d?.error || 'Lỗi tạo chuyên mục');
+                        await loadCategories();
+                        if (d?.id) setSelectedCategoryIds(prev => [...prev, d.id]);
+                        setNewCatName(''); setShowAddCategory(false);
+                      } catch (err: any) { setNewCatError(err.message); }
+                      finally { setNewCatSaving(false); }
+                    }}
+                    className="flex-1 py-1.5 bg-[#0059b2] text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-1"
+                  >
+                    {newCatSaving ? <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> : null}
+                    Tạo & chọn
+                  </button>
+                  <button type="button" onClick={() => { setShowAddCategory(false); setNewCatError(''); }} className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-200 transition">Hủy</button>
+                </div>
+              </div>
+            )}
+
             <div className="p-4 max-h-[260px] overflow-y-auto">
               {categories.length === 0 ? (
-                <p className="text-[12px] text-gray-400 text-center py-4">Chưa có chuyên mục</p>
+                <p className="text-[12px] text-gray-400 text-center py-4">Chưa có chuyên mục nào. Hãy thêm mới!</p>
               ) : (
                 <ul className="space-y-1">
                   {categories.map(c => (

@@ -85,6 +85,23 @@ function discordBotApiPlugin() {
           return;
         }
 
+        // PATCH /api/admin/categories/:id
+        if (req.method === 'PATCH') {
+          const id = req.url?.split('/').pop();
+          const chunks: Buffer[] = [];
+          req.on('data', (c: Buffer) => chunks.push(c));
+          req.on('end', async () => {
+            try {
+              const body = JSON.parse(Buffer.concat(chunks).toString());
+              const r = await fetch(`${SUPABASE_URL_DEV}/rest/v1/categories?id=eq.${id}`, { method: 'PATCH', headers, body: JSON.stringify(body) });
+              const d = await r.json();
+              if (!r.ok) { res.statusCode = r.status; return res.end(JSON.stringify({ error: d?.message || JSON.stringify(d) })); }
+              return res.end(JSON.stringify(Array.isArray(d) ? d[0] : d));
+            } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+          });
+          return;
+        }
+
         // DELETE /api/admin/categories/:id
         if (req.method === 'DELETE') {
           const id = req.url?.split('/').pop();
