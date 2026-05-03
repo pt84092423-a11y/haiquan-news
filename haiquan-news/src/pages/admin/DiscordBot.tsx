@@ -302,13 +302,16 @@ export default function DiscordBot() {
         </div>
       )}
       {botTokenConfigured === 'no-token' && (
-        <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-          <span className="text-xl mt-0.5">⚠️</span>
+        <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+          <span className="text-xl mt-0.5">ℹ️</span>
           <div className="flex-1">
-            <p className="text-[13px] font-bold text-amber-800">Bot Token chưa được cấu hình</p>
-            <p className="text-[12px] text-amber-700 mt-0.5">Vào <strong>Secrets</strong> trong Replit, thêm biến <Code>DISCORD_BOT_TOKEN</Code> với giá trị token của bot.</p>
+            <p className="text-[13px] font-bold text-blue-800">Bot Token chưa được cấu hình trên máy chủ này</p>
+            <p className="text-[12px] text-blue-700 mt-0.5">
+              Biến môi trường <Code>DISCORD_BOT_TOKEN</Code> chưa được đặt trên máy chủ hiện tại.{' '}
+              <strong>Chức năng Webhook vẫn hoạt động bình thường.</strong>
+            </p>
           </div>
-          <button onClick={checkBotToken} className="shrink-0 text-[12px] font-bold text-amber-800 border border-amber-300 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition">
+          <button onClick={checkBotToken} className="shrink-0 text-[12px] font-bold text-blue-800 border border-blue-300 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition">
             Kiểm tra lại
           </button>
         </div>

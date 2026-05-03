@@ -46,11 +46,38 @@ const YT_TV_CHANNELS = [
 ];
 
 async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): Promise<YTVideo[]> {
+  // Method 1: rss2json.com — browser-direct, bypasses server IP blocks from YouTube
+  try {
+    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`;
+    const r = await fetch(apiUrl);
+    const j = await r.json();
+    if (j.status === 'ok' && Array.isArray(j.items) && j.items.length > 0) {
+      return j.items.map((item: any) => {
+        const videoId = item.link?.split('v=')?.[1]?.split('&')?.[0] || '';
+        return {
+          videoId,
+          title: item.title || '',
+          published: item.pubDate || '',
+          thumbnail: item.thumbnail || item.enclosure?.link || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          url: item.link || '',
+          embedUrl: `https://www.youtube.com/embed/${videoId}`,
+          channel: ch.handle,
+        } as YTVideo;
+      }).filter((v: YTVideo) => v.videoId);
+    }
+  } catch { /* fall through */ }
+
+  // Method 2: server-side proxy (works on Replit dev, may fail on production)
   try {
     const r = await fetch(`/api/youtube/feed?channelId=${ch.channelId}&handle=${ch.handle}`);
-    const j = await r.json();
-    return (j.videos || []) as YTVideo[];
-  } catch { return []; }
+    if (r.ok) {
+      const j = await r.json();
+      if ((j.videos || []).length > 0) return j.videos as YTVideo[];
+    }
+  } catch { /* fall through */ }
+
+  return [];
 }
 
 export default function HomePage() {
