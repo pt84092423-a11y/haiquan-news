@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { YOUTUBE_CACHE } from '@/data/youtube-cache';
 import { Link } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
@@ -45,18 +46,9 @@ const DEFAULT_YT_TV_CHANNELS = [
   { channelId: 'UC7W8ubM1PB8DzLMP7JSrHyg', handle: 'srov4' },
 ];
 
-// Module-level cache for the static youtube-cache.json (fetched once)
-let _ytStaticCache: Record<string, YTVideo[]> | null = null;
-let _ytStaticCachePromise: Promise<Record<string, YTVideo[]> | null> | null = null;
-
-async function getStaticYtCache(): Promise<Record<string, YTVideo[]> | null> {
-  if (_ytStaticCache !== null) return _ytStaticCache;
-  if (_ytStaticCachePromise) return _ytStaticCachePromise;
-  _ytStaticCachePromise = fetch('/youtube-cache.json', { cache: 'no-cache' })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => { _ytStaticCache = data; return data; })
-    .catch(() => null);
-  return _ytStaticCachePromise;
+// Bundled at build time by Vite — no HTTP request needed, works on any static host
+function getStaticYtCache(): Record<string, any[]> {
+  return YOUTUBE_CACHE;
 }
 
 function parseYoutubeXml(xml: string, handle: string): YTVideo[] {
@@ -92,10 +84,10 @@ function parseYoutubeXml(xml: string, handle: string): YTVideo[] {
 async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): Promise<YTVideo[]> {
   const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
 
-  // Method 0: static youtube-cache.json (baked in at build time by GitHub Actions — instant, no CORS)
+  // Method 0: bundled at build time — instant, no HTTP, works on any static host
   try {
-    const cache = await getStaticYtCache();
-    const cached = cache?.[ch.channelId];
+    const cache = getStaticYtCache();
+    const cached = cache[ch.channelId];
     if (Array.isArray(cached) && cached.length > 0) {
       return cached.map(v => ({ ...v, channel: ch.handle })) as YTVideo[];
     }
