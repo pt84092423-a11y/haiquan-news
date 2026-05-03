@@ -13,6 +13,14 @@ const client = new Client({
 
 client.once('clientReady', () => {
   console.log(`[Discord Bot] ✅ Bot đã online: ${client.user.tag}`);
+  console.log(`[Discord Bot] Application ID: ${client.user.id}`);
+  console.log(`[Discord Bot] OAuth Invite URL: https://discord.com/oauth2/authorize?client_id=${client.user.id}&scope=bot&permissions=2048`);
+  const guilds = client.guilds.cache.map(g => `${g.name} (${g.id})`);
+  if (guilds.length === 0) {
+    console.log('[Discord Bot] ⚠️  Bot chưa được thêm vào server nào!');
+  } else {
+    console.log(`[Discord Bot] Bot đang có trong ${guilds.length} server: ${guilds.join(', ')}`);
+  }
   client.user.setPresence({
     status: 'online',
     activities: [
