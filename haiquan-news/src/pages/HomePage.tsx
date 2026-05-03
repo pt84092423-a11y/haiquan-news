@@ -36,12 +36,12 @@ type YTVideo = {
   channel: string;
 };
 
-// Channel IDs + handles: @TGM_Kuroma, @srov24h, @srov4
-const YT_MEDIA_CHANNELS = [
+// Default channel IDs (used if no Supabase config exists yet)
+const DEFAULT_YT_MEDIA_CHANNELS = [
   { channelId: 'UCyV_AKZjCqd1bkUbEHGcTyA', handle: 'TGM_Kuroma' },
   { channelId: 'UC4MXnZXKnKu9Cg6mNts1aPQ', handle: 'srov24h' },
 ];
-const YT_TV_CHANNELS = [
+const DEFAULT_YT_TV_CHANNELS = [
   { channelId: 'UC7W8ubM1PB8DzLMP7JSrHyg', handle: 'srov4' },
 ];
 
@@ -195,9 +195,21 @@ export default function HomePage() {
     async function loadYT() {
       setYtLoading(true);
       try {
+        // Load channel config from Supabase (admin-configurable), fall back to defaults
+        let mediaChannels = DEFAULT_YT_MEDIA_CHANNELS;
+        let tvChannels = DEFAULT_YT_TV_CHANNELS;
+        try {
+          const raw = await getSiteSetting('youtube_home_config');
+          if (raw) {
+            const parsed = parseJsonSetting<{ media: typeof DEFAULT_YT_MEDIA_CHANNELS; tv: typeof DEFAULT_YT_TV_CHANNELS }>(raw, { media: [], tv: [] });
+            if (parsed.media?.length) mediaChannels = parsed.media;
+            if (parsed.tv?.length) tvChannels = parsed.tv;
+          }
+        } catch { /* use defaults */ }
+
         const [mediaResults, tvResults] = await Promise.allSettled([
-          Promise.all(YT_MEDIA_CHANNELS.map(fetchYoutubeChannel)),
-          Promise.all(YT_TV_CHANNELS.map(fetchYoutubeChannel)),
+          Promise.all(mediaChannels.map(fetchYoutubeChannel)),
+          Promise.all(tvChannels.map(fetchYoutubeChannel)),
         ]);
         if (mediaResults.status === 'fulfilled') {
           const all = mediaResults.value.flat();
