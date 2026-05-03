@@ -449,7 +449,7 @@ export default function DiscordBot() {
           { id: 'channels', label: 'Kênh Discord', icon: '🔗' },
           { id: 'config', label: 'Cấu hình', icon: '⚙️' },
           { id: 'history', label: 'Lịch sử gửi', icon: '📋' },
-          { id: 'roles', label: 'Quản lý role', icon: '🛡️' },
+          { id: 'roles', label: 'Quản lý tài khoản', icon: '🛡️' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             className={`px-5 py-2 rounded-lg text-[13px] font-bold transition ${tab === t.id ? 'bg-white shadow text-[#5865F2]' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -1109,7 +1109,7 @@ export default function DiscordBot() {
         <div className="space-y-5">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-5 space-y-4">
             <div>
-              <p className="text-[14px] font-black text-[#222] uppercase tracking-wide">Quản lý role <span className="font-mono text-[#5865F2]">&lt;@&amp;1432579300623777852&gt;</span></p>
+              <p className="text-[14px] font-black text-[#222] uppercase tracking-wide">Quản lý tài khoản <span className="font-mono text-[#5865F2]">&lt;@&amp;1432579300623777852&gt;</span></p>
               <p className="text-[12px] text-gray-500 mt-1">Chọn server, tải danh sách member, lọc người chưa có role và thêm/xoá trực tiếp.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
