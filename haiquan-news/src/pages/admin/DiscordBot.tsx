@@ -191,15 +191,22 @@ export default function DiscordBot() {
           setBotTokenConfigured('no-api');
           return;
         }
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          if (attempt === 2) { setBotTokenConfigured('no-token'); return; }
+          await new Promise(res => setTimeout(res, 1000));
+          continue;
+        }
         const d = await r.json();
         if (d.configured === true) { setBotTokenConfigured('ok'); return; }
-        if (d.configured === false) { setBotTokenConfigured('no-token'); return; }
+        setBotTokenConfigured('no-token');
+        return;
       } catch {
-        if (attempt === 2) { setBotTokenConfigured('no-api'); return; }
+        if (attempt === 2) { setBotTokenConfigured('no-token'); return; }
       }
       if (attempt < 2) await new Promise(res => setTimeout(res, 800));
     }
-    setBotTokenConfigured('no-api');
+    setBotTokenConfigured('no-token');
   };
 
   useEffect(() => {

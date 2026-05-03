@@ -78,9 +78,25 @@ function parseYoutubeXml(xml: string, handle: string): YTVideo[] {
 async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): Promise<YTVideo[]> {
   const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
 
-  // Method 1: allorigins.win CORS proxy — parse XML ourselves (most reliable)
+  // Method 1: server-side API (proven reliable — handles RSS + scraping fallback)
   try {
-    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`, { signal: AbortSignal.timeout(8000) });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 12000);
+    const r = await fetch(`/api/youtube/feed?channelId=${ch.channelId}&handle=${ch.handle}`, { signal: ctrl.signal });
+    clearTimeout(tid);
+    if (r.ok) {
+      const j = await r.json();
+      const vids = (j.videos || []).map((v: any) => ({ ...v, channel: ch.handle }));
+      if (vids.length > 0) return vids as YTVideo[];
+    }
+  } catch { /* fall through */ }
+
+  // Method 2: allorigins.win CORS proxy — parse XML ourselves
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`, { signal: ctrl.signal });
+    clearTimeout(tid);
     if (r.ok) {
       const xml = await r.text();
       const parsed = parseYoutubeXml(xml, ch.handle);
@@ -88,9 +104,12 @@ async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): P
     }
   } catch { /* fall through */ }
 
-  // Method 2: corsproxy.io — alternative CORS proxy
+  // Method 3: corsproxy.io — alternative CORS proxy
   try {
-    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, { signal: AbortSignal.timeout(8000) });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(rssUrl)}`, { signal: ctrl.signal });
+    clearTimeout(tid);
     if (r.ok) {
       const xml = await r.text();
       const parsed = parseYoutubeXml(xml, ch.handle);
@@ -98,9 +117,12 @@ async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): P
     }
   } catch { /* fall through */ }
 
-  // Method 3: rss2json.com — returns JSON (no XML parsing needed)
+  // Method 4: rss2json.com — JSON fallback
   try {
-    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`, { signal: AbortSignal.timeout(8000) });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=15`, { signal: ctrl.signal });
+    clearTimeout(tid);
     if (r.ok) {
       const j = await r.json();
       if (j.status === 'ok' && Array.isArray(j.items) && j.items.length > 0) {
@@ -109,15 +131,6 @@ async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): P
           return { videoId, title: item.title || '', published: item.pubDate || '', thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, url: item.link || '', embedUrl: `https://www.youtube.com/embed/${videoId}`, channel: ch.handle } as YTVideo;
         }).filter((v: YTVideo) => v.videoId);
       }
-    }
-  } catch { /* fall through */ }
-
-  // Method 4: server-side proxy (works on Replit dev)
-  try {
-    const r = await fetch(`/api/youtube/feed?channelId=${ch.channelId}&handle=${ch.handle}`, { signal: AbortSignal.timeout(10000) });
-    if (r.ok) {
-      const j = await r.json();
-      if ((j.videos || []).length > 0) return j.videos as YTVideo[];
     }
   } catch { /* fall through */ }
 
