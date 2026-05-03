@@ -741,11 +741,14 @@ export default function HomePage() {
         {/* HẢI QUÂN MEDIA */}
         <section className="mb-8 border-b border-[#e1e1e1] pb-8">
           <div className="flex items-center justify-between mb-1">
-            <SectionTitle title="HẢI QUÂN MEDIA" className={`text-[24px] ${headingStyle}`} />
-            <a href="https://www.youtube.com/@TGM_Kuroma" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold hover:underline">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-              YouTube
-            </a>
+            <Link href="/hai-quan-media"><SectionTitle title="HẢI QUÂN MEDIA" className={`text-[24px] ${headingStyle} hover:opacity-80 cursor-pointer`} /></Link>
+            <div className="flex items-center gap-3">
+              <Link href="/hai-quan-media" className="text-[12px] text-[#0059b2] font-bold hover:underline">Xem tất cả →</Link>
+              <a href="https://www.youtube.com/@TGM_Kuroma" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold hover:underline">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                YouTube
+              </a>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -854,11 +857,14 @@ export default function HomePage() {
           {/* TRUYỀN HÌNH HẢI QUÂN */}
           <div>
             <div className="flex items-center justify-between mb-6">
-              <SectionTitle title="TRUYỀN HÌNH HẢI QUÂN" light className="text-[24px] font-serif font-bold uppercase mb-0" />
-              <a href="https://www.youtube.com/@srov4" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] text-white/70 font-bold hover:text-white transition">
-                <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                @srov4
-              </a>
+              <Link href="/truyen-hinh-hq"><SectionTitle title="TRUYỀN HÌNH HẢI QUÂN" light className="text-[24px] font-serif font-bold uppercase mb-0 hover:opacity-80 cursor-pointer" /></Link>
+              <div className="flex items-center gap-3">
+                <Link href="/truyen-hinh-hq" className="text-[12px] text-white/70 font-bold hover:text-white transition">Xem tất cả →</Link>
+                <a href="https://www.youtube.com/@srov4" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] text-white/70 font-bold hover:text-white transition">
+                  <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                  @srov4
+                </a>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               <div className="md:col-span-8">

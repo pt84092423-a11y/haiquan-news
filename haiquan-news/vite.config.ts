@@ -83,37 +83,44 @@ function discordBotApiPlugin() {
           const html = await pageRes.text();
           const m = html.match(/ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s);
           if (!m) return [];
-          const s = JSON.stringify(JSON.parse(m[1]));
-          const seen = new Set<string>();
+          let data: any;
+          try { data = JSON.parse(m[1]); } catch { return []; }
+
           const entries: any[] = [];
+          const seen = new Set<string>();
+
           function clean(t: string) {
             return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
           }
-          function addEntry(videoId: string, title: string) {
-            if (!seen.has(videoId) && entries.length < 15) {
-              seen.add(videoId);
-              entries.push({
-                videoId, title: clean(title), published: '', channel: '',
-                thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-                url: `https://www.youtube.com/watch?v=${videoId}`,
-                embedUrl: `https://www.youtube.com/embed/${videoId}`,
-              });
+
+          // Walk the JSON tree and collect videoRenderer objects
+          function walk(node: any) {
+            if (!node || typeof node !== 'object' || entries.length >= 15) return;
+            if (node.videoRenderer) {
+              const vr = node.videoRenderer;
+              const videoId: string = vr.videoId || '';
+              const titleText: string =
+                vr.title?.runs?.[0]?.text ||
+                vr.title?.simpleText ||
+                vr.title?.content || '';
+              if (videoId && titleText && !seen.has(videoId)) {
+                seen.add(videoId);
+                entries.push({
+                  videoId,
+                  title: clean(titleText),
+                  published: '', channel: '',
+                  thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                  url: `https://www.youtube.com/watch?v=${videoId}`,
+                  embedUrl: `https://www.youtube.com/embed/${videoId}`,
+                });
+              }
+              return;
             }
+            if (Array.isArray(node)) { for (const item of node) walk(item); }
+            else { for (const val of Object.values(node)) walk(val); }
           }
-          // Pattern 1: new YouTube UI — "title":{"content":"TITLE"} near videoId
-          const re1 = /"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]{0,3000}?"title":\{"content":"([^"]+)"/g;
-          let mm: RegExpExecArray | null;
-          while ((mm = re1.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
-          // Pattern 2: old YouTube UI — videoRenderer with "thumbnail" then "runs":[{"text":"TITLE"}]
-          if (entries.length < 3) {
-            const re2 = /"videoId":"([a-zA-Z0-9_-]{11})","thumbnail"[\s\S]{0,300}?"runs":\[\{"text":"([^"]+)"/g;
-            while ((mm = re2.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
-          }
-          // Pattern 3: broadest — "videoId":"ID" then "text":"TITLE" within 400 chars
-          if (entries.length < 3) {
-            const re3 = /"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]{0,400}?"text":"([^"]{5,120})"/g;
-            while ((mm = re3.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
-          }
+
+          walk(data);
           return entries;
         }
         try {
