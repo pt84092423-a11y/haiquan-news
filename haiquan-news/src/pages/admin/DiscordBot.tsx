@@ -163,8 +163,8 @@ export default function DiscordBot() {
     getAllPosts({ limit: 100, status: 'published' }).then(r => { setPosts(r.posts); setLoadingPosts(false); });
     getSiteSetting('discord_bot_channels').then(v => setChannels(parseJsonSetting<Channel[]>(v, [])));
     getSiteSetting('discord_bot_config').then(v => setConfig({ ...DEFAULT_CONFIG, ...parseJsonSetting<BotConfig>(v, DEFAULT_CONFIG) }));
-    fetch('/api/discord/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channelId: 'check', content: 'check' }) })
-      .then(r => r.json()).then(d => setBotTokenConfigured(!d.error?.includes('DISCORD_BOT_TOKEN'))).catch(() => setBotTokenConfigured(false));
+    fetch('/api/discord/ping')
+      .then(r => r.json()).then(d => setBotTokenConfigured(d.configured === true)).catch(() => setBotTokenConfigured(false));
   }, []);
 
   const handleSend = async () => {
