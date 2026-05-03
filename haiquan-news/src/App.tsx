@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SiteHeader from "@/components/SiteHeader";
@@ -48,12 +49,30 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: string | null }> {
+  constructor(props: any) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e: Error) { return { error: e?.message || String(e) }; }
+  render() {
+    if (this.state.error) return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-8">
+        <div className="bg-white border border-red-200 rounded-2xl p-8 max-w-xl w-full shadow">
+          <p className="text-xl font-black text-red-600 mb-2">⚠️ Lỗi trang</p>
+          <p className="text-gray-500 text-sm mb-4">Trang này gặp lỗi JavaScript. Vui lòng chụp màn hình và báo cáo:</p>
+          <pre className="bg-red-50 text-red-700 text-xs p-4 rounded-lg whitespace-pre-wrap break-all">{this.state.error}</pre>
+          <button onClick={() => this.setState({ error: null })} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Thử lại</button>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 function ProtectedRoute({ component: Comp, action }: { component: React.ComponentType; action?: string }) {
   const session = getSession();
   const [, setLocation] = useLocation();
   if (!session) {
     setTimeout(() => setLocation('/admin/login'), 0);
-    return null;
+    return <div className="min-h-screen bg-[#01122e] flex items-center justify-center"><div className="text-white text-sm opacity-60">Đang chuyển hướng...</div></div>;
   }
   if (action && !can(session.role, action)) {
     return (
@@ -91,7 +110,7 @@ function Router() {
       <Route path="/admin/quang-cao" component={() => <ProtectedRoute component={AdminAds} />} />
       <Route path="/admin/thanh-dieu-huong" component={() => <ProtectedRoute component={NavManager} />} />
       <Route path="/admin/hadmin" component={() => <ProtectedRoute component={HadminPanel} action="view_hadmin_panel" />} />
-      <Route path="/admin/discord-bot" component={() => <ProtectedRoute component={DiscordBot} />} />
+      <Route path="/admin/discord-bot" component={() => <ErrorBoundary><ProtectedRoute component={DiscordBot} /></ErrorBoundary>} />
       <Route path="/admin/import-video" component={() => <ProtectedRoute component={ImportVideo} action="write_post" />} />
       <Route path="/admin/discord-reader" component={() => <ProtectedRoute component={DiscordReader} />} />
       <Route path="/admin/ip-monitor" component={() => <ProtectedRoute component={IpMonitor} action="view_audit_log" />} />
