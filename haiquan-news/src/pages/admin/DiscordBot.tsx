@@ -101,7 +101,7 @@ export default function DiscordBot() {
   const [configSaved, setConfigSaved] = useState(false);
   const [botTokenConfigured, setBotTokenConfigured] = useState<boolean | null>(null);
 
-  interface DiscordGuild { id: string; name: string; icon: string | null; channels: { id: string; name: string }[]; }
+  interface DiscordGuild { id: string; name: string; icon: string | null; channels: { id: string; name: string; type: number }[]; }
   const [discoveredGuilds, setDiscoveredGuilds] = useState<DiscordGuild[]>([]);
   const [loadingGuilds, setLoadingGuilds] = useState(false);
   const [selectedGuildId, setSelectedGuildId] = useState('');
@@ -573,8 +573,13 @@ export default function DiscordBot() {
                               .map(c => (
                                 <button key={c.id} onClick={() => setSelectedChannelId(c.id)}
                                   className={`w-full text-left px-3 py-2 text-[13px] transition border-b border-gray-50 last:border-0 flex items-center gap-2 ${selectedChannelId === c.id ? 'bg-indigo-50 text-[#5865F2] font-bold' : 'hover:bg-gray-50 text-[#222]'}`}>
-                                  <span className="text-gray-400">#</span>
+                                  {c.type === 5 ? (
+                                    <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM8 8.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-7zm3.5 0a.5.5 0 0 1 .5-.5h1l3 3.5-3 3.5h-1a.5.5 0 0 1-.5-.5v-6z"/></svg>
+                                  ) : (
+                                    <span className="text-gray-400 font-mono text-[11px]">#</span>
+                                  )}
                                   <span>{c.name}</span>
+                                  {c.type === 5 && <span className="ml-auto text-[10px] text-amber-500 font-bold bg-amber-50 px-1.5 py-0.5 rounded">thông báo</span>}
                                   {selectedChannelId === c.id && (
                                     <svg className="w-3.5 h-3.5 ml-auto text-[#5865F2]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                                   )}

@@ -154,8 +154,9 @@ function discordBotApiPlugin() {
             });
             const channels = chRes.ok ? await chRes.json() : [];
             const textChannels = channels
-              .filter((c: any) => c.type === 0)
-              .map((c: any) => ({ id: c.id, name: c.name }));
+              .filter((c: any) => c.type === 0 || c.type === 5)
+              .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))
+              .map((c: any) => ({ id: c.id, name: c.name, type: c.type }));
             return { id: g.id, name: g.name, icon: g.icon, channels: textChannels };
           }));
           return res.end(JSON.stringify({ guilds: result }));
