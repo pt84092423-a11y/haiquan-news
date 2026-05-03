@@ -12,11 +12,11 @@ const IMGS = [
 
 export default function NavyGalleryStrip() {
   return (
-    <div className="w-full bg-white py-5 border-t border-b border-gray-100">
+    <div className="w-full bg-white py-5">
       <div className="container mx-auto max-w-[1200px] px-4">
         <div className="grid grid-cols-4 gap-3">
           {IMGS.map((img, i) => (
-            <div key={i} className="overflow-hidden rounded-sm shadow-sm aspect-[4/3] relative group">
+            <div key={i} className="overflow-hidden shadow-sm aspect-[4/3] relative group">
               <img
                 src={img.src}
                 alt={img.alt}
