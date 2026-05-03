@@ -48,6 +48,7 @@ function formatDiscordMessage(post: Post, config: BotConfig): string {
     '',
     articleUrl,
     '',
+    'Chi tiết trong đường link',
     'Kính mong các đồng chí chú ý!',
     'Trân trọng,',
     `Đồng chí ${config.signature_name}`,
