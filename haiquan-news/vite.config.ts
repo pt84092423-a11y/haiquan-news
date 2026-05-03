@@ -63,37 +63,70 @@ function discordBotApiPlugin() {
         } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
       });
 
-      // ── YouTube: fetch RSS feed by channel ID ──
+      // ── YouTube: fetch videos by scraping channel page (RSS blocked from server IPs) ──
       server.middlewares.use('/api/youtube/feed', async (req: any, res: any, next: any) => {
         if (req.method !== 'GET') return next();
-        const qs = new URL(req.url, 'http://localhost').searchParams;
+        const qs = new URL(req.url || '/', 'http://localhost').searchParams;
         const channelId = qs.get('channelId');
+        const handle = qs.get('handle');
         res.setHeader('Content-Type', 'application/json');
-        try {
-          if (!channelId) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'Thiếu channelId' })); }
-          const rssRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
-            headers: { 'User-Agent': 'Mozilla/5.0' }
-          });
-          if (!rssRes.ok) { res.statusCode = rssRes.status; return res.end(JSON.stringify({ error: 'Không thể tải RSS' })); }
-          const xml = await rssRes.text();
+        // Known handle map for fallback
+        const HANDLE_MAP: Record<string, string> = {
+          'UC4MXnZXKnKu9Cg6mNts1aPQ': 'srov24h',
+          'UC7W8ubM1PB8DzLMP7JSrHyg': 'srov4',
+          'UCyV_AKZjCqd1bkUbEHGcTyA': 'TGM_Kuroma',
+        };
+        const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+        async function scrapeChannelPage(url: string): Promise<any[]> {
+          const pageRes = await fetch(url, { headers: { 'User-Agent': UA } });
+          if (!pageRes.ok) return [];
+          const html = await pageRes.text();
+          const m = html.match(/ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s);
+          if (!m) return [];
+          const s = JSON.stringify(JSON.parse(m[1]));
+          const seen = new Set<string>();
           const entries: any[] = [];
-          const re = /<entry>([\s\S]*?)<\/entry>/g;
-          let m;
-          while ((m = re.exec(xml)) !== null) {
-            const e = m[1];
-            const videoId   = (e.match(/<yt:videoId>(.*?)<\/yt:videoId>/)      || [])[1];
-            const title     = (e.match(/<title>(.*?)<\/title>/)                || [])[1];
-            const published = (e.match(/<published>(.*?)<\/published>/)         || [])[1];
-            const thumbnail = (e.match(/<media:thumbnail url="(.*?)"/)         || [])[1];
-            const channel   = (e.match(/<name>(.*?)<\/name>/)                  || [])[1];
-            if (videoId && title) entries.push({
-              videoId, published, thumbnail, channel: channel || '',
-              title: title.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"),
-              url: `https://www.youtube.com/watch?v=${videoId}`,
-              embedUrl: `https://www.youtube.com/embed/${videoId}`,
-            });
+          function clean(t: string) {
+            return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
           }
-          return res.end(JSON.stringify({ videos: entries }));
+          function addEntry(videoId: string, title: string) {
+            if (!seen.has(videoId) && entries.length < 15) {
+              seen.add(videoId);
+              entries.push({
+                videoId, title: clean(title), published: '', channel: '',
+                thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                url: `https://www.youtube.com/watch?v=${videoId}`,
+                embedUrl: `https://www.youtube.com/embed/${videoId}`,
+              });
+            }
+          }
+          // Pattern 1: new YouTube UI — "title":{"content":"TITLE"} near videoId
+          const re1 = /"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]{0,3000}?"title":\{"content":"([^"]+)"/g;
+          let mm: RegExpExecArray | null;
+          while ((mm = re1.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
+          // Pattern 2: old YouTube UI — videoRenderer with "thumbnail" then "runs":[{"text":"TITLE"}]
+          if (entries.length < 3) {
+            const re2 = /"videoId":"([a-zA-Z0-9_-]{11})","thumbnail"[\s\S]{0,300}?"runs":\[\{"text":"([^"]+)"/g;
+            while ((mm = re2.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
+          }
+          // Pattern 3: broadest — "videoId":"ID" then "text":"TITLE" within 400 chars
+          if (entries.length < 3) {
+            const re3 = /"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]{0,400}?"text":"([^"]{5,120})"/g;
+            while ((mm = re3.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
+          }
+          return entries;
+        }
+        try {
+          if (!channelId && !handle) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'Thiếu channelId hoặc handle' })); }
+          let videos: any[] = [];
+          // Try channel/ID/videos first (works for most channels)
+          if (channelId) videos = await scrapeChannelPage(`https://www.youtube.com/channel/${channelId}/videos`);
+          // Try @handle/videos if channel ID scraping failed
+          const resolvedHandle = handle || (channelId ? HANDLE_MAP[channelId] : null);
+          if (videos.length === 0 && resolvedHandle) {
+            videos = await scrapeChannelPage(`https://www.youtube.com/@${resolvedHandle.replace('@','')}/videos`);
+          }
+          return res.end(JSON.stringify({ videos }));
         } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
       });
 

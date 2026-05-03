@@ -5,14 +5,15 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPA
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 async function getSetting(key) {
-  const { data } = await supabase.from('site_settings').select('value').eq('key', key).single();
+  const { data } = await supabase.from('settings').select('value').eq('key', key).single();
   return data?.value || null;
 }
 
 async function upsertSetting(key, value) {
-  await supabase.from('site_settings').upsert({ key, value }, { onConflict: 'key' });
+  await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
 }
 
 async function getCategoryId(slug) {
@@ -21,33 +22,56 @@ async function getCategoryId(slug) {
   return data?.id || null;
 }
 
-async function parseYoutubeRSS(channelId) {
-  try {
-    const res = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    if (!res.ok) return [];
-    const xml = await res.text();
-    const entries = [];
-    const re = /<entry>([\s\S]*?)<\/entry>/g;
-    let m;
-    while ((m = re.exec(xml)) !== null) {
-      const e = m[1];
-      const videoId   = (e.match(/<yt:videoId>(.*?)<\/yt:videoId>/)   || [])[1];
-      const title     = (e.match(/<title>(.*?)<\/title>/)             || [])[1];
-      const published = (e.match(/<published>(.*?)<\/published>/)      || [])[1];
-      const thumbnail = (e.match(/<media:thumbnail url="(.*?)"/)      || [])[1];
-      if (videoId && title) entries.push({
-        videoId, published, thumbnail: thumbnail || '',
-        title: title.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"),
-        embedUrl: `https://www.youtube.com/embed/${videoId}`,
-      });
+async function scrapeChannelVideos(channelId, handle) {
+  async function scrape(url) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) return [];
+      const html = await res.text();
+      const m = html.match(/ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s);
+      if (!m) return [];
+      const s = JSON.stringify(JSON.parse(m[1]));
+      const seen = new Set();
+      const entries = [];
+      function clean(t) {
+        return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+      }
+      function addEntry(videoId, title) {
+        if (!seen.has(videoId) && entries.length < 15) {
+          seen.add(videoId);
+          entries.push({
+            videoId, title: clean(title),
+            thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+            embedUrl: `https://www.youtube.com/embed/${videoId}`,
+            published: new Date().toISOString(),
+          });
+        }
+      }
+      let mm;
+      // Pattern 1: new YouTube UI
+      const re1 = /"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]{0,3000}?"title":\{"content":"([^"]+)"/g;
+      while ((mm = re1.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
+      // Pattern 2: old YouTube UI (videoRenderer with thumbnail then runs)
+      if (entries.length < 3) {
+        const re2 = /"videoId":"([a-zA-Z0-9_-]{11})","thumbnail"[\s\S]{0,300}?"runs":\[\{"text":"([^"]+)"/g;
+        while ((mm = re2.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
+      }
+      // Pattern 3: broadest fallback
+      if (entries.length < 3) {
+        const re3 = /"videoId":"([a-zA-Z0-9_-]{11})"[\s\S]{0,400}?"text":"([^"]{5,120})"/g;
+        while ((mm = re3.exec(s)) !== null) { addEntry(mm[1], mm[2]); if (entries.length >= 15) break; }
+      }
+      return entries;
+    } catch (e) {
+      return [];
     }
-    return entries;
-  } catch (e) {
-    console.error(`[VideoSync] Lỗi RSS ${channelId}:`, e.message);
-    return [];
   }
+
+  let videos = await scrape(`https://www.youtube.com/channel/${channelId}/videos`);
+  if (videos.length === 0 && handle) {
+    videos = await scrape(`https://www.youtube.com/@${handle.replace('@', '')}/videos`);
+  }
+  return videos;
 }
 
 async function syncChannels() {
@@ -68,10 +92,10 @@ async function syncChannels() {
   let newCount = 0;
 
   for (const ch of channels) {
-    const { channelId, categorySlug, label } = ch;
+    const { channelId, handle, categorySlug, label } = ch;
     if (!channelId) continue;
     const categoryId = await getCategoryId(categorySlug);
-    const videos = await parseYoutubeRSS(channelId);
+    const videos = await scrapeChannelVideos(channelId, handle);
 
     for (const v of videos) {
       if (seenIds.has(v.videoId)) continue;
@@ -87,7 +111,7 @@ async function syncChannels() {
         post_type: 'video',
         video_url: v.embedUrl,
         author: label || 'YouTube Auto-Sync',
-        published_at: v.published || new Date().toISOString(),
+        published_at: v.published,
       }, { onConflict: 'slug', ignoreDuplicates: true });
 
       newSeenIds.add(v.videoId);

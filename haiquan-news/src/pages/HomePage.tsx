@@ -26,6 +26,33 @@ const getAdImages = (settings: Record<string, string>, multiKey: string, singleK
   return images.map((item: string) => item.trim()).filter(Boolean);
 };
 
+type YTVideo = {
+  videoId: string;
+  title: string;
+  published: string;
+  thumbnail: string;
+  url: string;
+  embedUrl: string;
+  channel: string;
+};
+
+// Channel IDs + handles: @TGM_Kuroma, @srov24h, @srov4
+const YT_MEDIA_CHANNELS = [
+  { channelId: 'UCyV_AKZjCqd1bkUbEHGcTyA', handle: 'TGM_Kuroma' },
+  { channelId: 'UC4MXnZXKnKu9Cg6mNts1aPQ', handle: 'srov24h' },
+];
+const YT_TV_CHANNELS = [
+  { channelId: 'UC7W8ubM1PB8DzLMP7JSrHyg', handle: 'srov4' },
+];
+
+async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): Promise<YTVideo[]> {
+  try {
+    const r = await fetch(`/api/youtube/feed?channelId=${ch.channelId}&handle=${ch.handle}`);
+    const j = await r.json();
+    return (j.videos || []) as YTVideo[];
+  } catch { return []; }
+}
+
 export default function HomePage() {
   const [spotlight, setSpotlight] = useState<Post[]>([]);
   const [featuredIdx, setFeaturedIdx] = useState(0);
@@ -33,7 +60,6 @@ export default function HomePage() {
   const [mostRead, setMostRead] = useState<Post[]>([]);
   const [generalPosts, setGeneralPosts] = useState<Post[]>([]);
   
-  // Data cho các mục mới
   const [chuQuyenPosts, setChuQuyenPosts] = useState<Post[]>([]);
   const [tamTinhPosts, setTamTinhPosts] = useState<Post[]>([]);
   const [lichSuPosts, setLichSuPosts] = useState<Post[]>([]);
@@ -49,6 +75,11 @@ export default function HomePage() {
   const [bottomAdIdx, setBottomAdIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
+
+  // YouTube live RSS state
+  const [ytMediaVideos, setYtMediaVideos] = useState<YTVideo[]>([]);
+  const [ytTVVideos, setYtTVVideos] = useState<YTVideo[]>([]);
+  const [ytLoading, setYtLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -130,6 +161,35 @@ export default function HomePage() {
       }
     }
     load();
+  }, []);
+
+  // Fetch YouTube RSS feeds live for homepage video sections
+  useEffect(() => {
+    async function loadYT() {
+      setYtLoading(true);
+      try {
+        const [mediaResults, tvResults] = await Promise.allSettled([
+          Promise.all(YT_MEDIA_CHANNELS.map(fetchYoutubeChannel)),
+          Promise.all(YT_TV_CHANNELS.map(fetchYoutubeChannel)),
+        ]);
+        if (mediaResults.status === 'fulfilled') {
+          const all = mediaResults.value.flat();
+          // Sort by published date descending
+          all.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
+          setYtMediaVideos(all.slice(0, 10));
+        }
+        if (tvResults.status === 'fulfilled') {
+          const all = tvResults.value.flat();
+          all.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
+          setYtTVVideos(all.slice(0, 6));
+        }
+      } catch (e) {
+        console.warn('[HomePage] YouTube RSS fetch failed', e);
+      } finally {
+        setYtLoading(false);
+      }
+    }
+    loadYT();
   }, []);
 
   useEffect(() => {
@@ -680,37 +740,55 @@ export default function HomePage() {
 
         {/* HẢI QUÂN MEDIA */}
         <section className="mb-8 border-b border-[#e1e1e1] pb-8">
-          <SectionTitle title="HẢI QUÂN MEDIA" className={`text-[24px] ${headingStyle}`} />
+          <div className="flex items-center justify-between mb-1">
+            <SectionTitle title="HẢI QUÂN MEDIA" className={`text-[24px] ${headingStyle}`} />
+            <a href="https://www.youtube.com/@TGM_Kuroma" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] text-red-600 font-bold hover:underline">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube
+            </a>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[0, 1, 2, 3].map(index => {
-                const post = videoPosts[index];
-                return post ? (
-                  <Link key={post.id} href={`/bai-viet/${post.slug}`} className="group block bg-white rounded-lg overflow-hidden border border-blue-50 shadow-sm hover:shadow-md transition">
-                    <div className="relative aspect-video bg-[#e8f0fa] overflow-hidden">
-                      <img src={post.thumbnail || PLACEHOLDER} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-white/35 backdrop-blur-sm flex items-center justify-center">
-                          <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+              {(ytLoading && videoPosts.length === 0)
+                ? [...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-lg overflow-hidden border border-blue-50 shadow-sm animate-pulse">
+                      <div className="aspect-video bg-[#e8f0fa]" />
+                      <div className="p-3 space-y-2"><div className="h-3 bg-gray-100 rounded w-full" /><div className="h-3 bg-gray-100 rounded w-3/4" /></div>
+                    </div>
+                  ))
+                : [0, 1, 2, 3].map(index => {
+                  const post = videoPosts[index];
+                  const yt = ytMediaVideos[index];
+                  if (post) return (
+                    <Link key={post.id} href={`/bai-viet/${post.slug}`} className="group block bg-white rounded-lg overflow-hidden border border-blue-50 shadow-sm hover:shadow-md transition">
+                      <div className="relative aspect-video bg-[#e8f0fa] overflow-hidden">
+                        <img src={post.thumbnail || PLACEHOLDER} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-white/35 backdrop-blur-sm flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] group-hover:text-[#0059b2] line-clamp-2">{post.title}</h4>
-                    </div>
-                  </Link>
-                ) : (
-                  <div key={`media-slot-${index}`} className="bg-white rounded-lg overflow-hidden border border-blue-50 shadow-sm">
-                    <div className="aspect-video bg-[#e8f0fa] flex items-center justify-center">
-                      <svg className="w-7 h-7 text-[#a8c8e8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m15 10 4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2Z" /></svg>
-                    </div>
-                    <div className="p-3 space-y-2 opacity-60">
-                      <div className="h-3 bg-gray-100 rounded w-full" />
-                      <div className="h-3 bg-gray-100 rounded w-3/4" />
-                    </div>
-                  </div>
-                );
-              })}
+                      <div className="p-3"><h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] group-hover:text-[#0059b2] line-clamp-2">{post.title}</h4></div>
+                    </Link>
+                  );
+                  if (yt) return (
+                    <a key={yt.videoId} href={yt.url} target="_blank" rel="noopener noreferrer" className="group block bg-white rounded-lg overflow-hidden border border-blue-50 shadow-sm hover:shadow-md transition">
+                      <div className="relative aspect-video bg-[#e8f0fa] overflow-hidden">
+                        <img src={yt.thumbnail} alt={yt.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-red-600/80 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                          </div>
+                        </div>
+                        <span className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">YouTube</span>
+                      </div>
+                      <div className="p-3"><h4 className="font-['Roboto',sans-serif] text-[14px] font-bold text-[#222222] group-hover:text-[#0059b2] line-clamp-2">{yt.title}</h4></div>
+                    </a>
+                  );
+                  return null;
+                })
+              }
             </div>
             <div className="md:col-span-4">
               <a href={ads.home_ad_media_link || "#"} className="h-full min-h-[280px] rounded-xl bg-gradient-to-br from-[#001a55] to-[#0059b2] flex flex-col items-center justify-center text-center text-white p-6 shadow-md hover:opacity-95 transition">
@@ -733,29 +811,55 @@ export default function HomePage() {
       <div className="w-full bg-[#0059b2] pt-10 pb-12 shadow-inner">
         <div className="container mx-auto max-w-[1200px] px-4">
           <div className="mb-12">
-            <SectionTitle title="SHORT VIDEO" light className="text-[24px] font-serif font-bold uppercase mb-6" />
+            <div className="flex items-center justify-between mb-6">
+              <SectionTitle title="SHORT VIDEO" light className="text-[24px] font-serif font-bold uppercase mb-0" />
+              <a href="https://www.youtube.com/@srov24h" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] text-white/70 font-bold hover:text-white transition">
+                <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                @srov24h
+              </a>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {loading
+              {(loading && ytLoading)
                 ? [...Array(5)].map((_, i) => <div key={i} className="aspect-[9/16] bg-[#004b87] rounded-lg animate-pulse" />)
-                : shortVideos.length > 0 ? shortVideos.map(p => (
-                  <Link key={p.id} href={`/bai-viet/${p.slug}`} className="relative aspect-[9/16] rounded-lg overflow-hidden group cursor-pointer shadow-lg border border-white/10">
-                    <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                : shortVideos.length > 0
+                  ? shortVideos.map(p => (
+                    <Link key={p.id} href={`/bai-viet/${p.slug}`} className="relative aspect-[9/16] rounded-lg overflow-hidden group cursor-pointer shadow-lg border border-white/10">
+                      <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        </div>
                       </div>
-                    </div>
-                    <h4 className="absolute bottom-3 left-3 right-3 text-white font-['Roboto',sans-serif] font-bold text-[14px] leading-tight">{p.title}</h4>
-                  </Link>
-                )) : [...Array(5)].map((_, i) => <div key={`short-empty-${i}`} className="aspect-[9/16] bg-[#004b87] rounded-lg flex items-center justify-center text-white/40 uppercase text-xs font-bold">Chưa có nội dung</div>)
+                      <h4 className="absolute bottom-3 left-3 right-3 text-white font-['Roboto',sans-serif] font-bold text-[14px] leading-tight">{p.title}</h4>
+                    </Link>
+                  ))
+                  : ytMediaVideos.slice(0, 5).map(yt => (
+                    <a key={yt.videoId} href={yt.url} target="_blank" rel="noopener noreferrer" className="relative aspect-[9/16] rounded-lg overflow-hidden group cursor-pointer shadow-lg border border-white/10">
+                      <img src={yt.thumbnail} alt={yt.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-12 h-12 bg-red-600/80 rounded-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        </div>
+                      </div>
+                      <span className="absolute top-2 left-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">YouTube</span>
+                      <h4 className="absolute bottom-3 left-3 right-3 text-white font-['Roboto',sans-serif] font-bold text-[13px] leading-tight line-clamp-3">{yt.title}</h4>
+                    </a>
+                  ))
               }
             </div>
           </div>
 
           {/* TRUYỀN HÌNH HẢI QUÂN */}
           <div>
-            <SectionTitle title="TRUYỀN HÌNH HẢI QUÂN" light className="text-[24px] font-serif font-bold uppercase mb-6" />
+            <div className="flex items-center justify-between mb-6">
+              <SectionTitle title="TRUYỀN HÌNH HẢI QUÂN" light className="text-[24px] font-serif font-bold uppercase mb-0" />
+              <a href="https://www.youtube.com/@srov4" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[12px] text-white/70 font-bold hover:text-white transition">
+                <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                @srov4
+              </a>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               <div className="md:col-span-8">
                 {videoPosts[0] ? (
@@ -770,20 +874,52 @@ export default function HomePage() {
                       <h3 className="text-white font-bold text-[18px]">{videoPosts[0].title}</h3>
                     </div>
                   </Link>
+                ) : ytTVVideos[0] ? (
+                  <a href={ytTVVideos[0].url} target="_blank" rel="noopener noreferrer" className="relative aspect-video rounded-md overflow-hidden group cursor-pointer border border-white/20 shadow-lg block">
+                    <img src={ytTVVideos[0].thumbnail} alt={ytTVVideos[0].title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 bg-red-600/80 rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                      </div>
+                    </div>
+                    <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                      YouTube
+                    </span>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 p-4">
+                      <h3 className="text-white font-bold text-[18px]">{ytTVVideos[0].title}</h3>
+                    </div>
+                  </a>
+                ) : ytLoading ? (
+                  <div className="aspect-video bg-[#001540] rounded-md animate-pulse" />
                 ) : (
                   <div className="aspect-video bg-[#001540] rounded-md flex items-center justify-center text-white/40 uppercase">Chưa có nội dung</div>
                 )}
               </div>
               <div className="md:col-span-4 flex flex-col gap-4">
-                {videoPosts.slice(1, 4).map(p => (
-                  <Link key={p.id} href={`/bai-viet/${p.slug}`} className="flex gap-3 group cursor-pointer">
-                    <div className="w-[120px] flex-shrink-0 relative aspect-video rounded-sm overflow-hidden">
-                      <img src={p.thumbnail || PLACEHOLDER} alt={p.title} className="w-full h-full object-cover" />
-                    </div>
-                    <h4 className="font-['Roboto',sans-serif] text-[13px] font-bold text-white/80 group-hover:text-[#FFD700] leading-snug">{p.title}</h4>
-                  </Link>
-                ))}
-                {!loading && videoPosts.length <= 1 && [...Array(3)].map((_, i) => (
+                {(() => {
+                  const items = videoPosts.length > 1 ? videoPosts.slice(1, 4) : ytTVVideos.slice(1, 4);
+                  const useYT = videoPosts.length <= 1;
+                  return items.map((item: any) => useYT ? (
+                    <a key={item.videoId} href={item.url} target="_blank" rel="noopener noreferrer" className="flex gap-3 group cursor-pointer">
+                      <div className="w-[120px] flex-shrink-0 relative aspect-video rounded-sm overflow-hidden">
+                        <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        </div>
+                      </div>
+                      <h4 className="font-['Roboto',sans-serif] text-[13px] font-bold text-white/80 group-hover:text-[#FFD700] leading-snug line-clamp-3">{item.title}</h4>
+                    </a>
+                  ) : (
+                    <Link key={item.id} href={`/bai-viet/${item.slug}`} className="flex gap-3 group cursor-pointer">
+                      <div className="w-[120px] flex-shrink-0 relative aspect-video rounded-sm overflow-hidden">
+                        <img src={item.thumbnail || PLACEHOLDER} alt={item.title} className="w-full h-full object-cover" />
+                      </div>
+                      <h4 className="font-['Roboto',sans-serif] text-[13px] font-bold text-white/80 group-hover:text-[#FFD700] leading-snug">{item.title}</h4>
+                    </Link>
+                  ));
+                })()}
+                {!loading && !ytLoading && videoPosts.length === 0 && ytTVVideos.length === 0 && [...Array(3)].map((_, i) => (
                   <div key={`tv-empty-${i}`} className="flex gap-3 opacity-60">
                     <div className="w-[120px] flex-shrink-0 aspect-video rounded-sm bg-[#001540]" />
                     <div className="flex-1 space-y-2 pt-1">
