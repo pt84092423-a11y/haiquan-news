@@ -1,0 +1,21 @@
+name: Discord Send Message
+
+on:
+  repository_dispatch:
+    types: [discord-send]
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Send Discord message via Bot
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ github.event.client_payload.channelId }}
+          DISCORD_CONTENT: ${{ toJson(github.event.client_payload.content) }}
+          DISCORD_EMBED_IMAGE: ${{ github.event.client_payload.embedImage }}
+        run: node haiquan-news/scripts/discord-send.mjs
