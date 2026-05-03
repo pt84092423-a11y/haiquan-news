@@ -123,6 +123,10 @@ export default function DiscordBot() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
   const [botTokenConfigured, setBotTokenConfigured] = useState<'ok' | 'no-token' | 'no-api' | null>(null);
+  const [apiBaseUrl, setApiBaseUrl] = useState('');
+  const [apiBaseUrlInput, setApiBaseUrlInput] = useState('');
+  const [savingApiUrl, setSavingApiUrl] = useState(false);
+  const [apiUrlSaved, setApiUrlSaved] = useState(false);
 
   interface DiscordGuild { id: string; name: string; icon: string | null; channels: { id: string; name: string; type: number }[]; }
   const [discoveredGuilds, setDiscoveredGuilds] = useState<DiscordGuild[]>([]);
@@ -140,7 +144,7 @@ export default function DiscordBot() {
   const fetchGuilds = async () => {
     setLoadingGuilds(true);
     try {
-      const res = await fetch('/api/discord/guilds');
+      const res = await fetch(`${apiBaseUrl}/api/discord/guilds`);
       const data = await res.json();
       if (data.guilds) setDiscoveredGuilds(data.guilds);
     } catch {}
@@ -182,11 +186,12 @@ export default function DiscordBot() {
     setManualBotName(''); setManualBotServer(''); setManualBotChannel(''); setManualBotChannelId('');
   };
 
-  const checkBotToken = async () => {
+  const checkBotToken = async (base?: string) => {
+    const url = (base !== undefined ? base : apiBaseUrl);
     setBotTokenConfigured(null);
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const r = await fetch('/api/discord/ping');
+        const r = await fetch(`${url}/api/discord/ping`);
         if (r.status === 404 || r.status === 405) {
           setBotTokenConfigured('no-api');
           return;
@@ -209,12 +214,28 @@ export default function DiscordBot() {
     setBotTokenConfigured('no-token');
   };
 
+  const handleSaveApiUrl = async () => {
+    setSavingApiUrl(true);
+    const trimmed = apiBaseUrlInput.trim().replace(/\/$/, '');
+    setApiBaseUrl(trimmed);
+    await upsertSetting('discord_api_url', trimmed);
+    setSavingApiUrl(false);
+    setApiUrlSaved(true);
+    setTimeout(() => setApiUrlSaved(false), 3000);
+    checkBotToken(trimmed);
+  };
+
   useEffect(() => {
     getAllPosts({ limit: 100, status: 'published' }).then(r => { setPosts(r.posts); setLoadingPosts(false); });
     getSiteSetting('discord_bot_channels').then(v => setChannels(parseJsonSetting<Channel[]>(v, [])));
     getSiteSetting('discord_bot_config').then(v => setConfig({ ...DEFAULT_CONFIG, ...parseJsonSetting<BotConfig>(v, DEFAULT_CONFIG) }));
     getSiteSetting('discord_send_history').then(v => setSendHistory(parseJsonSetting<SendHistoryEntry[]>(v, [])));
-    checkBotToken();
+    getSiteSetting('discord_api_url').then(v => {
+      const url = (v || '').trim().replace(/\/$/, '');
+      setApiBaseUrl(url);
+      setApiBaseUrlInput(url);
+      checkBotToken(url);
+    });
   }, []);
 
   const handleSend = async () => {
@@ -226,7 +247,7 @@ export default function DiscordBot() {
     let errorMsg = '';
     try {
       if (selectedChannel.mode === 'bot') {
-        const res = await fetch('/api/discord/send', {
+        const res = await fetch(`${apiBaseUrl}/api/discord/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ channelId: selectedChannel.channelId, content, embedImage: selectedPost.thumbnail }),
@@ -302,6 +323,38 @@ export default function DiscordBot() {
         <p className="text-[#555] text-[13px] mt-1">Đăng bài viết lên Discord bằng Bot Token hoặc Webhook.</p>
       </div>
 
+      {/* ── Server URL Configuration ── */}
+      <div className="mb-5 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <p className="text-[13px] font-black text-gray-800 mb-1 flex items-center gap-2">
+          🖥️ Máy chủ Bot API (Render.com)
+        </p>
+        <p className="text-[12px] text-gray-500 mb-3">
+          Nhập URL máy chủ Render.com để Bot Token hoạt động trên InfinityFree. Để trống nếu dùng Replit Dev.{' '}
+          <a href="https://render.com" target="_blank" rel="noreferrer" className="text-[#5865F2] underline font-bold">Đăng ký Render miễn phí →</a>
+        </p>
+        <div className="flex gap-2 items-center">
+          <input
+            type="url"
+            value={apiBaseUrlInput}
+            onChange={e => setApiBaseUrlInput(e.target.value)}
+            placeholder="https://haiquan-discord-api.onrender.com"
+            className="flex-1 text-[13px] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2]"
+            data-testid="input-discord-api-url"
+          />
+          <button
+            onClick={handleSaveApiUrl}
+            disabled={savingApiUrl}
+            className="shrink-0 text-[13px] font-bold bg-[#5865F2] text-white px-4 py-2 rounded-lg hover:bg-[#4752c4] transition disabled:opacity-50"
+            data-testid="button-save-api-url"
+          >
+            {savingApiUrl ? 'Đang lưu…' : apiUrlSaved ? '✓ Đã lưu' : 'Lưu & kiểm tra'}
+          </button>
+        </div>
+        {apiBaseUrl && (
+          <p className="text-[11px] text-gray-400 mt-1.5">Đang dùng: <span className="font-mono text-[#5865F2]">{apiBaseUrl}</span></p>
+        )}
+      </div>
+
       {botTokenConfigured === null && (
         <div className="mb-5 p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-3 text-[13px] text-gray-500">
           <svg className="animate-spin w-4 h-4 text-[#5865F2]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
@@ -309,38 +362,39 @@ export default function DiscordBot() {
         </div>
       )}
       {botTokenConfigured === 'no-token' && (
-        <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
-          <span className="text-xl mt-0.5">ℹ️</span>
+        <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+          <span className="text-xl mt-0.5">⚠️</span>
           <div className="flex-1">
-            <p className="text-[13px] font-bold text-blue-800">Bot Token chưa được cấu hình trên máy chủ này</p>
-            <p className="text-[12px] text-blue-700 mt-0.5">
-              Biến môi trường <Code>DISCORD_BOT_TOKEN</Code> chưa được đặt trên máy chủ hiện tại.{' '}
-              <strong>Chức năng Webhook vẫn hoạt động bình thường.</strong>
+            <p className="text-[13px] font-bold text-amber-800">Bot Token chưa được đặt trên máy chủ</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">
+              Máy chủ tại <span className="font-mono">{apiBaseUrl || 'localhost'}</span> chưa có biến môi trường{' '}
+              <Code>DISCORD_BOT_TOKEN</Code>. Đặt token trong Render Dashboard → Environment → Add Environment Variable.{' '}
+              <strong>Webhook vẫn hoạt động bình thường.</strong>
             </p>
           </div>
-          <button onClick={checkBotToken} className="shrink-0 text-[12px] font-bold text-blue-800 border border-blue-300 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition">
+          <button onClick={() => checkBotToken()} className="shrink-0 text-[12px] font-bold text-amber-800 border border-amber-300 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition">
             Kiểm tra lại
           </button>
         </div>
       )}
       {botTokenConfigured === 'no-api' && (
-        <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
-          <span className="text-xl mt-0.5">ℹ️</span>
+        <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+          <span className="text-xl mt-0.5">⚠️</span>
           <div className="flex-1">
-            <p className="text-[13px] font-bold text-blue-800">Bot API không khả dụng trên máy chủ này</p>
-            <p className="text-[12px] text-blue-700 mt-0.5">
-              Máy chủ hiện tại không hỗ trợ Bot Token API. <strong>Chức năng Webhook vẫn hoạt động bình thường.</strong>
-              <br />Để dùng Bot mode, hãy truy cập qua Replit Dev hoặc máy chủ Node.js riêng.
+            <p className="text-[13px] font-bold text-amber-800">Không kết nối được tới máy chủ Bot API</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">
+              Không tìm thấy API tại <span className="font-mono">{apiBaseUrl || 'localhost'}</span>. Kiểm tra URL Render hoặc deploy lại.{' '}
+              <strong>Webhook vẫn hoạt động bình thường.</strong>
             </p>
           </div>
-          <button onClick={checkBotToken} className="shrink-0 text-[12px] font-bold text-blue-800 border border-blue-300 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition">
+          <button onClick={() => checkBotToken()} className="shrink-0 text-[12px] font-bold text-amber-800 border border-amber-300 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition">
             Thử lại
           </button>
         </div>
       )}
       {botTokenConfigured === 'ok' && (
         <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-[13px] text-green-700 font-medium">
-          <span>✅</span> Bot Token đã được cấu hình — Bot đang hoạt động
+          <span>✅</span> Bot Token đang hoạt động{apiBaseUrl ? ` — ${apiBaseUrl}` : ''}
         </div>
       )}
 
