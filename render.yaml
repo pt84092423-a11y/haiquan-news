@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: haiquan-discord-api
+    env: node
+    rootDir: haiquan-news
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://baohaiquansrov.xo.je
