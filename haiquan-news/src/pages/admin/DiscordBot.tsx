@@ -123,10 +123,12 @@ export default function DiscordBot() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
   const [botTokenConfigured, setBotTokenConfigured] = useState<'ok' | 'no-token' | 'no-api' | null>(null);
-  const [apiBaseUrl, setApiBaseUrl] = useState('');
-  const [apiBaseUrlInput, setApiBaseUrlInput] = useState('');
-  const [savingApiUrl, setSavingApiUrl] = useState(false);
-  const [apiUrlSaved, setApiUrlSaved] = useState(false);
+  const [ghToken, setGhToken] = useState('');
+  const [ghTokenInput, setGhTokenInput] = useState('');
+  const [savingGhToken, setSavingGhToken] = useState(false);
+  const [ghTokenSaved, setGhTokenSaved] = useState(false);
+
+  const GH_REPO = 'pt84092423-a11y/haiquan-news';
 
   interface DiscordGuild { id: string; name: string; icon: string | null; channels: { id: string; name: string; type: number }[]; }
   const [discoveredGuilds, setDiscoveredGuilds] = useState<DiscordGuild[]>([]);
@@ -142,12 +144,6 @@ export default function DiscordBot() {
   const [manualBotChannelId, setManualBotChannelId] = useState('');
 
   const fetchGuilds = async () => {
-    setLoadingGuilds(true);
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/discord/guilds`);
-      const data = await res.json();
-      if (data.guilds) setDiscoveredGuilds(data.guilds);
-    } catch {}
     setLoadingGuilds(false);
   };
 
@@ -186,42 +182,19 @@ export default function DiscordBot() {
     setManualBotName(''); setManualBotServer(''); setManualBotChannel(''); setManualBotChannelId('');
   };
 
-  const checkBotToken = async (base?: string) => {
-    const url = (base !== undefined ? base : apiBaseUrl);
-    setBotTokenConfigured(null);
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const r = await fetch(`${url}/api/discord/ping`);
-        if (r.status === 404 || r.status === 405) {
-          setBotTokenConfigured('no-api');
-          return;
-        }
-        const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) {
-          if (attempt === 2) { setBotTokenConfigured('no-token'); return; }
-          await new Promise(res => setTimeout(res, 1000));
-          continue;
-        }
-        const d = await r.json();
-        if (d.configured === true) { setBotTokenConfigured('ok'); return; }
-        setBotTokenConfigured('no-token');
-        return;
-      } catch {
-        if (attempt === 2) { setBotTokenConfigured('no-token'); return; }
-      }
-      if (attempt < 2) await new Promise(res => setTimeout(res, 800));
-    }
-    setBotTokenConfigured('no-token');
+  const checkBotToken = (token?: string) => {
+    const t = token !== undefined ? token : ghToken;
+    setBotTokenConfigured(t ? 'ok' : 'no-token');
   };
 
-  const handleSaveApiUrl = async () => {
-    setSavingApiUrl(true);
-    const trimmed = apiBaseUrlInput.trim().replace(/\/$/, '');
-    setApiBaseUrl(trimmed);
-    await upsertSetting('discord_api_url', trimmed);
-    setSavingApiUrl(false);
-    setApiUrlSaved(true);
-    setTimeout(() => setApiUrlSaved(false), 3000);
+  const handleSaveGhToken = async () => {
+    setSavingGhToken(true);
+    const trimmed = ghTokenInput.trim();
+    setGhToken(trimmed);
+    await upsertSetting('discord_github_token', trimmed);
+    setSavingGhToken(false);
+    setGhTokenSaved(true);
+    setTimeout(() => setGhTokenSaved(false), 3000);
     checkBotToken(trimmed);
   };
 
@@ -230,11 +203,11 @@ export default function DiscordBot() {
     getSiteSetting('discord_bot_channels').then(v => setChannels(parseJsonSetting<Channel[]>(v, [])));
     getSiteSetting('discord_bot_config').then(v => setConfig({ ...DEFAULT_CONFIG, ...parseJsonSetting<BotConfig>(v, DEFAULT_CONFIG) }));
     getSiteSetting('discord_send_history').then(v => setSendHistory(parseJsonSetting<SendHistoryEntry[]>(v, [])));
-    getSiteSetting('discord_api_url').then(v => {
-      const url = (v || '').trim().replace(/\/$/, '');
-      setApiBaseUrl(url);
-      setApiBaseUrlInput(url);
-      checkBotToken(url);
+    getSiteSetting('discord_github_token').then(v => {
+      const t = (v || '').trim();
+      setGhToken(t);
+      setGhTokenInput(t);
+      setBotTokenConfigured(t ? 'ok' : 'no-token');
     });
   }, []);
 
@@ -247,14 +220,35 @@ export default function DiscordBot() {
     let errorMsg = '';
     try {
       if (selectedChannel.mode === 'bot') {
-        const res = await fetch(`${apiBaseUrl}/api/discord/send`, {
+        if (!ghToken) {
+          setSendResult({ ok: false, msg: 'Chưa cấu hình GitHub Token. Vui lòng nhập token ở phần đầu trang.' });
+          setSending(false);
+          return;
+        }
+        const res = await fetch(`https://api.github.com/repos/${GH_REPO}/dispatches`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ channelId: selectedChannel.channelId, content, embedImage: selectedPost.thumbnail }),
+          headers: {
+            'Authorization': `Bearer ${ghToken}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            event_type: 'discord-send',
+            client_payload: {
+              channelId: selectedChannel.channelId,
+              content,
+              embedImage: selectedPost.thumbnail || '',
+            },
+          }),
         });
-        const data = await res.json();
-        if (data.ok) { success = true; setSendResult({ ok: true, msg: `Đã đăng thành công qua Bot lên #${selectedChannel.channel}!` }); }
-        else { errorMsg = data.error || 'Lỗi không xác định'; setSendResult({ ok: false, msg: `Lỗi Bot: ${errorMsg}` }); }
+        if (res.status === 204) {
+          success = true;
+          setSendResult({ ok: true, msg: `✅ Đã xếp hàng gửi vào #${selectedChannel.channel}! GitHub Actions sẽ gửi trong ~60 giây.` });
+        } else {
+          const errText = await res.text().catch(() => `HTTP ${res.status}`);
+          errorMsg = `GitHub API lỗi ${res.status}: ${errText}`;
+          setSendResult({ ok: false, msg: errorMsg });
+        }
       } else {
         const payload: any = { content };
         if (selectedPost.thumbnail) payload.embeds = [{ image: { url: selectedPost.thumbnail }, color: 0x0059b2 }];
@@ -323,35 +317,39 @@ export default function DiscordBot() {
         <p className="text-[#555] text-[13px] mt-1">Đăng bài viết lên Discord bằng Bot Token hoặc Webhook.</p>
       </div>
 
-      {/* ── Server URL Configuration ── */}
+      {/* ── GitHub Token Configuration ── */}
       <div className="mb-5 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
         <p className="text-[13px] font-black text-gray-800 mb-1 flex items-center gap-2">
-          🖥️ Máy chủ Bot API (Render.com)
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub Token — Bot gửi qua GitHub Actions
         </p>
         <p className="text-[12px] text-gray-500 mb-3">
-          Nhập URL máy chủ Render.com để Bot Token hoạt động trên InfinityFree. Để trống nếu dùng Replit Dev.{' '}
-          <a href="https://render.com" target="_blank" rel="noreferrer" className="text-[#5865F2] underline font-bold">Đăng ký Render miễn phí →</a>
+          Tạo GitHub Personal Access Token (classic) với quyền <strong>repo</strong> tại{' '}
+          <a href="https://github.com/settings/tokens" target="_blank" rel="noreferrer" className="text-[#5865F2] underline font-bold">github.com/settings/tokens</a>.
+          {' '}Sau đó thêm <strong>DISCORD_BOT_TOKEN</strong> vào{' '}
+          <a href={`https://github.com/${GH_REPO}/settings/secrets/actions`} target="_blank" rel="noreferrer" className="text-[#5865F2] underline font-bold">GitHub Secrets</a>.
+          Tin nhắn sẽ gửi sau ~60 giây qua GitHub Actions.
         </p>
         <div className="flex gap-2 items-center">
           <input
-            type="url"
-            value={apiBaseUrlInput}
-            onChange={e => setApiBaseUrlInput(e.target.value)}
-            placeholder="https://haiquan-discord-api.onrender.com"
-            className="flex-1 text-[13px] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2]"
-            data-testid="input-discord-api-url"
+            type="password"
+            value={ghTokenInput}
+            onChange={e => setGhTokenInput(e.target.value)}
+            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            className="flex-1 text-[13px] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#5865F2] font-mono"
+            data-testid="input-github-token"
           />
           <button
-            onClick={handleSaveApiUrl}
-            disabled={savingApiUrl}
+            onClick={handleSaveGhToken}
+            disabled={savingGhToken}
             className="shrink-0 text-[13px] font-bold bg-[#5865F2] text-white px-4 py-2 rounded-lg hover:bg-[#4752c4] transition disabled:opacity-50"
-            data-testid="button-save-api-url"
+            data-testid="button-save-github-token"
           >
-            {savingApiUrl ? 'Đang lưu…' : apiUrlSaved ? '✓ Đã lưu' : 'Lưu & kiểm tra'}
+            {savingGhToken ? 'Đang lưu…' : ghTokenSaved ? '✓ Đã lưu' : 'Lưu token'}
           </button>
         </div>
-        {apiBaseUrl && (
-          <p className="text-[11px] text-gray-400 mt-1.5">Đang dùng: <span className="font-mono text-[#5865F2]">{apiBaseUrl}</span></p>
+        {ghToken && (
+          <p className="text-[11px] text-green-600 mt-1.5 font-medium">✓ Token đã được cấu hình</p>
         )}
       </div>
 
