@@ -16,6 +16,7 @@ interface SendHistoryEntry {
 }
 
 type ChannelMode = 'bot' | 'webhook';
+type MessageFormat = 'baohaiquan' | '162' | 'noping';
 
 interface Channel {
   id: string;
@@ -35,6 +36,8 @@ interface BotConfig {
   contact_line1: string;
   contact_line2: string;
   site_url: string;
+  role_mention_162: string;
+  emoji_162: string;
 }
 
 const DEFAULT_CONFIG: BotConfig = {
@@ -45,16 +48,20 @@ const DEFAULT_CONFIG: BotConfig = {
   contact_line1: 'Địa chỉ liên hệ: Phòng Công tác Truyền thông - Hải quân Nhân dân Việt Nam',
   contact_line2: 'Số 36 phường Cam Ranh, Khánh Hòa',
   site_url: 'https://baohaiquansrov.xo.je',
+  role_mention_162: '<@&1472618981062869187>',
+  emoji_162: '<:Sudoan162:1472891125768388772>',
 };
 
-function formatDiscordMessage(post: Post, config: BotConfig): string {
+function formatDiscordMessage(post: Post, config: BotConfig, format: MessageFormat = 'baohaiquan'): string {
   const today = new Date();
   const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
   const articleUrl = `${config.site_url}/bai-viet/${post.slug}`;
   const excerpt = post.excerpt ? post.excerpt.replace(/<[^>]+>/g, '').trim() : post.title;
+  const emoji = format === '162' ? (config.emoji_162 || DEFAULT_CONFIG.emoji_162) : config.emoji;
+  const roleMention = format === '162' ? (config.role_mention_162 || DEFAULT_CONFIG.role_mention_162) : config.role_mention;
   return [
-    config.role_mention,
-    `# ${config.emoji}| ${config.sender_name}`,
+    ...(format !== 'noping' ? [roleMention] : []),
+    `# ${emoji}| ${config.sender_name}`,
     `-# **Ngày ${dateStr}**`,
     '',
     excerpt,
@@ -110,6 +117,7 @@ export default function DiscordBot() {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [postSearch, setPostSearch] = useState('');
+  const [selectedFormat, setSelectedFormat] = useState<MessageFormat>('baohaiquan');
 
   const [newChannel, setNewChannel] = useState<Partial<Channel>>({ name: '', server: '', channel: '', mode: 'bot', channelId: '', webhookUrl: '' });
   const [savingConfig, setSavingConfig] = useState(false);
@@ -206,7 +214,7 @@ export default function DiscordBot() {
     if (!selectedPost || !selectedChannel) return;
     setSending(true);
     setSendResult(null);
-    const content = formatDiscordMessage(selectedPost, config);
+    const content = formatDiscordMessage(selectedPost, config, selectedFormat);
     let success = false;
     let errorMsg = '';
     try {
@@ -276,7 +284,7 @@ export default function DiscordBot() {
   };
 
   const filteredPosts = posts.filter(p => p.title.toLowerCase().includes(postSearch.toLowerCase()));
-  const messagePreview = selectedPost ? formatDiscordMessage(selectedPost, config) : '';
+  const messagePreview = selectedPost ? formatDiscordMessage(selectedPost, config, selectedFormat) : '';
 
   return (
     <AdminLayout title="Discord Bot">
@@ -535,6 +543,38 @@ export default function DiscordBot() {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Format selector */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100">
+                <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">3. Chọn định dạng tin nhắn</span>
+              </div>
+              <div className="p-4 flex flex-col gap-2">
+                {([
+                  { value: 'baohaiquan', label: 'Báo Hải Quân', desc: 'Định dạng cũ — role mention BHQ', color: '#0059b2' },
+                  { value: '162', label: 'Định dạng 162', desc: 'Role mention + emoji server 162', color: '#7c3aed' },
+                  { value: 'noping', label: 'NO ping', desc: 'Không có role mention (im lặng)', color: '#6b7280' },
+                ] as { value: MessageFormat; label: string; desc: string; color: string }[]).map(f => (
+                  <button key={f.value} onClick={() => setSelectedFormat(f.value)}
+                    className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 transition ${selectedFormat === f.value ? 'border-current bg-opacity-5' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}
+                    style={selectedFormat === f.value ? { borderColor: f.color, backgroundColor: f.color + '0d' } : {}}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-[11px] font-black"
+                      style={{ backgroundColor: f.color }}>
+                      {f.value === 'baohaiquan' ? 'BHQ' : f.value === '162' ? '162' : '—'}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[13px] font-bold" style={selectedFormat === f.value ? { color: f.color } : { color: '#222' }}>{f.label}</p>
+                      <p className="text-[11px] text-gray-400">{f.desc}</p>
+                    </div>
+                    {selectedFormat === f.value && (
+                      <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" style={{ color: f.color }}>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -819,10 +859,11 @@ export default function DiscordBot() {
               <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Nội dung chữ ký tin nhắn</span>
             </div>
             <div className="p-5 space-y-4">
+              <p className="text-[11px] font-black text-[#0059b2] uppercase tracking-wider pt-1">Báo Hải Quân (BHQ)</p>
               {[
                 { key: 'sender_name', label: 'Tên tòa soạn (tiêu đề)', placeholder: 'Tòa Soạn Báo Hải Quân Nhân Dân' },
-                { key: 'emoji', label: 'Emoji server (trước tiêu đề)', placeholder: '<:36Media:1483393549751025715>' },
-                { key: 'role_mention', label: 'Role Mention (đầu tin nhắn)', placeholder: '<@&872815851894616095>' },
+                { key: 'emoji', label: 'Emoji BHQ (trước tiêu đề)', placeholder: '<:36Media:1483393549751025715>' },
+                { key: 'role_mention', label: 'Role Mention BHQ', placeholder: '<@&872815851894616095>' },
                 { key: 'signature_name', label: 'Tên người ký (Đồng chí...)', placeholder: 'KirkTGM' },
                 { key: 'contact_line1', label: 'Địa chỉ dòng 1', placeholder: 'Địa chỉ liên hệ: Phòng...' },
                 { key: 'contact_line2', label: 'Địa chỉ dòng 2', placeholder: 'Số 36 phường Cam Ranh, Khánh Hòa' },
@@ -834,6 +875,20 @@ export default function DiscordBot() {
                     className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]" placeholder={f.placeholder} />
                 </div>
               ))}
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-[11px] font-black text-[#7c3aed] uppercase tracking-wider mb-3">Định dạng 162</p>
+                {[
+                  { key: 'emoji_162', label: 'Emoji server 162', placeholder: '<:Sudoan162:1472891125768388772>' },
+                  { key: 'role_mention_162', label: 'Role Mention 162', placeholder: '<@&1472618981062869187>' },
+                ].map(f => (
+                  <div key={f.key} className="mb-3">
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">{f.label}</label>
+                    <input value={(config as any)[f.key] || ''} onChange={e => setConfig(c => ({ ...c, [f.key]: e.target.value }))}
+                      className="w-full p-2.5 text-[13px] border border-purple-200 rounded-lg focus:outline-none focus:border-[#7c3aed] font-mono" placeholder={f.placeholder} />
+                  </div>
+                ))}
+              </div>
+
               <button onClick={handleSaveConfig} disabled={savingConfig}
                 className="w-full py-2.5 bg-[#0059b2] text-white rounded-lg font-bold text-[13px] hover:bg-[#00408a] transition disabled:opacity-40">
                 {savingConfig ? 'Đang lưu...' : configSaved ? '✓ Đã lưu!' : 'Lưu cấu hình'}
@@ -843,27 +898,36 @@ export default function DiscordBot() {
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100">
-              <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Xem trước định dạng raw</span>
+              <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Xem trước — 3 định dạng</span>
             </div>
-            <div className="p-4">
-              <div className="bg-[#1e1f22] rounded-xl p-4 font-mono text-[12px] text-[#dcddde] whitespace-pre-wrap leading-relaxed">
-                {[
-                  config.role_mention,
-                  `# ${config.emoji}| ${config.sender_name}`,
-                  `-# **Ngày ${new Date().getDate()}/${new Date().getMonth() + 1}/${new Date().getFullYear()}**`,
-                  '',
-                  'Nội dung sapo bài viết',
-                  '',
-                  `${config.site_url}/bai-viet/slug-bai-viet`,
-                  '',
-                  'Chi tiết trong đường link',
-                  'Kính mong các đồng chí chú ý!',
-                  'Trân trọng,',
-                  `Đồng chí ${config.signature_name}`,
-                  `-# ${config.contact_line1}`,
-                  `-# ${config.contact_line2}`,
-                ].join('\n')}
-              </div>
+            <div className="p-4 space-y-4">
+              {([
+                { fmt: 'baohaiquan' as MessageFormat, label: 'BHQ', color: '#0059b2', emoji: config.emoji, mention: config.role_mention },
+                { fmt: '162' as MessageFormat, label: '162', color: '#7c3aed', emoji: config.emoji_162 || DEFAULT_CONFIG.emoji_162, mention: config.role_mention_162 || DEFAULT_CONFIG.role_mention_162 },
+                { fmt: 'noping' as MessageFormat, label: 'NO ping', color: '#6b7280', emoji: config.emoji, mention: null },
+              ]).map(({ fmt, label, color, emoji, mention }) => (
+                <div key={fmt}>
+                  <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color }}>{label}</p>
+                  <div className="bg-[#1e1f22] rounded-xl p-3 font-mono text-[11px] text-[#dcddde] whitespace-pre-wrap leading-relaxed">
+                    {[
+                      ...(mention ? [mention] : []),
+                      `# ${emoji}| ${config.sender_name}`,
+                      `-# **Ngày ${new Date().getDate()}/${new Date().getMonth() + 1}/${new Date().getFullYear()}**`,
+                      '',
+                      'Nội dung sapo bài viết',
+                      '',
+                      `${config.site_url}/bai-viet/slug-bai-viet`,
+                      '',
+                      'Chi tiết trong đường link',
+                      'Kính mong các đồng chí chú ý!',
+                      'Trân trọng,',
+                      `Đồng chí ${config.signature_name}`,
+                      `-# ${config.contact_line1}`,
+                      `-# ${config.contact_line2}`,
+                    ].join('\n')}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
