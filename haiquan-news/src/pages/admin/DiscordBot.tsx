@@ -363,36 +363,17 @@ export default function DiscordBot() {
         <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
           <span className="text-xl mt-0.5">⚠️</span>
           <div className="flex-1">
-            <p className="text-[13px] font-bold text-amber-800">Bot Token chưa được đặt trên máy chủ</p>
+            <p className="text-[13px] font-bold text-amber-800">Chưa có GitHub Token</p>
             <p className="text-[12px] text-amber-700 mt-0.5">
-              Máy chủ tại <span className="font-mono">{apiBaseUrl || 'localhost'}</span> chưa có biến môi trường{' '}
-              <Code>DISCORD_BOT_TOKEN</Code>. Đặt token trong Render Dashboard → Environment → Add Environment Variable.{' '}
+              Nhập GitHub Personal Access Token ở ô phía trên rồi bấm <strong>Lưu token</strong> để Bot có thể gửi tin qua GitHub Actions.{' '}
               <strong>Webhook vẫn hoạt động bình thường.</strong>
             </p>
           </div>
-          <button onClick={() => checkBotToken()} className="shrink-0 text-[12px] font-bold text-amber-800 border border-amber-300 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition">
-            Kiểm tra lại
-          </button>
-        </div>
-      )}
-      {botTokenConfigured === 'no-api' && (
-        <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-          <span className="text-xl mt-0.5">⚠️</span>
-          <div className="flex-1">
-            <p className="text-[13px] font-bold text-amber-800">Không kết nối được tới máy chủ Bot API</p>
-            <p className="text-[12px] text-amber-700 mt-0.5">
-              Không tìm thấy API tại <span className="font-mono">{apiBaseUrl || 'localhost'}</span>. Kiểm tra URL Render hoặc deploy lại.{' '}
-              <strong>Webhook vẫn hoạt động bình thường.</strong>
-            </p>
-          </div>
-          <button onClick={() => checkBotToken()} className="shrink-0 text-[12px] font-bold text-amber-800 border border-amber-300 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition">
-            Thử lại
-          </button>
         </div>
       )}
       {botTokenConfigured === 'ok' && (
         <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-[13px] text-green-700 font-medium">
-          <span>✅</span> Bot Token đang hoạt động{apiBaseUrl ? ` — ${apiBaseUrl}` : ''}
+          <span>✅</span> GitHub Token đã sẵn sàng — Bot gửi qua GitHub Actions
         </div>
       )}
 
