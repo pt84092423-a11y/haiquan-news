@@ -160,12 +160,24 @@ export default function DiscordBot() {
     setManualBotName(''); setManualBotServer(''); setManualBotChannel(''); setManualBotChannelId('');
   };
 
+  const checkBotToken = async () => {
+    setBotTokenConfigured(null);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch('/api/discord/ping');
+        const d = await r.json();
+        if (d.configured === true) { setBotTokenConfigured(true); return; }
+      } catch {}
+      if (attempt < 2) await new Promise(res => setTimeout(res, 800));
+    }
+    setBotTokenConfigured(false);
+  };
+
   useEffect(() => {
     getAllPosts({ limit: 100, status: 'published' }).then(r => { setPosts(r.posts); setLoadingPosts(false); });
     getSiteSetting('discord_bot_channels').then(v => setChannels(parseJsonSetting<Channel[]>(v, [])));
     getSiteSetting('discord_bot_config').then(v => setConfig({ ...DEFAULT_CONFIG, ...parseJsonSetting<BotConfig>(v, DEFAULT_CONFIG) }));
-    fetch('/api/discord/ping')
-      .then(r => r.json()).then(d => setBotTokenConfigured(d.configured === true)).catch(() => setBotTokenConfigured(false));
+    checkBotToken();
   }, []);
 
   const handleSend = async () => {
@@ -233,13 +245,27 @@ export default function DiscordBot() {
         <p className="text-[#555] text-[13px] mt-1">Đăng bài viết lên Discord bằng Bot Token hoặc Webhook.</p>
       </div>
 
+      {botTokenConfigured === null && (
+        <div className="mb-5 p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-3 text-[13px] text-gray-500">
+          <svg className="animate-spin w-4 h-4 text-[#5865F2]" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+          Đang kiểm tra Bot Token...
+        </div>
+      )}
       {botTokenConfigured === false && (
         <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
           <span className="text-xl mt-0.5">⚠️</span>
-          <div>
+          <div className="flex-1">
             <p className="text-[13px] font-bold text-amber-800">Bot Token chưa được cấu hình</p>
-            <p className="text-[12px] text-amber-700 mt-0.5">Vào <strong>Secrets</strong> trong Replit, thêm biến <Code>DISCORD_BOT_TOKEN</Code> với giá trị token của bot. Xem hướng dẫn ở tab bên dưới.</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">Vào <strong>Secrets</strong> trong Replit, thêm biến <Code>DISCORD_BOT_TOKEN</Code> với giá trị token của bot.</p>
           </div>
+          <button onClick={checkBotToken} className="shrink-0 text-[12px] font-bold text-amber-800 border border-amber-300 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition">
+            Kiểm tra lại
+          </button>
+        </div>
+      )}
+      {botTokenConfigured === true && (
+        <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-[13px] text-green-700 font-medium">
+          <span>✅</span> Bot Token đã được cấu hình — Bot đang hoạt động
         </div>
       )}
 

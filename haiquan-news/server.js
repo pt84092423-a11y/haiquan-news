@@ -134,6 +134,133 @@ function injectOgIntoHtml(html, ogHtml) {
 
 app.use(express.json());
 
+// ── Discord: ping to check bot token ──
+app.get('/api/discord/ping', (req, res) => {
+  const configured = !!process.env.DISCORD_BOT_TOKEN;
+  res.json({ configured });
+});
+
+// ── YouTube: fetch videos via RSS feed ──
+app.get('/api/youtube/feed', async (req, res) => {
+  const channelId = req.query.channelId;
+  const handle = req.query.handle;
+  const HANDLE_MAP = {
+    'UC4MXnZXKnKu9Cg6mNts1aPQ': 'srov24h',
+    'UC7W8ubM1PB8DzLMP7JSrHyg': 'srov4',
+    'UCyV_AKZjCqd1bkUbEHGcTyA': 'TGM_Kuroma',
+  };
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+  function clean(t) {
+    return t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
+  }
+
+  async function fetchRSS(chId) {
+    try {
+      const rssRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${chId}`, {
+        headers: { 'User-Agent': UA },
+      });
+      if (!rssRes.ok) return [];
+      const xml = await rssRes.text();
+      const entries = [];
+      const seen = new Set();
+      const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
+      let em;
+      while ((em = entryRe.exec(xml)) !== null) {
+        const block = em[1];
+        const vidMatch = block.match(/<yt:videoId>([a-zA-Z0-9_-]{11})<\/yt:videoId>/);
+        const titleMatch = block.match(/<title>([^<]+)<\/title>/);
+        const pubMatch = block.match(/<published>([^<]+)<\/published>/);
+        const thumbMatch = block.match(/<media:thumbnail url="([^"]+)"/);
+        if (!vidMatch || !titleMatch) continue;
+        const videoId = vidMatch[1];
+        if (seen.has(videoId)) continue;
+        seen.add(videoId);
+        entries.push({
+          videoId,
+          title: clean(titleMatch[1]),
+          published: pubMatch ? pubMatch[1] : '',
+          channel: '',
+          thumbnail: thumbMatch ? thumbMatch[1] : `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          url: `https://www.youtube.com/watch?v=${videoId}`,
+          embedUrl: `https://www.youtube.com/embed/${videoId}`,
+        });
+        if (entries.length >= 15) break;
+      }
+      return entries;
+    } catch { return []; }
+  }
+
+  async function scrapeByHandle(hdl) {
+    try {
+      const pageRes = await fetch(`https://www.youtube.com/@${hdl.replace('@','')}/videos`, { headers: { 'User-Agent': UA } });
+      if (!pageRes.ok) return [];
+      const html = await pageRes.text();
+      const entries = [];
+      const seen = new Set();
+      const re = /"videoId":"([a-zA-Z0-9_-]{11})"[^}]*?"text":"([^"]{2,200})"/g;
+      let mm;
+      while ((mm = re.exec(html)) !== null) {
+        const videoId = mm[1];
+        const title = mm[2];
+        if (!seen.has(videoId) && title.length > 3) {
+          seen.add(videoId);
+          entries.push({
+            videoId,
+            title: clean(title),
+            published: '', channel: '',
+            thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            embedUrl: `https://www.youtube.com/embed/${videoId}`,
+          });
+        }
+        if (entries.length >= 15) break;
+      }
+      return entries;
+    } catch { return []; }
+  }
+
+  if (!channelId && !handle) return res.status(400).json({ error: 'Thiếu channelId hoặc handle' });
+  try {
+    let videos = [];
+    if (channelId) videos = await fetchRSS(channelId);
+    const resolvedHandle = handle || (channelId ? HANDLE_MAP[channelId] : null);
+    if (videos.length === 0 && resolvedHandle) videos = await scrapeByHandle(resolvedHandle);
+    return res.json({ videos });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Discord: list guilds and channels ──
+app.get('/api/discord/guilds', async (req, res) => {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) return res.status(500).json({ error: 'DISCORD_BOT_TOKEN chưa được cấu hình.' });
+  try {
+    const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+      headers: { Authorization: `Bot ${token}` },
+    });
+    if (!guildsRes.ok) return res.status(guildsRes.status).json({ error: await guildsRes.text() });
+    const guilds = await guildsRes.json();
+    const result = [];
+    for (const guild of guilds) {
+      const chRes = await fetch(`https://discord.com/api/v10/guilds/${guild.id}/channels`, {
+        headers: { Authorization: `Bot ${token}` },
+      });
+      if (!chRes.ok) continue;
+      const channels = await chRes.json();
+      const textChannels = channels
+        .filter(c => c.type === 0 || c.type === 5)
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        .map(c => ({ id: c.id, name: c.name, type: c.type }));
+      result.push({ id: guild.id, name: guild.name, channels: textChannels });
+    }
+    return res.json({ guilds: result });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 // Discord Bot proxy — keeps the token server-side
 app.post('/api/discord/send', async (req, res) => {
   const token = process.env.DISCORD_BOT_TOKEN;
