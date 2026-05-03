@@ -114,7 +114,7 @@ export default function DiscordBot() {
   const [newChannel, setNewChannel] = useState<Partial<Channel>>({ name: '', server: '', channel: '', mode: 'bot', channelId: '', webhookUrl: '' });
   const [savingConfig, setSavingConfig] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
-  const [botTokenConfigured, setBotTokenConfigured] = useState<boolean | null>(null);
+  const [botTokenConfigured, setBotTokenConfigured] = useState<'ok' | 'no-token' | 'no-api' | null>(null);
 
   interface DiscordGuild { id: string; name: string; icon: string | null; channels: { id: string; name: string; type: number }[]; }
   const [discoveredGuilds, setDiscoveredGuilds] = useState<DiscordGuild[]>([]);
@@ -179,12 +179,19 @@ export default function DiscordBot() {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const r = await fetch('/api/discord/ping');
+        if (r.status === 404 || r.status === 405) {
+          setBotTokenConfigured('no-api');
+          return;
+        }
         const d = await r.json();
-        if (d.configured === true) { setBotTokenConfigured(true); return; }
-      } catch {}
+        if (d.configured === true) { setBotTokenConfigured('ok'); return; }
+        if (d.configured === false) { setBotTokenConfigured('no-token'); return; }
+      } catch {
+        if (attempt === 2) { setBotTokenConfigured('no-api'); return; }
+      }
       if (attempt < 2) await new Promise(res => setTimeout(res, 800));
     }
-    setBotTokenConfigured(false);
+    setBotTokenConfigured('no-api');
   };
 
   useEffect(() => {
@@ -286,7 +293,7 @@ export default function DiscordBot() {
           Đang kiểm tra Bot Token...
         </div>
       )}
-      {botTokenConfigured === false && (
+      {botTokenConfigured === 'no-token' && (
         <div className="mb-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
           <span className="text-xl mt-0.5">⚠️</span>
           <div className="flex-1">
@@ -298,7 +305,22 @@ export default function DiscordBot() {
           </button>
         </div>
       )}
-      {botTokenConfigured === true && (
+      {botTokenConfigured === 'no-api' && (
+        <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+          <span className="text-xl mt-0.5">ℹ️</span>
+          <div className="flex-1">
+            <p className="text-[13px] font-bold text-blue-800">Bot API không khả dụng trên máy chủ này</p>
+            <p className="text-[12px] text-blue-700 mt-0.5">
+              Máy chủ hiện tại không hỗ trợ Bot Token API. <strong>Chức năng Webhook vẫn hoạt động bình thường.</strong>
+              <br />Để dùng Bot mode, hãy truy cập qua Replit Dev hoặc máy chủ Node.js riêng.
+            </p>
+          </div>
+          <button onClick={checkBotToken} className="shrink-0 text-[12px] font-bold text-blue-800 border border-blue-300 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition">
+            Thử lại
+          </button>
+        </div>
+      )}
+      {botTokenConfigured === 'ok' && (
         <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-[13px] text-green-700 font-medium">
           <span>✅</span> Bot Token đã được cấu hình — Bot đang hoạt động
         </div>
