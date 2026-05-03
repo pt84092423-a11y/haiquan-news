@@ -15,6 +15,15 @@ interface SendHistoryEntry {
   error?: string;
 }
 
+interface DiscordGuildMember {
+  id: string;
+  name: string;
+  username: string;
+  roles: string[];
+  hasRole: boolean;
+  avatar: string | null;
+}
+
 type ChannelMode = 'bot' | 'webhook';
 type MessageFormat = 'baohaiquan' | '162' | 'noping';
 
@@ -104,7 +113,7 @@ function Img({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function DiscordBot() {
-  const [tab, setTab] = useState<'guide' | 'post' | 'channels' | 'config' | 'history'>('post');
+  const [tab, setTab] = useState<'guide' | 'post' | 'channels' | 'config' | 'history' | 'roles'>('post');
   const [sendHistory, setSendHistory] = useState<SendHistoryEntry[]>([]);
   const [guideTab, setGuideTab] = useState<'bot' | 'webhook'>('bot');
 
@@ -143,6 +152,15 @@ export default function DiscordBot() {
   const [manualBotServer, setManualBotServer] = useState('');
   const [manualBotChannel, setManualBotChannel] = useState('');
   const [manualBotChannelId, setManualBotChannelId] = useState('');
+  const [roleGuildId, setRoleGuildId] = useState('');
+  const [roleRoleId, setRoleRoleId] = useState('<@&1432579300623777852>');
+  const [roleGuilds, setRoleGuilds] = useState<DiscordGuild[]>([]);
+  const [roleMembers, setRoleMembers] = useState<DiscordGuildMember[]>([]);
+  const [roleInfo, setRoleInfo] = useState<{ id: string; name: string } | null>(null);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [roleSearch, setRoleSearch] = useState('');
+  const [roleAction, setRoleAction] = useState<string | null>(null);
+  const [roleMessage, setRoleMessage] = useState<string | null>(null);
 
   const fetchGuilds = async () => {
     setLoadingGuilds(false);
@@ -199,6 +217,49 @@ export default function DiscordBot() {
     checkBotToken(trimmed);
   };
 
+  const loadRoleData = async () => {
+    if (!roleGuildId || !roleRoleId) return;
+    setLoadingRoles(true);
+    setRoleMessage(null);
+    try {
+      const res = await fetch(`/api/discord/role-manager?guildId=${encodeURIComponent(roleGuildId)}&roleId=${encodeURIComponent(roleRoleId.replace(/[<@&>]/g, ''))}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Không tải được danh sách role');
+      setRoleMembers(data.members || []);
+      setRoleInfo(data.role || null);
+    } catch (e: any) {
+      setRoleMessage(e.message || 'Không tải được dữ liệu');
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  const loadRoleGuilds = async () => {
+    const res = await fetch('/api/discord/guilds');
+    const data = await res.json();
+    if (res.ok) setRoleGuilds(data.guilds || []);
+  };
+
+  const mutateMemberRole = async (memberId: string, action: 'add' | 'remove') => {
+    setRoleAction(memberId + action);
+    setRoleMessage(null);
+    try {
+      const res = await fetch(`/api/discord/role-manager?guildId=${encodeURIComponent(roleGuildId)}&roleId=${encodeURIComponent(roleRoleId.replace(/[<@&>]/g, ''))}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Thao tác thất bại');
+      await loadRoleData();
+      setRoleMessage(action === 'add' ? 'Đã thêm role' : 'Đã xoá role');
+    } catch (e: any) {
+      setRoleMessage(e.message || 'Thao tác thất bại');
+    } finally {
+      setRoleAction(null);
+    }
+  };
+
   useEffect(() => {
     getAllPosts({ limit: 100, status: 'published' }).then(r => { setPosts(r.posts); setLoadingPosts(false); });
     getSiteSetting('discord_bot_channels').then(v => setChannels(parseJsonSetting<Channel[]>(v, [])));
@@ -210,6 +271,7 @@ export default function DiscordBot() {
       setGhTokenInput(t);
       setBotTokenConfigured(t ? 'ok' : 'no-token');
     });
+    loadRoleGuilds().catch(() => {});
   }, []);
 
   const handleSend = async () => {
@@ -387,6 +449,7 @@ export default function DiscordBot() {
           { id: 'channels', label: 'Kênh Discord', icon: '🔗' },
           { id: 'config', label: 'Cấu hình', icon: '⚙️' },
           { id: 'history', label: 'Lịch sử gửi', icon: '📋' },
+          { id: 'roles', label: 'Quản lý role', icon: '🛡️' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             className={`px-5 py-2 rounded-lg text-[13px] font-bold transition ${tab === t.id ? 'bg-white shadow text-[#5865F2]' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -1038,6 +1101,70 @@ export default function DiscordBot() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {tab === 'roles' && (
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-5 space-y-4">
+            <div>
+              <p className="text-[14px] font-black text-[#222] uppercase tracking-wide">Quản lý role <span className="font-mono text-[#5865F2]">&lt;@&amp;1432579300623777852&gt;</span></p>
+              <p className="text-[12px] text-gray-500 mt-1">Chọn server, tải danh sách member, lọc người chưa có role và thêm/xoá trực tiếp.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <select value={roleGuildId} onChange={e => setRoleGuildId(e.target.value)} className="p-3 rounded-lg border border-gray-200 text-[13px]">
+                <option value="">Chọn server</option>
+                {roleGuilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+              <input value={roleRoleId} onChange={e => setRoleRoleId(e.target.value)} className="p-3 rounded-lg border border-gray-200 text-[13px] font-mono" placeholder="<@&1432579300623777852>" />
+              <button onClick={loadRoleData} disabled={!roleGuildId || !roleRoleId || loadingRoles} className="p-3 rounded-lg bg-[#5865F2] text-white font-bold text-[13px] disabled:opacity-50">
+                {loadingRoles ? 'Đang tải...' : 'Tải member'}
+              </button>
+            </div>
+            <input value={roleSearch} onChange={e => setRoleSearch(e.target.value)} className="w-full p-3 rounded-lg border border-gray-200 text-[13px]" placeholder="Tìm member..." />
+            {roleMessage && <p className="text-[12px] font-medium text-[#5865F2]">{roleMessage}</p>}
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Member chưa có role ({roleMembers.filter(m => !m.hasRole && (m.name + ' ' + m.username).toLowerCase().includes(roleSearch.toLowerCase())).length})</span>
+              {roleInfo && <span className="text-[11px] text-gray-400">Role: {roleInfo.name}</span>}
+            </div>
+            <div className="p-4 space-y-2 max-h-[560px] overflow-y-auto">
+              {roleMembers.filter(m => !m.hasRole && (m.name + ' ' + m.username).toLowerCase().includes(roleSearch.toLowerCase())).map(m => (
+                <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
+                  <div className="w-9 h-9 rounded-full bg-[#5865F2] text-white flex items-center justify-center font-bold">{m.name.charAt(0).toUpperCase()}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-[#222] truncate">{m.name}</p>
+                    <p className="text-[11px] text-gray-400 font-mono truncate">@{m.username || m.id}</p>
+                  </div>
+                  <button onClick={() => mutateMemberRole(m.id, 'add')} disabled={!!roleAction} className="px-4 py-2 rounded-lg bg-green-600 text-white text-[12px] font-bold disabled:opacity-50">+ Thêm role</button>
+                </div>
+              ))}
+              {roleMembers.length > 0 && roleMembers.filter(m => !m.hasRole && (m.name + ' ' + m.username).toLowerCase().includes(roleSearch.toLowerCase())).length === 0 && (
+                <p className="text-[13px] text-gray-400 text-center py-8">Không còn member nào để thêm role.</p>
+              )}
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100">
+              <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Member đã có role</span>
+            </div>
+            <div className="p-4 space-y-2 max-h-[420px] overflow-y-auto">
+              {roleMembers.filter(m => m.hasRole && (m.name + ' ' + m.username).toLowerCase().includes(roleSearch.toLowerCase())).map(m => (
+                <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-indigo-50">
+                  <div className="w-9 h-9 rounded-full bg-[#5865F2] text-white flex items-center justify-center font-bold">{m.name.charAt(0).toUpperCase()}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold text-[#222] truncate">{m.name}</p>
+                    <p className="text-[11px] text-gray-400 font-mono truncate">@{m.username || m.id}</p>
+                  </div>
+                  <button onClick={() => mutateMemberRole(m.id, 'remove')} disabled={!!roleAction} className="px-4 py-2 rounded-lg bg-red-600 text-white text-[12px] font-bold disabled:opacity-50">- Xoá role</button>
+                </div>
+              ))}
+              {roleMembers.length > 0 && roleMembers.filter(m => m.hasRole && (m.name + ' ' + m.username).toLowerCase().includes(roleSearch.toLowerCase())).length === 0 && (
+                <p className="text-[13px] text-gray-400 text-center py-8">Không có member nào đang có role này.</p>
+              )}
+            </div>
           </div>
         </div>
       )}
