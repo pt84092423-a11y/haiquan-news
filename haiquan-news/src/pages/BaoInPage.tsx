@@ -3,22 +3,82 @@ import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import { supabase } from '@/lib/supabase';
 
+interface PageEntry {
+  url: string;
+  type: 'image' | 'canva';
+}
+
 interface NewspaperIssue {
   id: number;
   edition: number;
   date: string;
   cover: string;
-  pages: string[];
+  pages: PageEntry[];
+  title: string;
+}
+
+function parsePages(content: string): PageEntry[] {
+  try {
+    const raw = JSON.parse(content || '[]');
+    if (!Array.isArray(raw)) return [];
+    return raw.map((p: any) => {
+      if (typeof p === 'string') return { url: p, type: 'image' as const };
+      return { url: p.url || '', type: p.type || 'image' } as PageEntry;
+    }).filter(p => p.url);
+  } catch {
+    return [];
+  }
+}
+
+function CanvaViewer({ url, onClose, title }: { url: string; onClose: () => void; title: string }) {
+  return (
+    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 text-white/80 text-[13px] flex-shrink-0 bg-black/80">
+        <span className="font-bold truncate max-w-[60vw]">{title}</span>
+        <div className="flex items-center gap-3">
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-white/70 hover:text-white transition text-[12px] border border-white/20 px-3 py-1 rounded"
+          >
+            Mở Canva
+          </a>
+          <button onClick={onClose} className="hover:text-white transition p-1">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        <iframe
+          src={url}
+          className="w-full h-full border-0"
+          allowFullScreen
+          title={title}
+        />
+      </div>
+    </div>
+  );
 }
 
 function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: () => void }) {
   const [page, setPage] = useState(0);
   const [flip, setFlip] = useState<{ from: number; to: number; dir: 'next' | 'prev' } | null>(null);
-  const contentPages = issue.pages.filter(Boolean);
-  const pages = issue.cover && !contentPages.includes(issue.cover)
-    ? [issue.cover, ...contentPages]
-    : contentPages.length > 0 ? contentPages : (issue.cover ? [issue.cover] : []);
-  const total = pages.length;
+  const [showThumb, setShowThumb] = useState(false);
+
+  const allPages: PageEntry[] = (() => {
+    const imgPages = issue.pages.filter(p => p.type === 'image');
+    const coverEntry: PageEntry | null = issue.cover && !imgPages.some(p => p.url === issue.cover)
+      ? { url: issue.cover, type: 'image' }
+      : null;
+    const combined = coverEntry ? [coverEntry, ...imgPages] : imgPages;
+    return combined.length > 0 ? combined : (issue.cover ? [{ url: issue.cover, type: 'image' }] : []);
+  })();
+
+  const canvaPages = issue.pages.filter(p => p.type === 'canva');
+  const total = allPages.length;
   const FLIP_MS = 650;
 
   const turnTo = useCallback((nextPage: number, dir: 'next' | 'prev') => {
@@ -53,7 +113,7 @@ function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: (
     return () => window.removeEventListener('keydown', handler);
   }, [goNext, goPrev, onClose]);
 
-  if (total === 0) {
+  if (total === 0 && canvaPages.length === 0) {
     return (
       <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
         <div className="text-white text-center">
@@ -64,19 +124,65 @@ function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: (
     );
   }
 
+  if (total === 0 && canvaPages.length > 0) {
+    return <CanvaViewer url={canvaPages[0].url} onClose={onClose} title={issue.title} />;
+  }
+
+  const currentPage = allPages[page];
+
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 text-white/80 text-[13px] flex-shrink-0">
-        <span className="font-mono">{page + 1} / {total}</span>
         <div className="flex items-center gap-3">
-          <button className="hover:text-white transition p-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          <span className="font-mono">{page + 1} / {total}</span>
+          {canvaPages.length > 0 && (
+            <a
+              href={canvaPages[0].url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-purple-300 hover:text-purple-200 text-[11px] border border-purple-400/40 px-2 py-0.5 rounded flex items-center gap-1"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Xem Canva
+            </a>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            className="hover:text-white transition p-1"
+            onClick={() => setShowThumb(v => !v)}
+            title="Xem tất cả trang"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
           <button onClick={onClose} className="hover:text-white transition p-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
       </div>
+
+      {showThumb && (
+        <div className="absolute inset-0 z-10 bg-black/95 overflow-y-auto p-6" onClick={() => setShowThumb(false)}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 max-w-5xl mx-auto">
+            {allPages.map((p, i) => (
+              <button
+                key={i}
+                onClick={e => { e.stopPropagation(); setPage(i); setFlip(null); setShowThumb(false); }}
+                className={`relative aspect-[3/4] rounded overflow-hidden border-2 transition ${i === page ? 'border-[#0059b2] ring-2 ring-[#0059b2]/50' : 'border-white/20 hover:border-white/60'}`}
+              >
+                <img src={p.url} alt={`Trang ${i + 1}`} className="w-full h-full object-cover" />
+                <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">{i + 1}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 relative flex items-center justify-center overflow-hidden" style={{ perspective: '2200px' }}>
         <button
@@ -84,24 +190,23 @@ function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: (
           disabled={page === 0 || !!flip}
           className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-white/20 disabled:opacity-20 rounded-full flex items-center justify-center text-white transition"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
 
         <div className="relative h-full max-h-full flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
-          {/* Page underneath (destination) */}
           {flip && (
             <img
-              src={pages[flip.to]}
+              src={allPages[flip.to].url}
               alt={`Trang ${flip.to + 1}`}
               className="max-h-[92vh] max-w-[95vw] object-contain select-none shadow-2xl"
               draggable={false}
             />
           )}
-
-          {/* Current page (the one flipping) */}
           <img
             key={`current-${page}-${flip ? flip.dir : 'idle'}`}
-            src={pages[page]}
+            src={currentPage.url}
             alt={`Trang ${page + 1}`}
             onClick={e => {
               if (flip) return;
@@ -124,32 +229,50 @@ function NewspaperReader({ issue, onClose }: { issue: NewspaperIssue; onClose: (
           disabled={page === total - 1 || !!flip}
           className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-white/20 disabled:opacity-20 rounded-full flex items-center justify-center text-white transition"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
 
       <div className="flex-shrink-0 border-t border-white/10 px-6 py-3 flex items-center justify-center gap-6 text-white/60">
-        <button className="hover:text-white transition" title="Phóng to"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg></button>
-        <button className="hover:text-white transition" title="Thu nhỏ"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg></button>
-        <button className="hover:text-white transition" title="Slideshow"><svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></button>
-        <button className="hover:text-white transition" title="Đánh dấu"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg></button>
-        <button className="hover:text-white transition" title="Danh mục"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg></button>
-        <button className="hover:text-white transition" title="Xem lưới">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" strokeWidth={2} /><rect x="14" y="3" width="7" height="7" strokeWidth={2} /><rect x="3" y="14" width="7" height="7" strokeWidth={2} /><rect x="14" y="14" width="7" height="7" strokeWidth={2} /></svg>
-        </button>
-        <button className="hover:text-white transition" title="In"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg></button>
-        <button
-          onClick={() => { const a = document.createElement('a'); a.href = pages[page]; a.download = `baoin-so${issue.edition}-trang${page + 1}.jpg`; a.click(); }}
-          className="hover:text-white transition" title="Tải xuống"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-        </button>
         <button
           onClick={() => document.documentElement.requestFullscreen?.()}
           className="hover:text-white transition" title="Toàn màn hình"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
         </button>
+        <button
+          onClick={() => { const a = document.createElement('a'); a.href = currentPage.url; a.download = `baoin-trang${page + 1}.jpg`; a.click(); }}
+          className="hover:text-white transition" title="Tải trang hiện tại"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </button>
+        <button onClick={() => setShowThumb(v => !v)} className="hover:text-white transition" title="Xem lưới trang">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" strokeWidth={2} />
+            <rect x="14" y="3" width="7" height="7" strokeWidth={2} />
+            <rect x="3" y="14" width="7" height="7" strokeWidth={2} />
+            <rect x="14" y="14" width="7" height="7" strokeWidth={2} />
+          </svg>
+        </button>
+        {canvaPages.length > 0 && (
+          <a
+            href={canvaPages[0].url}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-white transition text-purple-400 hover:text-purple-300"
+            title="Mở Canva embed"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        )}
       </div>
     </div>
   );
@@ -169,18 +292,14 @@ export default function BaoInPage() {
         .eq('status', 'published')
         .order('published_at', { ascending: false });
       if (data) {
-        setIssues(data.map((p: any) => {
-          let pages: string[] = [];
-          try { pages = JSON.parse(p.content || '[]'); } catch {}
-          return {
-            id: p.id,
-            edition: p.id,
-            date: p.published_at?.slice(0, 10) || p.created_at?.slice(0, 10) || '',
-            cover: p.thumbnail || '',
-            pages,
-            title: p.title,
-          } as any;
-        }));
+        setIssues(data.map((p: any) => ({
+          id: p.id,
+          edition: p.id,
+          date: p.published_at?.slice(0, 10) || p.created_at?.slice(0, 10) || '',
+          cover: p.thumbnail || '',
+          pages: parsePages(p.content || '[]'),
+          title: p.title || `Báo in Hải quân số ${p.id}`,
+        })));
       }
       setLoading(false);
     }
@@ -222,9 +341,18 @@ export default function BaoInPage() {
                   <div className={`relative aspect-[3/4] rounded-md overflow-hidden border-2 mb-2 shadow-sm ${issue ? 'border-gray-200 group-hover:border-[#0059b2] group-hover:shadow-lg transition' : 'border-dashed border-gray-200 bg-gray-50'}`}>
                     {issue?.cover ? (
                       <img src={issue.cover} alt={`Số ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    ) : (
+                    ) : issue ? (
                       <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
-                        <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-[11px]">Báo số {i + 1}</span>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-200">
+                        <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                         <span className="text-[11px]">Chưa có</span>
                       </div>
                     )}
@@ -235,10 +363,15 @@ export default function BaoInPage() {
                         </div>
                       </div>
                     )}
+                    {issue && issue.pages.some(p => p.type === 'canva') && (
+                      <div className="absolute top-1.5 right-1.5 bg-purple-500/90 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">
+                        Canva
+                      </div>
+                    )}
                   </div>
                   {issue ? (
                     <>
-                      <p className="text-[13px] font-bold text-[#002060] group-hover:text-[#0059b2] transition leading-snug line-clamp-2">{(issue as any).title || `Báo in Hải quân số ${i + 1}`}</p>
+                      <p className="text-[13px] font-bold text-[#002060] group-hover:text-[#0059b2] transition leading-snug line-clamp-2">{issue.title}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5">{formatDate(issue.date)}</p>
                     </>
                   ) : (
