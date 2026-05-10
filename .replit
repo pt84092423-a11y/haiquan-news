@@ -27,22 +27,18 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd haiquan-news && (node discord-bot.js &) && (node video-sync.js &) && npm run dev"
+args = "cd haiquan-news && npm run dev"
 waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 5001
-externalPort = 3000
-
 [deployment]
 deploymentTarget = "autoscale"
-build = ["bash", "-c", "cd haiquan-news && npm run build"]
+build = ["npm", "run", "build"]
 publicDir = "haiquan-news/dist"
-run = ["node", "haiquan-news/server.js"]
+run = ["node", "./dist/index.cjs"]
 
 [userenv]
 
