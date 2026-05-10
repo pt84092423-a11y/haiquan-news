@@ -54,22 +54,26 @@ function convertCanvaLinkToEmbed(url: string): string {
   return url;
 }
 
-function isCanvaUrl(url: string) {
-  return url.includes('canva.com');
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs';
+const PDFJS_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+
+async function getPdfjsLib(): Promise<any> {
+  const win = window as any;
+  if (win.__pdfjsLib) return win.__pdfjsLib;
+  const mod = await import(/* @vite-ignore */ PDFJS_CDN);
+  const lib = mod.default ?? mod;
+  lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+  win.__pdfjsLib = lib;
+  return lib;
 }
 
 async function pdfToImages(
   file: File,
   onProgress: (done: number, total: number) => void
 ): Promise<Blob[]> {
-  const pdfjsLib = await import('pdfjs-dist');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.mjs',
-    import.meta.url
-  ).toString();
-
+  const pdfjsLib = await getPdfjsLib();
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
   const total = pdf.numPages;
   const blobs: Blob[] = [];
 
@@ -80,7 +84,7 @@ async function pdfToImages(
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     const ctx = canvas.getContext('2d')!;
-    await (page.render as any)({ canvasContext: ctx, viewport }).promise;
+    await page.render({ canvasContext: ctx, viewport }).promise;
     const blob = await new Promise<Blob>((res) =>
       canvas.toBlob((b) => res(b!), 'image/jpeg', 0.88)
     );

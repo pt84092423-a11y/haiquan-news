@@ -377,7 +377,6 @@ export default defineConfig({
     emptyOutDir: true,
   },
   optimizeDeps: {
-    exclude: ["pdfjs-dist"],
     esbuildOptions: {
       alias: {
         react: path.resolve(import.meta.dirname, "node_modules/react"),
