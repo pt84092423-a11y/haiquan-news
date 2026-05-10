@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import AdminLayout from './AdminLayout';
 import { supabase, type Post } from '@/lib/supabase';
-import { getAuditLogs, getAdminUsers } from '@/lib/auth';
+import { getAuditLogs, getAdminUsers, getSession, addAuditLog } from '@/lib/auth';
 
 type AuditEntry = {
   id: number;
@@ -64,6 +64,110 @@ function SeoBadge({ ok }: { ok: boolean }) {
       <span className={`w-1.5 h-1.5 rounded-full ${ok ? 'bg-emerald-500' : 'bg-amber-500'}`} />
       {ok ? 'Đã cấu hình' : 'Thiếu'}
     </span>
+  );
+}
+
+async function simpleHash(str: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function ChangePasswordSection() {
+  const session = getSession();
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    setMsg(null);
+    if (!session) return;
+    if (newPw.length < 8) { setMsg({ type: 'err', text: 'Mật khẩu mới phải có ít nhất 8 ký tự.' }); return; }
+    if (newPw !== confirmPw) { setMsg({ type: 'err', text: 'Xác nhận mật khẩu không khớp.' }); return; }
+    setSaving(true);
+    try {
+      const currentHash = await simpleHash(currentPw);
+      const { data: user, error: verifyErr } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('id', session.id)
+        .eq('password_hash', currentHash)
+        .eq('status', 'active')
+        .single();
+      if (verifyErr || !user) { setMsg({ type: 'err', text: 'Mật khẩu hiện tại không đúng.' }); setSaving(false); return; }
+      const newHash = await simpleHash(newPw);
+      const { error: updateErr } = await supabase
+        .from('admin_users')
+        .update({ password_hash: newHash })
+        .eq('id', session.id);
+      if (updateErr) throw updateErr;
+      await addAuditLog('CHANGE_PASSWORD', 'admin_user', session.id, 'Đổi mật khẩu thành công', session);
+      setMsg({ type: 'ok', text: 'Đổi mật khẩu thành công!' });
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+    } catch (err: any) {
+      setMsg({ type: 'err', text: err.message || 'Có lỗi xảy ra.' });
+    }
+    setSaving(false);
+  };
+
+  return (
+    <section className="bg-white rounded-3xl border border-blue-100 shadow-sm p-6">
+      <h2 className="text-xl font-black text-[#002060] mb-1">Đổi mật khẩu</h2>
+      <p className="text-sm text-gray-500 mb-5">Chỉ áp dụng cho tài khoản đang đăng nhập ({session?.username}).</p>
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+        <div>
+          <label className="block text-[12px] font-bold text-gray-500 uppercase tracking-wide mb-1">Mật khẩu hiện tại</label>
+          <input
+            type="password"
+            value={currentPw}
+            onChange={e => setCurrentPw(e.target.value)}
+            required
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0059b2] focus:ring-2 focus:ring-[#0059b2]/10"
+            placeholder="Nhập mật khẩu hiện tại"
+          />
+        </div>
+        <div>
+          <label className="block text-[12px] font-bold text-gray-500 uppercase tracking-wide mb-1">Mật khẩu mới</label>
+          <input
+            type="password"
+            value={newPw}
+            onChange={e => setNewPw(e.target.value)}
+            required
+            minLength={8}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0059b2] focus:ring-2 focus:ring-[#0059b2]/10"
+            placeholder="Tối thiểu 8 ký tự"
+          />
+        </div>
+        <div>
+          <label className="block text-[12px] font-bold text-gray-500 uppercase tracking-wide mb-1">Xác nhận mật khẩu mới</label>
+          <input
+            type="password"
+            value={confirmPw}
+            onChange={e => setConfirmPw(e.target.value)}
+            required
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0059b2] focus:ring-2 focus:ring-[#0059b2]/10"
+            placeholder="Nhập lại mật khẩu mới"
+          />
+        </div>
+        {msg && (
+          <div className={`px-4 py-3 rounded-xl text-sm font-medium ${msg.type === 'ok' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+            {msg.type === 'ok' ? '✅ ' : '❌ '}{msg.text}
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={saving}
+          className="px-6 py-2.5 bg-[#0059b2] text-white text-sm font-bold rounded-xl hover:bg-[#004a9a] transition disabled:opacity-50"
+        >
+          {saving ? 'Đang lưu...' : 'Đổi mật khẩu'}
+        </button>
+      </form>
+    </section>
   );
 }
 
@@ -269,6 +373,8 @@ export default function HadminPanel() {
                 </div>
               </div>
             </section>
+
+            <ChangePasswordSection />
 
             <section className="bg-white rounded-3xl border border-blue-100 shadow-sm p-6">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-4">

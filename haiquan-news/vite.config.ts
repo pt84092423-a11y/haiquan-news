@@ -290,6 +290,29 @@ function discordBotApiPlugin() {
         }
       });
 
+      // ── Discord: delete a message ──
+      server.middlewares.use('/api/discord/messages/', async (req: any, res: any, next: any) => {
+        if (req.method !== 'DELETE') return next();
+        const urlParts = (req.url || '').split('?');
+        const messageId = urlParts[0].replace(/^\//, '').split('/')[0];
+        const qs = new URL(req.url || '/', 'http://localhost').searchParams;
+        const channelId = qs.get('channelId');
+        res.setHeader('Content-Type', 'application/json');
+        try {
+          const token = process.env.DISCORD_BOT_TOKEN;
+          if (!token) { res.statusCode = 500; return res.end(JSON.stringify({ error: 'DISCORD_BOT_TOKEN chưa được cấu hình.' })); }
+          if (!channelId || !messageId) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'Thiếu channelId hoặc messageId.' })); }
+          const r = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${messageId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bot ${token}` },
+          });
+          if (r.ok || r.status === 204) return res.end(JSON.stringify({ ok: true }));
+          const err = await r.text();
+          res.statusCode = r.status;
+          return res.end(JSON.stringify({ error: err }));
+        } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: e.message })); }
+      });
+
       // ── Discord: read channel messages (TP67 only) ──
       server.middlewares.use('/api/discord/messages', async (req: any, res: any, next: any) => {
         if (req.method !== 'GET') return next();
@@ -342,6 +365,9 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "src/assets"),
+      "react": path.resolve(import.meta.dirname, "node_modules/react"),
+      "react-dom": path.resolve(import.meta.dirname, "node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(import.meta.dirname, "node_modules/react/jsx-runtime"),
     },
     dedupe: ["react", "react-dom"],
   },
@@ -349,6 +375,14 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      alias: {
+        react: path.resolve(import.meta.dirname, "node_modules/react"),
+        "react-dom": path.resolve(import.meta.dirname, "node_modules/react-dom"),
+      },
+    },
   },
   server: {
     port,

@@ -380,6 +380,26 @@ app.get('/api/discord/messages', async (req, res) => {
   }
 });
 
+// ── Discord: delete a message ──
+app.delete('/api/discord/messages/:messageId', async (req, res) => {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) return res.status(500).json({ error: 'DISCORD_BOT_TOKEN chưa được cấu hình.' });
+  const { messageId } = req.params;
+  const channelId = req.query.channelId;
+  if (!channelId || !messageId) return res.status(400).json({ error: 'Thiếu channelId hoặc messageId.' });
+  try {
+    const r = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${messageId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bot ${token}` },
+    });
+    if (r.ok || r.status === 204) return res.json({ ok: true });
+    const err = await r.text();
+    return res.status(r.status).json({ error: err });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Admin: Categories CRUD (server-side to bypass RLS issues) ──
 app.get('/api/admin/categories', async (req, res) => {
   try {

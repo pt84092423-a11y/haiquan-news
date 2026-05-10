@@ -35,6 +35,8 @@ export default function DiscordReader() {
   const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const selectedGuild = guilds.find(g => g.id === selectedGuildId);
   const selectedChannel = selectedGuild?.channels.find(c => c.id === selectedChannelId);
@@ -76,6 +78,24 @@ export default function DiscordReader() {
         m.content.toLowerCase().includes(search.toLowerCase()) ||
         (m.author.global_name || m.author.username).toLowerCase().includes(search.toLowerCase()))
     : messages;
+
+  const deleteMessage = async (messageId: string) => {
+    if (!selectedChannelId) return;
+    setDeletingId(messageId);
+    setConfirmDeleteId(null);
+    try {
+      const r = await fetch(`/api/discord/messages/${messageId}?channelId=${selectedChannelId}`, { method: 'DELETE' });
+      const d = await r.json();
+      if (d.ok) {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+      } else {
+        alert('Xóa thất bại: ' + (d.error || 'Lỗi không xác định'));
+      }
+    } catch (e: any) {
+      alert('Lỗi: ' + e.message);
+    }
+    setDeletingId(null);
+  };
 
   const oldestId = messages[messages.length - 1]?.id;
 
@@ -198,8 +218,10 @@ export default function DiscordReader() {
                   const sameAuthor = prev && prev.author.id === msg.author.id
                     && (new Date(prev.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 5 * 60 * 1000;
                   const displayName = msg.author.global_name || msg.author.username;
+                  const isDeleting = deletingId === msg.id;
+                  const isConfirming = confirmDeleteId === msg.id;
                   return (
-                    <div key={msg.id} className={`flex gap-3 group ${sameAuthor ? 'mt-0.5' : 'mt-4'}`}>
+                    <div key={msg.id} className={`flex gap-3 group relative hover:bg-white/5 rounded px-1 -mx-1 ${sameAuthor ? 'mt-0.5' : 'mt-4'}`}>
                       {sameAuthor ? (
                         <div className="w-10 shrink-0" />
                       ) : (
@@ -240,6 +262,36 @@ export default function DiscordReader() {
                         )}
                         {msg.embeds[0]?.image && (
                           <img src={msg.embeds[0].image.url} alt="" className="mt-1 max-w-sm max-h-48 rounded object-contain" />
+                        )}
+                      </div>
+
+                      {/* Delete action — hiện khi hover */}
+                      <div className="absolute right-2 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        {isConfirming ? (
+                          <>
+                            <span className="text-red-400 text-[11px] font-bold mr-1">Xóa?</span>
+                            <button
+                              onClick={() => deleteMessage(msg.id)}
+                              disabled={isDeleting}
+                              className="bg-red-600 hover:bg-red-500 text-white text-[11px] font-bold px-2 py-1 rounded transition"
+                            >
+                              {isDeleting ? '...' : 'Xác nhận'}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="bg-[#4f545c] hover:bg-[#5d6269] text-white text-[11px] px-2 py-1 rounded transition"
+                            >
+                              Hủy
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(msg.id)}
+                            title="Xóa tin nhắn"
+                            className="bg-[#2f3136] hover:bg-red-700 text-[#72767d] hover:text-white text-[13px] px-2 py-1 rounded transition border border-transparent hover:border-red-600"
+                          >
+                            🗑️
+                          </button>
                         )}
                       </div>
                     </div>
