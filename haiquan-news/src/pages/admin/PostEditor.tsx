@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 import { useParams, useLocation } from 'wouter';
 import AdminLayout from './AdminLayout';
 import {
@@ -114,9 +115,9 @@ export default function PostEditor() {
   const [ogTitle, setOgTitle] = useState('');
   const [ogImage, setOgImage] = useState('');
 
-  const quillRef = useRef<any>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const quillInited = useRef(false);
+  const editorRef = useRef<any>(null);
+  const [editorInited, setEditorInited] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<string>('');
 
   const [form, setForm] = useState<Partial<Post>>({
     title: '',
@@ -166,61 +167,13 @@ export default function PostEditor() {
     }
   }, [params.id]);
 
+  // Load content into TinyMCE when editing an existing post (content arrives async)
   useEffect(() => {
-    if (!HAS_QUILL.includes(form.post_type || '')) return;
-    if (quillInited.current) return;
-    if (!editorRef.current) return;
-
-    const initQuill = () => {
-      if (quillInited.current || !editorRef.current) return;
-      const Quill = (window as any).Quill;
-      if (!Quill) return;
-      quillInited.current = true;
-      quillRef.current = new Quill(editorRef.current, {
-        theme: 'snow',
-        modules: {
-          toolbar: [
-            [{ header: [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            ['blockquote', 'code-block'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            [{ color: [] }, { background: [] }],
-            [{ align: [] }],
-            ['link', 'image', 'video'],
-            ['clean'],
-          ],
-        },
-        placeholder: 'Bắt đầu soạn thảo nội dung bài báo, chèn hình ảnh, video...',
-      });
-      quillRef.current.root.style.minHeight = '300px';
-      quillRef.current.root.style.fontSize = '15px';
-      quillRef.current.root.style.lineHeight = '1.7';
-      if (form.content) quillRef.current.root.innerHTML = form.content;
-      quillRef.current.on('text-change', () => {
-        setForm(f => ({ ...f, content: quillRef.current.root.innerHTML }));
-      });
-    };
-
-    if ((window as any).Quill) {
-      initQuill();
-    } else {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://cdn.quilljs.com/1.3.6/quill.snow.css';
-      document.head.appendChild(link);
-      const script = document.createElement('script');
-      script.src = 'https://cdn.quilljs.com/1.3.6/quill.js';
-      script.onload = initQuill;
-      document.head.appendChild(script);
+    if (editorInited && editorRef.current && form.content && !(editorRef.current as any)._loaded) {
+      editorRef.current.setContent(form.content);
+      (editorRef.current as any)._loaded = true;
     }
-  }, [form.post_type]);
-
-  useEffect(() => {
-    if (quillRef.current && form.content && !quillRef.current._loaded) {
-      quillRef.current.root.innerHTML = form.content;
-      quillRef.current._loaded = true;
-    }
-  }, [form.content]);
+  }, [editorInited, form.content]);
 
   const handleTitleChange = (title: string) => {
     setForm(f => ({ ...f, title, slug: isNew ? generateSlug(title) : f.slug }));
@@ -245,11 +198,8 @@ export default function PostEditor() {
   };
 
   const insertContentBlock = (html: string) => {
-    if (!quillRef.current) return;
-    const selection = quillRef.current.getSelection(true);
-    const index = selection?.index ?? quillRef.current.getLength();
-    quillRef.current.clipboard.dangerouslyPasteHTML(index, html);
-    setForm(f => ({ ...f, content: quillRef.current.root.innerHTML }));
+    if (!editorRef.current) return;
+    editorRef.current.insertContent(html);
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -323,7 +273,7 @@ export default function PostEditor() {
         ...form,
         category_id: selectedCategoryIds[0] ?? form.category_id,
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
-        content: quillRef.current?.root.innerHTML || form.content || '',
+        content: editorRef.current?.getContent() || form.content || '',
         status: actualStatus,
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
         updated_at: new Date().toISOString(),
@@ -364,8 +314,47 @@ export default function PostEditor() {
     }
   };
 
+  const handleSchedule = async () => {
+    if (!form.title?.trim()) { setError('Vui lòng nhập tiêu đề bài viết.'); return; }
+    if (!scheduledAt) { setError('Vui lòng chọn thời điểm đặt lịch.'); return; }
+    if (new Date(scheduledAt) <= new Date()) { setError('Thời điểm đặt lịch phải là trong tương lai.'); return; }
+    setSaving(true); setError('');
+    try {
+      const tagStr = tags.length ? `[TAGS:${tags.join(',')}]` : '';
+      const ogPayload = packOgPayload({ title: ogTitle, image: ogImage, gallery: form.post_type === 'photo_story' ? galleryImages : undefined });
+      const extraIds = selectedCategoryIds.slice(1);
+      const payload: Partial<Post> = {
+        ...form,
+        category_id: selectedCategoryIds[0] ?? form.category_id,
+        extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
+        content: editorRef.current?.getContent() || form.content || '',
+        status: 'published',
+        published_at: scheduledAt,
+        updated_at: new Date().toISOString(),
+        meta_title: tagStr ? `${tagStr} ${form.meta_title || ''}`.trim() : form.meta_title,
+        og_image: (ogTitle || ogImage) ? ogPayload : form.og_image,
+        excerpt: form.post_type === 'baoin' ? editionNumber : form.excerpt,
+      };
+      if (isNew) {
+        const created = await createPost(payload);
+        setTimeout(() => setLocation(`/admin/bai-viet/${created.id}`), 1200);
+      } else {
+        await updatePost(Number(params.id), payload);
+      }
+      setForm(f => ({ ...f, status: 'published', published_at: scheduledAt }));
+      const d = new Date(scheduledAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+      setSuccess(`Đã đặt lịch đăng vào ${d}! Bài sẽ tự xuất bản đúng giờ.`);
+    } catch (e: any) {
+      setError(e.message || 'Lỗi khi đặt lịch.');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setSuccess(''), 6000);
+    }
+  };
+
   const currentType = form.post_type || 'article';
   const showQuill = HAS_QUILL.includes(currentType);
+  const isScheduledPost = form.status === 'published' && form.published_at && new Date(form.published_at) > new Date();
 
   return (
     <AdminLayout title={isNew ? 'Viết bài mới' : 'Sửa bài viết'}>
@@ -483,6 +472,12 @@ export default function PostEditor() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             Xem trước
           </button>
+          {scheduledAt && new Date(scheduledAt) > new Date() && (
+            <button onClick={handleSchedule} disabled={saving} className="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition font-bold text-[13.5px] shadow-md flex items-center gap-2 disabled:opacity-50">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {saving ? 'Đang lưu...' : 'Đặt Lịch'}
+            </button>
+          )}
           <button onClick={() => handleSave('published')} disabled={saving} className={`px-8 py-2.5 rounded-lg text-white transition font-bold text-[13.5px] shadow-md flex items-center gap-2 disabled:opacity-50 ${isEditor ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#0059b2] hover:bg-blue-700'}`}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             {saving ? 'Đang lưu...' : isEditor ? 'Gửi Duyệt' : 'Xuất Bản'}
@@ -558,15 +553,11 @@ export default function PostEditor() {
             </div>
           </div>
 
-          {/* Quill Editor (conditional) */}
+          {/* TinyMCE Editor (conditional) */}
           {showQuill && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
                 <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Nội dung chi tiết</span>
-                <button type="button" className="text-[12px] text-[#0059b2] font-bold hover:underline flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                  Thêm Media (Ảnh/Video)
-                </button>
               </div>
               <div className="px-6 py-3 border-b border-gray-100 bg-[#f8fbff]">
                 <p className="text-[12px] font-bold text-[#0059b2] uppercase mb-2">Mẫu khuôn chèn nhanh</p>
@@ -583,7 +574,45 @@ export default function PostEditor() {
                   ))}
                 </div>
               </div>
-              <div ref={editorRef} className="border-0" style={{ minHeight: '320px' }} />
+              <Editor
+                tinymceScriptSrc="/tinymce/tinymce.min.js"
+                onInit={(_evt, editor) => {
+                  editorRef.current = editor;
+                  setEditorInited(true);
+                  if (form.content) {
+                    editor.setContent(form.content);
+                    (editor as any)._loaded = true;
+                  }
+                }}
+                init={{
+                  height: 540,
+                  menubar: true,
+                  branding: false,
+                  promotion: false,
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'wordcount',
+                  ],
+                  toolbar: [
+                    'undo redo | cut copy paste | bold italic underline strikethrough | subscript superscript | removeformat | forecolor backcolor',
+                    'bullist numlist | outdent indent | blockquote | alignleft aligncenter alignright alignjustify | link image media table | code fullscreen',
+                  ],
+                  toolbar_mode: 'wrap',
+                  font_family_formats: 'Roboto=Roboto,sans-serif;Arial=Arial,sans-serif;Times New Roman=Times New Roman,serif;Courier New=Courier New,monospace;',
+                  font_size_formats: '10pt 11pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 36pt',
+                  content_style: [
+                    'body { font-family: Roboto, sans-serif; font-size: 15px; line-height: 1.85; color: #222; max-width: 100%; }',
+                    'img { max-width: 100%; height: auto; border-radius: 8px; }',
+                    'blockquote { border-left: 4px solid #0059b2; margin: 1em 0; padding: 0.5em 1em; background: #f0f5ff; color: #333; }',
+                    'table { border-collapse: collapse; width: 100%; }',
+                    'td, th { border: 1px solid #ddd; padding: 8px; }',
+                  ].join(''),
+                  placeholder: 'Bắt đầu soạn thảo nội dung bài báo...',
+                  image_uploadtab: true,
+                  automatic_uploads: false,
+                }}
+              />
             </div>
           )}
 
@@ -1093,13 +1122,30 @@ export default function PostEditor() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Lịch đăng tải</label>
+                <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Đặt lịch đăng tự động</label>
                 <input
-                  type="date"
-                  value={form.published_at ? form.published_at.split('T')[0] : ''}
-                  onChange={e => setForm(f => ({ ...f, published_at: e.target.value }))}
-                  className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]"
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={e => setScheduledAt(e.target.value)}
+                  min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                  className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-amber-400"
                 />
+                {scheduledAt && (
+                  <button
+                    type="button"
+                    onClick={handleSchedule}
+                    disabled={saving || new Date(scheduledAt) <= new Date()}
+                    className="mt-2 w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[12px] rounded-lg transition disabled:opacity-40 flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {new Date(scheduledAt) <= new Date() ? 'Phải chọn giờ tương lai' : 'Xác nhận đặt lịch'}
+                  </button>
+                )}
+                {isScheduledPost && (
+                  <p className="mt-1.5 text-[11px] text-amber-600 font-bold">
+                    Lịch: {new Date(form.published_at!).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Từ khóa (Tags)</label>
@@ -1120,9 +1166,19 @@ export default function PostEditor() {
                 />
               </div>
               <div className="pt-2 border-t border-gray-100">
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-bold ${form.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                  <span className={`w-2 h-2 rounded-full ${form.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                  {form.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-bold ${
+                  isScheduledPost ? 'bg-amber-100 text-amber-700' :
+                  form.status === 'published' ? 'bg-green-100 text-green-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    isScheduledPost ? 'bg-amber-500' :
+                    form.status === 'published' ? 'bg-green-500' :
+                    'bg-yellow-500'
+                  }`} />
+                  {isScheduledPost
+                    ? `Lịch: ${new Date(form.published_at!).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}`
+                    : form.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
                 </div>
               </div>
             </div>

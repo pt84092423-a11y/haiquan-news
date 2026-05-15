@@ -42,18 +42,30 @@ export async function login(username: string, password: string): Promise<AdminUs
   const hash = await simpleHash(password);
   const { data, error } = await supabase
     .from('admin_users')
-    .select('*')
+    .select('id, username, role, display_name, status')
     .eq('username', username)
     .eq('password_hash', hash)
     .eq('status', 'active')
     .single();
   if (error || !data) return null;
+
+  // Load avatar from settings table (no ALTER TABLE required)
+  let avatar_url: string | undefined;
+  try {
+    const { data: av } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', `avatar_user_${data.id}`)
+      .maybeSingle();
+    avatar_url = av?.value ?? undefined;
+  } catch { /* ignore */ }
+
   const user: AdminUser = {
     id: data.id,
     username: data.username,
     role: data.role as UserRole,
     display_name: data.display_name,
-    avatar_url: data.avatar_url,
+    avatar_url,
   };
   setSession(user);
   await addAuditLog('LOGIN', 'session', null, `Đăng nhập thành công`, user);

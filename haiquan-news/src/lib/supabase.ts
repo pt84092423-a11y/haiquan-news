@@ -55,12 +55,13 @@ export async function getPublishedPosts(options?: {
   limit?: number;
   offset?: number;
 }) {
+  const now = new Date().toISOString();
   let query = supabase
     .from('posts')
     .select('*, category:categories(*)')
-    .eq('status', 'published');
+    .eq('status', 'published')
+    .or(`published_at.is.null,published_at.lte.${now}`);
 
-  // Báo In: sắp xếp theo số báo (id) giảm dần để số mới nhất luôn ở đầu
   if (options?.postType === 'baoin') {
     query = query.order('id', { ascending: false });
   } else {
@@ -212,10 +213,18 @@ export async function getPostsForStats() {
 
 export async function updateAdminAvatar(userId: number, avatarUrl: string) {
   const { error } = await supabase
-    .from('admin_users')
-    .update({ avatar_url: avatarUrl })
-    .eq('id', userId);
+    .from('settings')
+    .upsert({ key: `avatar_user_${userId}`, value: avatarUrl });
   if (error) throw error;
+}
+
+export async function getAdminAvatar(userId: number): Promise<string | null> {
+  const { data } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', `avatar_user_${userId}`)
+    .maybeSingle();
+  return data?.value ?? null;
 }
 
 export async function createPost(post: Partial<Post>) {
