@@ -60,6 +60,19 @@ export async function login(username: string, password: string): Promise<AdminUs
     avatar_url = av?.value ?? undefined;
   } catch { /* ignore */ }
 
+  // Track last login time and IP (ignore errors if columns not yet added)
+  try {
+    let ip = '';
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipRes.json();
+      ip = ipData.ip || '';
+    } catch { /* ignore */ }
+    const updates: Record<string, string> = { last_login_at: new Date().toISOString() };
+    if (ip) updates.last_login_ip = ip;
+    await supabase.from('admin_users').update(updates).eq('id', data.id);
+  } catch { /* ignore if columns don't exist yet */ }
+
   const user: AdminUser = {
     id: data.id,
     username: data.username,
@@ -226,6 +239,10 @@ CREATE TABLE IF NOT EXISTS admin_users (
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','inactive')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_ip VARCHAR(100);
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
 CREATE TABLE IF NOT EXISTS audit_logs (
   id SERIAL PRIMARY KEY,

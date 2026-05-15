@@ -32,6 +32,7 @@ import ImportVideo from "@/pages/admin/ImportVideo";
 import DiscordReader from "@/pages/admin/DiscordReader";
 import IpMonitor from "@/pages/admin/IpMonitor";
 import YoutubeManager from "@/pages/admin/YoutubeManager";
+import CommentManager from "@/pages/admin/CommentManager";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import SearchPage from "@/pages/SearchPage";
 import TermsPage from "@/pages/TermsPage";
@@ -117,6 +118,7 @@ function Router() {
       <Route path="/admin/discord-reader" component={() => <ProtectedRoute component={DiscordReader} />} />
       <Route path="/admin/ip-monitor" component={() => <ProtectedRoute component={IpMonitor} action="view_audit_log" />} />
       <Route path="/admin/youtube" component={() => <ProtectedRoute component={YoutubeManager} />} />
+      <Route path="/admin/binh-luan" component={() => <ProtectedRoute component={CommentManager} />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />

@@ -116,6 +116,11 @@ export default function PostEditor() {
   const [ogImage, setOgImage] = useState('');
 
   const editorRef = useRef<any>(null);
+  const [editorType, setEditorType] = useState<'tinymce' | 'quill'>(() => {
+    return (localStorage.getItem('hq-editor') as 'tinymce' | 'quill') || 'tinymce';
+  });
+  const quillContainerRef = useRef<HTMLDivElement>(null);
+  const quillInstanceRef = useRef<any>(null);
   const [editorInited, setEditorInited] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>('');
 
@@ -175,6 +180,53 @@ export default function PostEditor() {
     }
   }, [editorInited, form.content]);
 
+  // Quill initialization
+  useEffect(() => {
+    if (editorType !== 'quill') { quillInstanceRef.current = null; return; }
+    const initQ = () => {
+      if (!quillContainerRef.current || quillInstanceRef.current) return;
+      const Q = (window as any).Quill;
+      if (!Q) return;
+      const inst = new Q(quillContainerRef.current, {
+        theme: 'snow',
+        placeholder: 'Bắt đầu soạn thảo nội dung bài báo...',
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, 4, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            [{ indent: '-1' }, { indent: '+1' }],
+            [{ align: [] }],
+            [{ color: [] }, { background: [] }],
+            ['link', 'image'],
+            ['clean'],
+          ],
+        },
+      });
+      if (form.content) {
+        inst.clipboard.dangerouslyPasteHTML(form.content);
+        (inst as any)._loaded = true;
+      }
+      quillInstanceRef.current = inst;
+    };
+    if ((window as any).Quill) {
+      setTimeout(initQ, 50);
+    } else {
+      const id = setInterval(() => {
+        if ((window as any).Quill) { clearInterval(id); initQ(); }
+      }, 100);
+      return () => clearInterval(id);
+    }
+  }, [editorType]);
+
+  useEffect(() => {
+    if (editorType === 'quill' && quillInstanceRef.current && form.content && !(quillInstanceRef.current as any)._loaded) {
+      quillInstanceRef.current.clipboard.dangerouslyPasteHTML(form.content);
+      (quillInstanceRef.current as any)._loaded = true;
+    }
+  }, [editorType, form.content]);
+
   const handleTitleChange = (title: string) => {
     setForm(f => ({ ...f, title, slug: isNew ? generateSlug(title) : f.slug }));
   };
@@ -198,8 +250,13 @@ export default function PostEditor() {
   };
 
   const insertContentBlock = (html: string) => {
-    if (!editorRef.current) return;
-    editorRef.current.insertContent(html);
+    if (editorType === 'quill' && quillInstanceRef.current) {
+      const q = quillInstanceRef.current;
+      const range = q.getSelection(true);
+      q.clipboard.dangerouslyPasteHTML(range ? range.index : q.getLength(), html);
+    } else if (editorRef.current) {
+      editorRef.current.insertContent(html);
+    }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -271,9 +328,12 @@ export default function PostEditor() {
       const extraIds = selectedCategoryIds.slice(1);
       const payload: Partial<Post> = {
         ...form,
+        author_id: session?.id,
         category_id: selectedCategoryIds[0] ?? form.category_id,
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
-        content: editorRef.current?.getContent() || form.content || '',
+        content: editorType === 'quill'
+          ? (quillInstanceRef.current?.root?.innerHTML || form.content || '')
+          : (editorRef.current?.getContent() || form.content || ''),
         status: actualStatus,
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
         updated_at: new Date().toISOString(),
@@ -556,8 +616,27 @@ export default function PostEditor() {
           {/* TinyMCE Editor (conditional) */}
           {showQuill && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+              <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
                 <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Nội dung chi tiết</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-400 font-bold uppercase hidden sm:block">Trình soạn:</span>
+                  <div className="flex rounded-lg overflow-hidden border border-gray-200 text-[12px]">
+                    {(['tinymce', 'quill'] as const).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          quillInstanceRef.current = null;
+                          setEditorType(t);
+                          localStorage.setItem('hq-editor', t);
+                        }}
+                        className={`px-3 py-1.5 font-bold transition ${editorType === t ? 'bg-[#0059b2] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                      >
+                        {t === 'tinymce' ? 'TinyMCE' : 'Quill'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="px-6 py-3 border-b border-gray-100 bg-[#f8fbff]">
                 <p className="text-[12px] font-bold text-[#0059b2] uppercase mb-2">Mẫu khuôn chèn nhanh</p>
@@ -574,45 +653,49 @@ export default function PostEditor() {
                   ))}
                 </div>
               </div>
-              <Editor
-                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
-                onInit={(_evt, editor) => {
-                  editorRef.current = editor;
-                  setEditorInited(true);
-                  if (form.content) {
-                    editor.setContent(form.content);
-                    (editor as any)._loaded = true;
-                  }
-                }}
-                init={{
-                  height: 540,
-                  menubar: true,
-                  branding: false,
-                  promotion: false,
-                  plugins: [
-                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'wordcount',
-                  ],
-                  toolbar: [
-                    'undo redo | cut copy paste | bold italic underline strikethrough | subscript superscript | removeformat | forecolor backcolor',
-                    'bullist numlist | outdent indent | blockquote | alignleft aligncenter alignright alignjustify | link image media table | code fullscreen',
-                  ],
-                  toolbar_mode: 'wrap',
-                  font_family_formats: 'Roboto=Roboto,sans-serif;Arial=Arial,sans-serif;Times New Roman=Times New Roman,serif;Courier New=Courier New,monospace;',
-                  font_size_formats: '10pt 11pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 36pt',
-                  content_style: [
-                    'body { font-family: Roboto, sans-serif; font-size: 15px; line-height: 1.85; color: #222; max-width: 100%; }',
-                    'img { max-width: 100%; height: auto; border-radius: 8px; }',
-                    'blockquote { border-left: 4px solid #0059b2; margin: 1em 0; padding: 0.5em 1em; background: #f0f5ff; color: #333; }',
-                    'table { border-collapse: collapse; width: 100%; }',
-                    'td, th { border: 1px solid #ddd; padding: 8px; }',
-                  ].join(''),
-                  placeholder: 'Bắt đầu soạn thảo nội dung bài báo...',
-                  image_uploadtab: true,
-                  automatic_uploads: false,
-                }}
-              />
+              {editorType === 'tinymce' ? (
+                <Editor
+                  apiKey="npvdnvz7bfumfuavqa4uc14zomqfz6lhd0g8xbq1i8yi9u0o"
+                  onInit={(_evt, editor) => {
+                    editorRef.current = editor;
+                    setEditorInited(true);
+                    if (form.content) {
+                      editor.setContent(form.content);
+                      (editor as any)._loaded = true;
+                    }
+                  }}
+                  init={{
+                    height: 540,
+                    menubar: true,
+                    branding: false,
+                    promotion: false,
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                      'insertdatetime', 'media', 'table', 'wordcount',
+                    ],
+                    toolbar: [
+                      'undo redo | cut copy paste | bold italic underline strikethrough | subscript superscript | removeformat | forecolor backcolor',
+                      'bullist numlist | outdent indent | blockquote | alignleft aligncenter alignright alignjustify | link image media table | code fullscreen',
+                    ],
+                    toolbar_mode: 'wrap',
+                    font_family_formats: 'Roboto=Roboto,sans-serif;Arial=Arial,sans-serif;Times New Roman=Times New Roman,serif;Courier New=Courier New,monospace;',
+                    font_size_formats: '10pt 11pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 36pt',
+                    content_style: [
+                      'body { font-family: Roboto, sans-serif; font-size: 15px; line-height: 1.85; color: #222; max-width: 100%; }',
+                      'img { max-width: 100%; height: auto; border-radius: 8px; }',
+                      'blockquote { border-left: 4px solid #0059b2; margin: 1em 0; padding: 0.5em 1em; background: #f0f5ff; color: #333; }',
+                      'table { border-collapse: collapse; width: 100%; }',
+                      'td, th { border: 1px solid #ddd; padding: 8px; }',
+                    ].join(''),
+                    placeholder: 'Bắt đầu soạn thảo nội dung bài báo...',
+                    image_uploadtab: true,
+                    automatic_uploads: false,
+                  }}
+                />
+              ) : (
+                <div ref={quillContainerRef} className="min-h-[500px]" />
+              )}
             </div>
           )}
 

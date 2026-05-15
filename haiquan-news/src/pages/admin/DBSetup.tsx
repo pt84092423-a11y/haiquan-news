@@ -3,6 +3,47 @@ import AdminLayout from './AdminLayout';
 import { SQL_SCHEMA } from '@/lib/supabase';
 import { ADMIN_SQL } from '@/lib/auth';
 
+const COMMENTS_SQL = `-- Bước 3: Cột mới cho admin_users (nếu chưa có)
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_ip VARCHAR(100);
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
+-- Cột author_id cho bảng posts
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_id INTEGER;
+
+-- Bảng bình luận
+CREATE TABLE IF NOT EXISTS post_comments (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER NOT NULL,
+  display_name VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  ip_address VARCHAR(100),
+  edit_count INTEGER DEFAULT 0,
+  edited_at TIMESTAMPTZ,
+  parent_id INTEGER,
+  status VARCHAR(20) DEFAULT 'visible' CHECK (status IN ('visible','hidden')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS cho bảng bình luận (cho phép public đọc & ghi)
+ALTER TABLE post_comments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "public_read_comments" ON post_comments;
+DROP POLICY IF EXISTS "public_insert_comments" ON post_comments;
+DROP POLICY IF EXISTS "public_update_comments" ON post_comments;
+DROP POLICY IF EXISTS "public_delete_comments" ON post_comments;
+CREATE POLICY "public_read_comments" ON post_comments FOR SELECT USING (status = 'visible');
+CREATE POLICY "public_insert_comments" ON post_comments FOR INSERT WITH CHECK (true);
+CREATE POLICY "public_update_comments" ON post_comments FOR UPDATE USING (true);
+CREATE POLICY "public_delete_comments" ON post_comments FOR DELETE USING (true);
+
+-- Bảng danh mục phụ (multi-category)
+CREATE TABLE IF NOT EXISTS post_categories (
+  post_id INTEGER NOT NULL,
+  category_id INTEGER NOT NULL,
+  PRIMARY KEY (post_id, category_id)
+);
+`;
+
 const SUPABASE_URL = 'https://gqxrptccptfbzfdmaoyl.supabase.co';
 
 export default function DBSetup() {
@@ -145,6 +186,25 @@ export default function DBSetup() {
         </div>
         <pre className="p-5 text-[12px] text-[#222222] overflow-x-auto bg-gray-50 font-mono leading-relaxed max-h-[400px] overflow-y-auto whitespace-pre-wrap">
           {ADMIN_SQL}
+        </pre>
+      </div>
+
+      {/* Bước 3: Bình luận & Tác giả */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h3 className="font-bold text-[14px] text-[#222222]">Bước 3 — Bình luận & Tác giả (Tính năng mới)</h3>
+            <p className="text-[12px] text-[#888] mt-0.5">Tạo bảng bình luận, theo dõi IP đăng nhập, author_id cho bài viết, multi-category</p>
+          </div>
+          <button
+            onClick={() => handleCopy('comments', COMMENTS_SQL)}
+            className="px-4 py-2 bg-teal-600 text-white text-[13px] font-bold rounded-lg hover:bg-teal-700 transition"
+          >
+            {copied === 'comments' ? '✅ Đã copy!' : '📋 Copy SQL'}
+          </button>
+        </div>
+        <pre className="p-5 text-[12px] text-[#222222] overflow-x-auto bg-gray-50 font-mono leading-relaxed max-h-[400px] overflow-y-auto whitespace-pre-wrap">
+          {COMMENTS_SQL}
         </pre>
       </div>
 

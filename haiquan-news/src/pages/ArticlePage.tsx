@@ -6,6 +6,8 @@ import WebsiteLinks from '@/components/WebsiteLinks';
 import { getAllSettings, getPostBySlug, getPublishedPosts, getRelatedPostsSmart, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
 import { formatDateLong, timeAgo } from '@/lib/utils';
 import { detectPlatform, toEmbedUrl, isShortFormat } from '@/lib/mediaEmbed';
+import AuthorAvatar from '@/components/AuthorAvatar';
+import CommentSection from '@/components/CommentSection';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Hải+Quân';
 
@@ -224,11 +226,7 @@ export default function ArticlePage() {
                     dangerouslySetInnerHTML={{ __html: post.content || '' }}
                   />
 
-                  {post.author && (
-                    <div className="text-right font-bold font-['Roboto',sans-serif] text-[14px] text-[#222222] mt-6 mb-8">
-                      {post.author}
-                    </div>
-                  )}
+                  <AuthorAvatar authorId={post.author_id} authorName={post.author} />
 
                   <div className="bg-gray-50 border-t border-b border-[#e1e1e1] py-3 px-4 text-center text-[13px] text-[#555555] italic mb-6">
                     <svg className="w-4 h-4 inline-block mr-1 text-[#0059b2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,7 +236,7 @@ export default function ArticlePage() {
                     <a href="mailto:pt84092423@gmail.com" className="font-bold text-[#0059b2] hover:underline">pt84092423@gmail.com</a>
                   </div>
 
-                  <div className="flex items-center justify-between border-b border-[#e1e1e1] pb-6 mb-8">
+                  <div className="flex items-center justify-between border-b border-[#e1e1e1] pb-4 mb-4">
                     <span className="text-[13px] text-[#555555] font-bold">Chia sẻ:</span>
                     <div className="flex gap-2">
                       <button
@@ -254,6 +252,8 @@ export default function ArticlePage() {
                       </button>
                     </div>
                   </div>
+
+                  <CommentSection postId={post.id} />
 
                   {relatedPosts.length > 0 && (
                     <div>

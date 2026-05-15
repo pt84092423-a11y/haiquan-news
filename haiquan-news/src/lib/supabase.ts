@@ -33,6 +33,7 @@ export type Post = {
   video_url?: string;
   audio_url?: string;
   author?: string;
+  author_id?: number;
   created_at: string;
   updated_at?: string;
   published_at?: string;
