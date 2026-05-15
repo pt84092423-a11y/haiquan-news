@@ -575,7 +575,6 @@ export default function PostEditor() {
                 </div>
               </div>
               <Editor
-                tinymceScriptSrc="/tinymce/tinymce.min.js"
                 apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                 onInit={(_evt, editor) => {
                   editorRef.current = editor;
@@ -590,7 +589,6 @@ export default function PostEditor() {
                   menubar: true,
                   branding: false,
                   promotion: false,
-                  license_key: import.meta.env.VITE_TINYMCE_API_KEY,
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
