@@ -46,3 +46,4 @@ run = ["node", "./dist/index.cjs"]
 VITE_SUPABASE_URL = "https://gqxrptccptfbzfdmaoyl.supabase.co"
 VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHJwdGNjcHRmYnpmZG1hb3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjIyNzAsImV4cCI6MjA5MDA5ODI3MH0.7lyAtlXFyRBHd3oFAhhxxdqs1rn2GhHdGOuMgEuk-SE"
 VITE_IMGBB_API_KEY = "03971349653b2f4431b2b3f9e6c3d8d8"
+VITE_TINYMCE_API_KEY = "npvdnvz7bfumfuavqa4uc14zomqfz6lhd0g8xbq1i8yi9u0o"
