@@ -23,6 +23,7 @@ export type Post = {
   thumbnail?: string;
   category_id?: number;
   category?: Category;
+  extra_category_ids?: string;
   status: 'draft' | 'published';
   view_count: number;
   meta_title?: string;
@@ -183,13 +184,14 @@ export async function upsertSetting(key: string, value: string) {
   return supabase.from('settings').upsert({ key, value });
 }
 
-export async function getAllPosts(options?: { limit?: number; offset?: number; status?: string }) {
+export async function getAllPosts(options?: { limit?: number; offset?: number; status?: string; search?: string }) {
   let query = supabase
     .from('posts')
     .select('*, category:categories(*)', { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (options?.status) query = query.eq('status', options.status);
+  if (options?.search) query = query.ilike('title', `%${options.search}%`);
   if (options?.limit) query = query.limit(options.limit);
   if (options?.offset) {
     query = query.range(options.offset, (options.offset + (options.limit || 20)) - 1);
@@ -198,6 +200,22 @@ export async function getAllPosts(options?: { limit?: number; offset?: number; s
   const { data, error, count } = await query;
   if (error) return { posts: [], count: 0 };
   return { posts: data as Post[], count: count ?? 0 };
+}
+
+export async function getPostsForStats() {
+  const { data } = await supabase
+    .from('posts')
+    .select('id, title, view_count, created_at, published_at, post_type, category_id, status, category:categories(name)')
+    .order('created_at', { ascending: false });
+  return (data || []) as any[];
+}
+
+export async function updateAdminAvatar(userId: number, avatarUrl: string) {
+  const { error } = await supabase
+    .from('admin_users')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', userId);
+  if (error) throw error;
 }
 
 export async function createPost(post: Partial<Post>) {

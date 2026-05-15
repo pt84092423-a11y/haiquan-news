@@ -34,6 +34,8 @@ import IpMonitor from "@/pages/admin/IpMonitor";
 import YoutubeManager from "@/pages/admin/YoutubeManager";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import SearchPage from "@/pages/SearchPage";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import { getSession, can } from "@/lib/auth";
 
 const queryClient = new QueryClient();
@@ -129,6 +131,14 @@ function Router() {
       {/* Search page */}
       <Route path="/tim-kiem" component={() => (
         <PublicLayout><SearchPage /></PublicLayout>
+      )} />
+
+      {/* Legal pages */}
+      <Route path="/dieu-khoan" component={() => (
+        <PublicLayout><TermsPage /></PublicLayout>
+      )} />
+      <Route path="/chinh-sach-bao-mat" component={() => (
+        <PublicLayout><PrivacyPage /></PublicLayout>
       )} />
 
       {/* Các trang đa phương tiện chuyên biệt (Longform / Phóng sự ảnh / Podcast / Short Video / Hải quân Media) */}

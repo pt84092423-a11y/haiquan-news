@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAdminUsers, createAdminUser, deleteAdminUser, getSession, can, type UserRole } from '@/lib/auth';
+import { getAdminUsers, createAdminUser, deleteAdminUser, getSession, can, setSession, type UserRole } from '@/lib/auth';
+import { uploadImage, updateAdminAvatar } from '@/lib/supabase';
 
 export default function UserManager() {
   const session = getSession();
@@ -11,6 +12,7 @@ export default function UserManager() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [avatarUploading, setAvatarUploading] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -49,6 +51,29 @@ export default function UserManager() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (e: any) {
       setError(e.message || 'Lỗi xóa tài khoản');
+    }
+  };
+
+  const handleAvatarUpload = async (userId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(userId);
+    setError('');
+    try {
+      const url = await uploadImage(file);
+      if (!url) throw new Error('Tải ảnh lên thất bại — kiểm tra API key ImgBB');
+      await updateAdminAvatar(userId, url);
+      if (session?.id === userId) {
+        const updated = { ...session, avatar_url: url };
+        setSession(updated);
+      }
+      setSuccess('Cập nhật avatar thành công! Hãy đăng nhập lại để thấy thay đổi trong sidebar.');
+      load();
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (e: any) {
+      setError(e.message || 'Lỗi tải ảnh lên');
+    } finally {
+      setAvatarUploading(null);
     }
   };
 
@@ -125,7 +150,7 @@ export default function UserManager() {
               <th className="text-left px-5 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Vai trò</th>
               <th className="text-left px-5 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Trạng thái</th>
               <th className="text-left px-5 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Ngày tạo</th>
-              <th className="text-left px-5 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Tạo bởi</th>
+              <th className="text-left px-5 py-3 font-bold text-[#555] uppercase text-[11px] tracking-wide">Avatar</th>
               <th className="px-5 py-3"></th>
             </tr>
           </thead>
@@ -142,9 +167,13 @@ export default function UserManager() {
               <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#0059b2] flex items-center justify-center text-white font-bold text-[12px]">
-                      {(user.display_name || user.username).charAt(0).toUpperCase()}
-                    </div>
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-gray-200" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-[#0059b2] flex items-center justify-center text-white font-bold text-[12px] flex-shrink-0">
+                        {(user.display_name || user.username).charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <p className="font-bold text-[#222]">{user.display_name || user.username}</p>
                       <p className="text-[11px] text-[#888]">@{user.username}</p>
@@ -158,7 +187,24 @@ export default function UserManager() {
                   </span>
                 </td>
                 <td className="px-5 py-4 text-[#888]">{new Date(user.created_at).toLocaleDateString('vi-VN')}</td>
-                <td className="px-5 py-4 text-[#888]">{user.created_by || '—'}</td>
+                <td className="px-5 py-4">
+                  {(session?.id === user.id || can(session?.role, 'manage_users')) && user.status === 'active' && (
+                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[12px] text-[#0059b2] font-bold hover:bg-blue-50 transition">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => handleAvatarUpload(user.id, e)}
+                      />
+                      {avatarUploading === user.id ? (
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      )}
+                      {avatarUploading === user.id ? 'Đang tải...' : 'Đổi ảnh'}
+                    </label>
+                  )}
+                </td>
                 <td className="px-5 py-4">
                   {can(session?.role, 'delete_account') && user.username !== session?.username && user.status === 'active' && (
                     <button onClick={() => handleDelete(user.id, user.username)}
@@ -171,6 +217,11 @@ export default function UserManager() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl text-[12px] text-[#0059b2]">
+        <p className="font-bold mb-1">Lưu ý về avatar:</p>
+        <p>Để avatar hiển thị trong sidebar, cần thêm cột <code className="bg-white px-1.5 py-0.5 rounded">avatar_url TEXT</code> vào bảng <code className="bg-white px-1.5 py-0.5 rounded">admin_users</code> trong Supabase. Chạy lệnh SQL: <code className="bg-white px-1.5 py-0.5 rounded">ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS avatar_url TEXT;</code></p>
       </div>
     </AdminLayout>
   );

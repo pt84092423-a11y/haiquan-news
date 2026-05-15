@@ -101,6 +101,7 @@ export default function PostEditor() {
   const [showPreview, setShowPreview] = useState(false);
   const [success, setSuccess] = useState('');
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [thumbnailDragging, setThumbnailDragging] = useState(false);
   const [ogImageUploading, setOgImageUploading] = useState(false);
   const [audioUploading, setAudioUploading] = useState(false);
   const [pdfUploading, setPdfUploading] = useState(false);
@@ -317,9 +318,11 @@ export default function PostEditor() {
       // EDITOR: khi nhấn "Xuất bản" thì chỉ lưu nháp + tạo approval request
       const actualStatus = (isEditor && status === 'published') ? 'draft' : status;
 
+      const extraIds = selectedCategoryIds.slice(1);
       const payload: Partial<Post> = {
         ...form,
         category_id: selectedCategoryIds[0] ?? form.category_id,
+        extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
         content: quillRef.current?.root.innerHTML || form.content || '',
         status: actualStatus,
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
@@ -1000,15 +1003,32 @@ export default function PostEditor() {
                   <button onClick={() => setForm(f => ({ ...f, thumbnail: '' }))} className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow">×</button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full aspect-video bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 cursor-pointer hover:bg-gray-100 transition mb-3">
+                <label
+                  className={`flex flex-col items-center justify-center w-full aspect-video rounded-xl border-2 border-dashed cursor-pointer transition mb-3 ${thumbnailDragging ? 'border-[#0059b2] bg-blue-50 scale-[1.01]' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+                  onDragOver={e => { e.preventDefault(); setThumbnailDragging(true); }}
+                  onDragLeave={() => setThumbnailDragging(false)}
+                  onDrop={async e => {
+                    e.preventDefault();
+                    setThumbnailDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file && file.type.startsWith('image/')) {
+                      await handleThumbnailUpload({ target: { files: [file] } } as any);
+                    }
+                  }}
+                >
                   <input type="file" accept="image/*" onChange={handleThumbnailUpload} className="hidden" />
                   {thumbnailUploading ? (
-                    <span className="text-[12px] text-gray-500">Đang tải...</span>
+                    <span className="text-[12px] text-[#0059b2] font-bold">Đang tải lên ImgBB...</span>
+                  ) : thumbnailDragging ? (
+                    <>
+                      <svg className="w-8 h-8 text-[#0059b2] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      <span className="text-[12px] text-[#0059b2] font-bold">Thả ảnh vào đây!</span>
+                    </>
                   ) : (
                     <>
                       <svg className="w-8 h-8 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      <span className="text-[12px] text-gray-400">Kéo thả ảnh vào đây</span>
-                      <span className="text-[11px] text-gray-300 mt-1">Tối đa JPG, PNG, WebP</span>
+                      <span className="text-[12px] text-gray-400">Kéo thả ảnh hoặc nhấn để chọn</span>
+                      <span className="text-[11px] text-gray-300 mt-1">JPG, PNG, WebP — tải lên ImgBB</span>
                     </>
                   )}
                 </label>

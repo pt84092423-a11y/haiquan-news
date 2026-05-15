@@ -15,17 +15,19 @@ export default function PostList() {
   const [filter, setFilter] = useState<string>('');
   const [deleteMsg, setDeleteMsg] = useState('');
 
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const LIMIT = 20;
 
   const load = async () => {
     setLoading(true);
-    const result = await getAllPosts({ limit: LIMIT, offset: page * LIMIT, status: filter || undefined });
+    const result = await getAllPosts({ limit: LIMIT, offset: page * LIMIT, status: filter || undefined, search: search || undefined });
     setPosts(result.posts);
     setTotal(result.count);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [page, filter]);
+  useEffect(() => { load(); }, [page, filter, search]);
 
   const handleDelete = async (id: number, title: string) => {
     if (needsApproval(session?.role, 'delete_post') && session) {
@@ -63,16 +65,35 @@ export default function PostList() {
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex gap-3">
-          {['', 'published', 'draft'].map(s => (
-            <button
-              key={s}
-              onClick={() => { setFilter(s); setPage(0); }}
-              className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition ${filter === s ? 'bg-[#0059b2] text-white' : 'bg-gray-100 text-[#555555] hover:bg-gray-200'}`}
-            >
-              {s === '' ? 'Tất cả' : s === 'published' ? 'Đã đăng' : 'Nháp'}
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-2">
+            {['', 'published', 'draft'].map(s => (
+              <button
+                key={s}
+                onClick={() => { setFilter(s); setPage(0); }}
+                className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition ${filter === s ? 'bg-[#0059b2] text-white' : 'bg-gray-100 text-[#555555] hover:bg-gray-200'}`}
+              >
+                {s === '' ? 'Tất cả' : s === 'published' ? 'Đã đăng' : 'Nháp'}
+              </button>
+            ))}
+          </div>
+          <form
+            onSubmit={e => { e.preventDefault(); setSearch(searchInput.trim()); setPage(0); }}
+            className="flex gap-2 sm:ml-auto"
+          >
+            <input
+              value={searchInput}
+              onChange={e => { setSearchInput(e.target.value); if (!e.target.value.trim()) { setSearch(''); setPage(0); } }}
+              placeholder="Tìm kiếm tiêu đề..."
+              className="px-3 py-1.5 border border-gray-200 rounded-full text-[13px] focus:outline-none focus:border-[#0059b2] w-[200px]"
+            />
+            <button type="submit" className="px-4 py-1.5 bg-[#0059b2] text-white rounded-full text-[13px] font-bold hover:bg-blue-700 transition">
+              Tìm
             </button>
-          ))}
+            {search && (
+              <button type="button" onClick={() => { setSearch(''); setSearchInput(''); setPage(0); }} className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-[13px] font-bold hover:bg-gray-200 transition">×</button>
+            )}
+          </form>
         </div>
 
         <div className="overflow-x-auto">

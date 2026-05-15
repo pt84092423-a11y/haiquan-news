@@ -103,9 +103,13 @@ export default function SiteFooter() {
           <p className="text-white/50 text-[13px] italic leading-relaxed">
             Đây là website roleplay milisim (giả lập quân đội) phục vụ cộng đồng SROV, không liên quan đến Quân đội Nhân dân Việt Nam, Nước CHXHCN Việt Nam, ĐCSVN và các đoàn thể chính trị khác.
           </p>
-          <p>
-            © 2025 Báo Hải Quân Việt Nam - SROV. Bảo lưu mọi quyền.
-            <span className="mx-2">|</span>
+          <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <span>© 2025 Báo Hải Quân Việt Nam - SROV. Bảo lưu mọi quyền.</span>
+            <span className="opacity-40">|</span>
+            <Link href="/dieu-khoan" className="hover:text-white/80 transition">Điều khoản sử dụng</Link>
+            <span className="opacity-40">|</span>
+            <Link href="/chinh-sach-bao-mat" className="hover:text-white/80 transition">Chính sách bảo mật</Link>
+            <span className="opacity-40">|</span>
             <Link href="/admin" className="hover:text-white/80 transition">Quản trị</Link>
           </p>
           <p className="text-white/20 text-[10px]">Design &amp; Code by <span className="text-white/40 font-semibold">HaVanChi aka uhqwekh</span></p>

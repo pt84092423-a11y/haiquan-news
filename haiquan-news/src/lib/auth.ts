@@ -7,6 +7,7 @@ export interface AdminUser {
   username: string;
   role: UserRole;
   display_name?: string;
+  avatar_url?: string;
 }
 
 const SESSION_KEY = 'hqvn_admin_session';
@@ -52,6 +53,7 @@ export async function login(username: string, password: string): Promise<AdminUs
     username: data.username,
     role: data.role as UserRole,
     display_name: data.display_name,
+    avatar_url: data.avatar_url,
   };
   setSession(user);
   await addAuditLog('LOGIN', 'session', null, `Đăng nhập thành công`, user);
