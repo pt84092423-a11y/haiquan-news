@@ -223,7 +223,7 @@ export async function createCategory(cat: Partial<Category>) {
   return data as Category;
 }
 
-const IMGBB_API_KEY = '03971349653b2f4431b2b3f9e6c3d8d8';
+const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || '03971349653b2f4431b2b3f9e6c3d8d8';
 
 async function convertToWebP(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
