@@ -377,6 +377,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   optimizeDeps: {
+    include: ["@tinymce/tinymce-react"],
     esbuildOptions: {
       alias: {
         react: path.resolve(import.meta.dirname, "node_modules/react"),
