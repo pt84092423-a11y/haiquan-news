@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAllPosts, getSiteSetting, upsertSetting, parseJsonSetting, type Post } from '@/lib/supabase';
-import { getSession } from '@/lib/auth';
+import React, { getAllPosts, getSiteSetting, upsertSetting, parseJsonSetting, type Post } from '@/lib/supabase';
+import React, { getSession } from '@/lib/auth';
 
 interface SendHistoryEntry {
   id: string;

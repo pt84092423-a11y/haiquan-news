@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAuditLogs } from '@/lib/auth';
+import React, { getAuditLogs } from '@/lib/auth';
 
 const ACTION_COLORS: Record<string, string> = {
   LOGIN: 'bg-blue-100 text-blue-700',

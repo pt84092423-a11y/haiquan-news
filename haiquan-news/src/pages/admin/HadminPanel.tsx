@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'wouter';
+import React, { useEffect, useMemo, useState } from 'react';
+import React, { Link } from 'wouter';
 import AdminLayout from './AdminLayout';
-import { supabase, type Post } from '@/lib/supabase';
-import { getAuditLogs, getAdminUsers, getSession, addAuditLog } from '@/lib/auth';
+import React, { supabase, type Post } from '@/lib/supabase';
+import React, { getAuditLogs, getAdminUsers, getSession, addAuditLog } from '@/lib/auth';
 
 type AuditEntry = {
   id: number;

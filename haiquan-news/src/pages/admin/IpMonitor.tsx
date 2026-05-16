@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAuditLogs } from '@/lib/auth';
+import React, { getAuditLogs } from '@/lib/auth';
 
 interface IpEntry {
   id: number;

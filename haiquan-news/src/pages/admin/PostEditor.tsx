@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import EditorJsEditor from '@/components/EditorJsEditor';
-import { useParams, useLocation } from 'wouter';
+import React, { useParams, useLocation } from 'wouter';
 import AdminLayout from './AdminLayout';
 import {
   createPost, updatePost, getAllCategories, uploadImage, uploadMediaFile, generateSlug,
   packOgPayload, parseOgPayload,
   type Post, type Category
 } from '@/lib/supabase';
-import { supabase } from '@/lib/supabase';
-import { getSession, createApprovalRequest } from '@/lib/auth';
-import { detectPlatform, toEmbedUrl, isShortFormat, isAudioPlatform, PLATFORM_META } from '@/lib/mediaEmbed';
+import React, { supabase } from '@/lib/supabase';
+import React, { getSession, createApprovalRequest } from '@/lib/auth';
+import React, { detectPlatform, toEmbedUrl, isShortFormat, isAudioPlatform, PLATFORM_META } from '@/lib/mediaEmbed';
 
 const CONTENT_TYPES = [
   {

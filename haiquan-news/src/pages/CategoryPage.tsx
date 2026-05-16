@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import React, { useEffect, useMemo, useState } from 'react';
+import React, { Link, useLocation } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import WebsiteLinks from '@/components/WebsiteLinks';
 import {

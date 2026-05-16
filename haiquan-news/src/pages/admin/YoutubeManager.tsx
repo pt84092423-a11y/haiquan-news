@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getSiteSetting, upsertSetting, parseJsonSetting } from '@/lib/supabase';
+import React, { getSiteSetting, upsertSetting, parseJsonSetting } from '@/lib/supabase';
 
 interface YTChannel {
   id: string;

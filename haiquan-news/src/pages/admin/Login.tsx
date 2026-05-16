@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useLocation } from 'wouter';
-import { login, addAuditLog } from '@/lib/auth';
+import React, { useState } from 'react';
+import React, { useLocation } from 'wouter';
+import React, { login, addAuditLog } from '@/lib/auth';
 import logoImg from '@assets/logo_haiquan.png';
 
 export default function Login() {

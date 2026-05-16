@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { getSession, logout, can } from '@/lib/auth';
+import React, { useState } from 'react';
+import React, { Link, useLocation } from 'wouter';
+import React, { getSession, logout, can } from '@/lib/auth';
 import logoImg from '@assets/logo_haiquan.png';
 
 interface AdminLayoutProps {

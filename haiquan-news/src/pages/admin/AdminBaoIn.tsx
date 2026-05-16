@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AdminLayout from './AdminLayout';
-import { supabase, uploadImage } from '@/lib/supabase';
+import React, { supabase, uploadImage } from '@/lib/supabase';
 
 interface BaoInIssue {
   id?: number;

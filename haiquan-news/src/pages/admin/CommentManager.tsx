@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { supabase } from '@/lib/supabase';
-import { timeAgo } from '@/lib/utils';
+import React, { supabase } from '@/lib/supabase';
+import React, { timeAgo } from '@/lib/utils';
 
 interface Comment {
   id: number;

@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { YOUTUBE_CACHE } from '@/data/youtube-cache';
-import { Link } from 'wouter';
+import React, { useState, useEffect, useRef } from 'react';
+import React, { YOUTUBE_CACHE } from '@/data/youtube-cache';
+import React, { Link } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import PostCard from '@/components/PostCard';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getAllSettings, getPublishedPosts, getSiteSetting, parseJsonSetting, type Post } from '@/lib/supabase';
-import { DEFAULT_COMMAND_DATA, type CommandData, type Commander } from '@/pages/CommandPage';
+import React, { getAllSettings, getPublishedPosts, getSiteSetting, parseJsonSetting, type Post } from '@/lib/supabase';
+import React, { DEFAULT_COMMAND_DATA, type CommandData, type Commander } from '@/pages/CommandPage';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
 const DEFAULT_MAIN_AD = 'https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg';

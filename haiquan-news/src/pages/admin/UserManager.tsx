@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAdminUsers, createAdminUser, deleteAdminUser, getSession, can, setSession, type UserRole } from '@/lib/auth';
-import { uploadImage, updateAdminAvatar } from '@/lib/supabase';
+import React, { getAdminUsers, createAdminUser, deleteAdminUser, getSession, can, setSession, type UserRole } from '@/lib/auth';
+import React, { uploadImage, updateAdminAvatar } from '@/lib/supabase';
 
 export default function UserManager() {
   const session = getSession();

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import AdminLayout from './AdminLayout';
-import { getSiteSetting, upsertSetting, parseJsonSetting, createPost, type Post } from '@/lib/supabase';
-import { supabase } from '@/lib/supabase';
-import { toEmbedUrl, detectPlatform, PLATFORM_META } from '@/lib/mediaEmbed';
+import React, { getSiteSetting, upsertSetting, parseJsonSetting, createPost, type Post } from '@/lib/supabase';
+import React, { supabase } from '@/lib/supabase';
+import React, { toEmbedUrl, detectPlatform, PLATFORM_META } from '@/lib/mediaEmbed';
 
 interface YoutubeChannel {
   id: string;

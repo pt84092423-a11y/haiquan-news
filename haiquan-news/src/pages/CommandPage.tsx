@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
-import { getSiteSetting, parseJsonSetting } from '@/lib/supabase';
+import React, { getSiteSetting, parseJsonSetting } from '@/lib/supabase';
 
 export type ActivityMilestone = {
   time: string;

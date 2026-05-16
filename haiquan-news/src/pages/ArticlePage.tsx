@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'wouter';
+import React, { useState, useEffect } from 'react';
+import React, { useParams, Link } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getAllSettings, getPostBySlug, getPublishedPosts, getRelatedPostsSmart, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
-import { formatDateLong, timeAgo } from '@/lib/utils';
-import { detectPlatform, toEmbedUrl, isShortFormat } from '@/lib/mediaEmbed';
+import React, { getAllSettings, getPostBySlug, getPublishedPosts, getRelatedPostsSmart, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
+import React, { formatDateLong, timeAgo } from '@/lib/utils';
+import React, { detectPlatform, toEmbedUrl, isShortFormat } from '@/lib/mediaEmbed';
 import AuthorAvatar from '@/components/AuthorAvatar';
 import CommentSection from '@/components/CommentSection';
 

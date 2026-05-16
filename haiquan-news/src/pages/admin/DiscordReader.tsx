@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { getSession } from '@/lib/auth';
+import React, { getSession } from '@/lib/auth';
 
 interface DiscordMessage {
   id: string;

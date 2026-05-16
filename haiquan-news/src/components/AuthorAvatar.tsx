@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import UserProfileModal from './UserProfileModal';
 
 interface AuthorAvatarProps {

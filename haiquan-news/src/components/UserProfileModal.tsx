@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { getSession } from '@/lib/auth';
-import { formatDateLong } from '@/lib/utils';
+import React, { useState, useEffect } from 'react';
+import React, { supabase } from '@/lib/supabase';
+import React, { getSession } from '@/lib/auth';
+import React, { formatDateLong } from '@/lib/utils';
 
 interface UserProfileModalProps {
   userId?: number;

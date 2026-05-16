@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminLayout from './AdminLayout';
-import { getSiteSetting, parseJsonSetting, upsertSetting } from '@/lib/supabase';
-import { DEFAULT_NAV_ITEMS, type NavItem } from '@/components/SiteHeader';
+import React, { getSiteSetting, parseJsonSetting, upsertSetting } from '@/lib/supabase';
+import React, { DEFAULT_NAV_ITEMS, type NavItem } from '@/components/SiteHeader';
 
 export default function NavManager() {
   const [items, setItems] = useState<NavItem[]>(DEFAULT_NAV_ITEMS);
