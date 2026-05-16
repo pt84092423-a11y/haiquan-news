@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { Editor } from '@tinymce/tinymce-react';
 import EditorJsEditor from '@/components/EditorJsEditor';
 import { useParams, useLocation } from 'wouter';
 import AdminLayout from './AdminLayout';
@@ -116,14 +115,14 @@ export default function PostEditor() {
   const [ogTitle, setOgTitle] = useState('');
   const [ogImage, setOgImage] = useState('');
 
-  const editorRef = useRef<any>(null);
-  const [editorType, setEditorType] = useState<'tinymce' | 'quill' | 'editorjs'>(() => {
-    return (localStorage.getItem('hq-editor') as 'tinymce' | 'quill' | 'editorjs') || 'tinymce';
+  const [editorType, setEditorType] = useState<'quill' | 'editorjs'>(() => {
+    const saved = localStorage.getItem('hq-editor');
+    if (saved === 'quill') return 'quill';
+    return 'editorjs';
   });
   const quillContainerRef = useRef<HTMLDivElement>(null);
   const quillInstanceRef = useRef<any>(null);
   const editorJsContentRef = useRef<string>('');
-  const [editorInited, setEditorInited] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>('');
 
   const [form, setForm] = useState<Partial<Post>>({
@@ -174,13 +173,6 @@ export default function PostEditor() {
     }
   }, [params.id]);
 
-  // Load content into TinyMCE when editing an existing post (content arrives async)
-  useEffect(() => {
-    if (editorInited && editorRef.current && form.content && !(editorRef.current as any)._loaded) {
-      editorRef.current.setContent(form.content);
-      (editorRef.current as any)._loaded = true;
-    }
-  }, [editorInited, form.content]);
 
   // Quill initialization
   useEffect(() => {
@@ -256,8 +248,6 @@ export default function PostEditor() {
       const q = quillInstanceRef.current;
       const range = q.getSelection(true);
       q.clipboard.dangerouslyPasteHTML(range ? range.index : q.getLength(), html);
-    } else if (editorRef.current) {
-      editorRef.current.insertContent(html);
     }
   };
 
@@ -335,9 +325,7 @@ export default function PostEditor() {
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
         content: editorType === 'quill'
           ? (quillInstanceRef.current?.root?.innerHTML || form.content || '')
-          : editorType === 'editorjs'
-          ? (editorJsContentRef.current || form.content || '')
-          : (editorRef.current?.getContent() || form.content || ''),
+          : (editorJsContentRef.current || form.content || ''),
         status: actualStatus,
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
         updated_at: new Date().toISOString(),
@@ -391,7 +379,9 @@ export default function PostEditor() {
         ...form,
         category_id: selectedCategoryIds[0] ?? form.category_id,
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
-        content: editorRef.current?.getContent() || form.content || '',
+        content: editorType === 'quill'
+          ? (quillInstanceRef.current?.root?.innerHTML || form.content || '')
+          : (editorJsContentRef.current || form.content || ''),
         status: 'published',
         published_at: scheduledAt,
         updated_at: new Date().toISOString(),
@@ -626,9 +616,8 @@ export default function PostEditor() {
                   <span className="text-[11px] text-gray-400 font-bold uppercase hidden sm:block">Trình soạn:</span>
                   <div className="flex rounded-lg overflow-hidden border border-gray-200 text-[12px]">
                     {([
-                      { id: 'tinymce', label: 'TinyMCE' },
+                      { id: 'editorjs', label: '✨ EditorJS AI' },
                       { id: 'quill', label: 'Quill' },
-                      { id: 'editorjs', label: '✨ AI' },
                     ] as const).map(t => (
                       <button
                         key={t.id}
@@ -639,7 +628,7 @@ export default function PostEditor() {
                           localStorage.setItem('hq-editor', t.id);
                         }}
                         className={`px-3 py-1.5 font-bold transition whitespace-nowrap ${editorType === t.id ? 'bg-[#0059b2] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
-                        title={t.id === 'editorjs' ? 'Editor.js + Gemini AI Assistant' : t.label}
+                        title={t.id === 'editorjs' ? 'Editor.js + Gemini AI Assistant' : 'Quill Rich Text Editor'}
                       >
                         {t.label}
                       </button>
@@ -664,47 +653,7 @@ export default function PostEditor() {
                   </div>
                 </div>
               )}
-              {editorType === 'tinymce' ? (
-                <Editor
-                  apiKey="npvdnvz7bfumfuavqa4uc14zomqfz6lhd0g8xbq1i8yi9u0o"
-                  onInit={(_evt, editor) => {
-                    editorRef.current = editor;
-                    setEditorInited(true);
-                    if (form.content) {
-                      editor.setContent(form.content);
-                      (editor as any)._loaded = true;
-                    }
-                  }}
-                  init={{
-                    height: 540,
-                    menubar: true,
-                    branding: false,
-                    promotion: false,
-                    plugins: [
-                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'wordcount',
-                    ],
-                    toolbar: [
-                      'undo redo | cut copy paste | bold italic underline strikethrough | subscript superscript | removeformat | forecolor backcolor',
-                      'bullist numlist | outdent indent | blockquote | alignleft aligncenter alignright alignjustify | link image media table | code fullscreen',
-                    ],
-                    toolbar_mode: 'wrap',
-                    font_family_formats: 'Roboto=Roboto,sans-serif;Arial=Arial,sans-serif;Times New Roman=Times New Roman,serif;Courier New=Courier New,monospace;',
-                    font_size_formats: '10pt 11pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 36pt',
-                    content_style: [
-                      'body { font-family: Roboto, sans-serif; font-size: 15px; line-height: 1.85; color: #222; max-width: 100%; }',
-                      'img { max-width: 100%; height: auto; border-radius: 8px; }',
-                      'blockquote { border-left: 4px solid #0059b2; margin: 1em 0; padding: 0.5em 1em; background: #f0f5ff; color: #333; }',
-                      'table { border-collapse: collapse; width: 100%; }',
-                      'td, th { border: 1px solid #ddd; padding: 8px; }',
-                    ].join(''),
-                    placeholder: 'Bắt đầu soạn thảo nội dung bài báo...',
-                    image_uploadtab: true,
-                    automatic_uploads: false,
-                  }}
-                />
-              ) : editorType === 'quill' ? (
+              {editorType === 'quill' ? (
                 <div ref={quillContainerRef} className="min-h-[500px]" />
               ) : (
                 <EditorJsEditor

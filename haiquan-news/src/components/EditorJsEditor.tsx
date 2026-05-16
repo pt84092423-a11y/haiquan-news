@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { blocksToHtml, htmlToBlocks } from '@/lib/editorUtils';
 
 // ─── Gemini API ────────────────────────────────────────────────────────────
 const GEMINI_KEY = 'AIzaSyD-jzH0ckOGlbBtanqrl75fOUpcmWp0Ih0';
@@ -35,11 +36,9 @@ function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
     const s = document.createElement('script');
-    s.src = src;
-    s.defer = false;
-    s.async = false;
+    s.src = src; s.defer = false; s.async = false;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error(`Failed to load: ${src}`));
+    s.onerror = () => reject(new Error(`Failed: ${src}`));
     document.head.appendChild(s);
   });
 }
@@ -51,113 +50,10 @@ function loadAllEditorJs(): Promise<void> {
   if (scriptsLoaded) return Promise.resolve();
   if (scriptsLoading) return scriptsLoading;
   scriptsLoading = (async () => {
-    for (const src of CDN_SCRIPTS) {
-      await loadScript(src);
-    }
+    for (const src of CDN_SCRIPTS) await loadScript(src);
     scriptsLoaded = true;
   })();
   return scriptsLoading;
-}
-
-// ─── Block converters ───────────────────────────────────────────────────────
-function htmlToBlocks(html: string): any[] {
-  if (!html || !html.trim()) return [];
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  const blocks: any[] = [];
-  for (const child of Array.from(div.children)) {
-    const tag = child.tagName.toLowerCase();
-    const inner = (child as HTMLElement).innerHTML;
-    const text = (child as HTMLElement).textContent || '';
-    if (/^h[1-6]$/.test(tag)) {
-      blocks.push({ type: 'header', data: { text: inner, level: parseInt(tag[1]) } });
-    } else if (tag === 'p') {
-      if (inner.trim()) blocks.push({ type: 'paragraph', data: { text: inner } });
-    } else if (tag === 'ul') {
-      const items = Array.from(child.querySelectorAll(':scope > li')).map(li => ({ content: (li as HTMLElement).innerHTML, items: [] }));
-      blocks.push({ type: 'list', data: { style: 'unordered', items } });
-    } else if (tag === 'ol') {
-      const items = Array.from(child.querySelectorAll(':scope > li')).map(li => ({ content: (li as HTMLElement).innerHTML, items: [] }));
-      blocks.push({ type: 'list', data: { style: 'ordered', items } });
-    } else if (tag === 'blockquote') {
-      const cite = child.querySelector('cite');
-      const cap = cite?.textContent || '';
-      if (cite) cite.remove();
-      blocks.push({ type: 'quote', data: { text: (child as HTMLElement).innerHTML, caption: cap, alignment: 'left' } });
-    } else if (tag === 'pre') {
-      blocks.push({ type: 'code', data: { code: text } });
-    } else if (tag === 'hr') {
-      blocks.push({ type: 'delimiter', data: {} });
-    } else if (tag === 'figure') {
-      const img = child.querySelector('img') as HTMLImageElement | null;
-      const cap = child.querySelector('figcaption');
-      if (img) blocks.push({ type: 'image', data: { file: { url: img.src }, caption: cap?.textContent || '', withBorder: false, withBackground: false, stretched: false } });
-    } else if (tag === 'table') {
-      const rows = Array.from(child.querySelectorAll('tr')).map(tr =>
-        Array.from(tr.querySelectorAll('td, th')).map(cell => (cell as HTMLElement).innerHTML)
-      );
-      blocks.push({ type: 'table', data: { withHeadings: false, content: rows } });
-    } else if (inner.trim()) {
-      blocks.push({ type: 'paragraph', data: { text: inner } });
-    }
-  }
-  return blocks.length ? blocks : [{ type: 'paragraph', data: { text: '' } }];
-}
-
-export function blocksToHtml(blocks: any[]): string {
-  return blocks.map(block => {
-    switch (block.type) {
-      case 'header': {
-        const lv = block.data.level || 2;
-        return `<h${lv}>${block.data.text}</h${lv}>`;
-      }
-      case 'paragraph': {
-        const align = block.data.alignment;
-        const style = align && align !== 'left' ? ` style="text-align:${align}"` : '';
-        return `<p${style}>${block.data.text || ''}</p>`;
-      }
-      case 'list': {
-        const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
-        const renderItems = (items: any[]): string =>
-          items.map(item => {
-            const t = typeof item === 'string' ? item : (item.content || '');
-            const sub = item.items?.length ? `<${tag}>${renderItems(item.items)}</${tag}>` : '';
-            return `<li>${t}${sub}</li>`;
-          }).join('');
-        return `<${tag}>${renderItems(block.data.items || [])}</${tag}>`;
-      }
-      case 'checklist':
-        return (block.data.items || []).map((it: any) =>
-          `<div style="display:flex;align-items:center;gap:8px;margin:4px 0">` +
-          `<span style="font-size:18px">${it.checked ? '✅' : '⬜'}</span><span${it.checked ? ' style="text-decoration:line-through;opacity:.7"' : ''}>${it.text}</span></div>`
-        ).join('');
-      case 'table': {
-        const rows = (block.data.content || []).map((row: string[], i: number) => {
-          const cells = row.map(c => i === 0 && block.data.withHeadings ? `<th style="background:#f0f5ff;font-weight:bold;padding:8px;border:1px solid #ddd">${c}</th>` : `<td style="padding:8px;border:1px solid #ddd">${c}</td>`).join('');
-          return `<tr>${cells}</tr>`;
-        }).join('');
-        return `<table style="border-collapse:collapse;width:100%;margin:1em 0"><tbody>${rows}</tbody></table>`;
-      }
-      case 'quote':
-        return `<blockquote style="border-left:4px solid #0059b2;margin:1em 0;padding:.5em 1em;background:#f0f5ff">${block.data.text}${block.data.caption ? `<br/><cite style="font-style:italic;font-size:.9em;opacity:.7">— ${block.data.caption}</cite>` : ''}</blockquote>`;
-      case 'delimiter':
-        return '<hr style="border:none;border-top:2px solid #e5e7eb;margin:2em auto;width:40%" />';
-      case 'code':
-        return `<pre style="background:#1e293b;color:#e2e8f0;padding:1em;border-radius:8px;overflow-x:auto;font-size:13px"><code>${block.data.code}</code></pre>`;
-      case 'image': {
-        const url = block.data.file?.url || block.data.url || '';
-        const cap = block.data.caption || '';
-        const classes = [block.data.withBorder && 'border:2px solid #e5e7eb', block.data.withBackground && 'background:#f8f9fa;padding:1em', block.data.stretched && 'width:100%'].filter(Boolean).join(';');
-        return `<figure style="margin:1em 0;text-align:center"><img src="${url}" alt="${cap}" style="max-width:100%;height:auto;border-radius:8px;${classes}" />${cap ? `<figcaption style="font-size:13px;color:#666;margin-top:6px;font-style:italic">${cap}</figcaption>` : ''}</figure>`;
-      }
-      case 'embed':
-        return `<div style="position:relative;padding-bottom:56.25%;height:0;margin:1em 0"><iframe src="${block.data.embed}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;border-radius:8px" allowfullscreen></iframe></div>`;
-      case 'raw':
-        return block.data.html || '';
-      default:
-        return '';
-    }
-  }).filter(Boolean).join('\n');
 }
 
 // ─── Props ──────────────────────────────────────────────────────────────────
@@ -179,24 +75,19 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
   const [wordCount, setWordCount] = useState(0);
   const [readingTime, setReadingTime] = useState(0);
 
-  // AI panel
   const [aiPanelOpen, setAiPanelOpen] = useState(true);
   const [aiTab, setAiTab] = useState<AiTab>('A');
   const [aiLoading, setAiLoading] = useState(false);
 
-  // Feature A
   const [topicInput, setTopicInput] = useState('');
   const [outlineResult, setOutlineResult] = useState('');
 
-  // Feature B
   const [commentText] = useState('Bài viết rất hay, nhưng ứng dụng thực tế thế nào?');
   const [replyOutput, setReplyOutput] = useState('');
 
-  // Feature C
   const [buddyResult, setBuddyResult] = useState('');
   const [buddyAction, setBuddyAction] = useState('');
 
-  // ── Extract plain text from blocks for word count ──
   const updateStats = useCallback((blocks: any[]) => {
     const text = blocks.map((b: any) => {
       if (b.type === 'paragraph' || b.type === 'header') return (b.data.text || '').replace(/<[^>]+>/g, '');
@@ -209,7 +100,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
     setReadingTime(Math.max(1, Math.round(words / 200)));
   }, []);
 
-  // ── Initialize Editor.js ──
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
@@ -223,45 +113,18 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
 
       const W = window as any;
       const tools: Record<string, any> = {
-        header: {
-          class: W.Header,
-          shortcut: 'CMD+SHIFT+H',
-          config: {
-            levels: [1, 2, 3, 4],
-            defaultLevel: 2,
-            placeholder: 'Tiêu đề...',
-          },
-        },
-        list: {
-          class: W.NestedList,
-          inlineToolbar: true,
-          config: { defaultStyle: 'unordered' },
-        },
+        header: { class: W.Header, shortcut: 'CMD+SHIFT+H', config: { levels: [1, 2, 3, 4], defaultLevel: 2, placeholder: 'Tiêu đề...' } },
+        list: { class: W.NestedList, inlineToolbar: true, config: { defaultStyle: 'unordered' } },
         checklist: { class: W.Checklist, inlineToolbar: true },
-        table: {
-          class: W.Table,
-          inlineToolbar: true,
-          config: { rows: 2, cols: 3, withHeadings: true },
-        },
-        quote: {
-          class: W.Quote,
-          inlineToolbar: true,
-          config: { quotePlaceholder: 'Trích dẫn...', captionPlaceholder: 'Tác giả' },
-        },
+        table: { class: W.Table, inlineToolbar: true, config: { rows: 2, cols: 3, withHeadings: true } },
+        quote: { class: W.Quote, inlineToolbar: true, config: { quotePlaceholder: 'Trích dẫn...', captionPlaceholder: 'Tác giả' } },
         code: { class: W.CodeTool, config: { placeholder: 'Nhập code tại đây...' } },
         delimiter: { class: W.Delimiter },
-        embed: {
-          class: W.Embed,
-          config: {
-            services: { youtube: true, vimeo: true, twitter: true, instagram: true, facebook: true },
-          },
-        },
+        embed: { class: W.Embed, config: { services: { youtube: true, vimeo: true, twitter: true, instagram: true, facebook: true } } },
         marker: { class: W.Marker, shortcut: 'CMD+SHIFT+M' },
         inlineCode: { class: W.InlineCode, shortcut: 'CMD+SHIFT+C' },
         underline: { class: W.Underline, shortcut: 'CMD+U' },
       };
-
-      // Remove undefined tools
       Object.keys(tools).forEach(k => { if (!tools[k].class) delete tools[k]; });
 
       const initialData = initialContent ? { blocks: htmlToBlocks(initialContent) } : undefined;
@@ -292,16 +155,18 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
               Link: 'Liên kết', Marker: 'Đánh dấu', Bold: 'Đậm', Italic: 'Nghiêng',
               InlineCode: 'Code nội dòng', Underline: 'Gạch chân',
             },
-            blockTunes: { delete: { Delete: 'Xóa' }, moveUp: { 'Move up': 'Lên trên' }, moveDown: { 'Move down': 'Xuống dưới' } },
+            blockTunes: {
+              delete: { Delete: 'Xóa' },
+              moveUp: { 'Move up': 'Lên trên' },
+              moveDown: { 'Move down': 'Xuống dưới' },
+            },
           },
         },
       });
 
       editorRef.current = editor;
       setReady(true);
-    }).catch(err => {
-      setLoadError(`Không tải được Editor.js: ${err.message}`);
-    });
+    }).catch(err => setLoadError(`Không tải được Editor.js: ${err.message}`));
 
     return () => {
       if (editorRef.current?.destroy) {
@@ -312,26 +177,22 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
     };
   }, []);
 
-  // ── AI Feature A: Generate article outline ──
   const handleGenerateOutline = async () => {
     if (!topicInput.trim()) return;
-    setAiLoading(true);
-    setOutlineResult('');
+    setAiLoading(true); setOutlineResult('');
     try {
       const prompt = `Bạn là chuyên gia báo chí quân sự và an ninh quốc phòng Việt Nam. Hãy tạo một dàn bài chi tiết cho bài báo với chủ đề: "${topicInput}". Viết bằng tiếng Việt, phong cách nghiêm túc, chuyên nghiệp. Trả về dàn bài dưới dạng văn bản có cấu trúc với các mục I. II. III. và 1. 2. 3. rõ ràng.`;
       const result = await callGemini(prompt);
-
-      // Inject as blocks into EditorJS
       if (editorRef.current) {
         const lines = result.split('\n').filter(l => l.trim());
         for (const line of lines) {
-          const trimmed = line.trim();
-          if (/^[IVX]+\./.test(trimmed) || /^#{1,3}\s/.test(trimmed)) {
-            await editorRef.current.blocks.insert('header', { text: trimmed.replace(/^#+\s*/, ''), level: 2 });
-          } else if (/^\d+\./.test(trimmed) || /^[a-z]\)/.test(trimmed)) {
-            await editorRef.current.blocks.insert('header', { text: trimmed, level: 3 });
-          } else if (trimmed) {
-            await editorRef.current.blocks.insert('paragraph', { text: trimmed });
+          const t = line.trim();
+          if (/^[IVX]+\./.test(t) || /^#{1,3}\s/.test(t)) {
+            await editorRef.current.blocks.insert('header', { text: t.replace(/^#+\s*/, ''), level: 2 });
+          } else if (/^\d+\./.test(t) || /^[a-z]\)/.test(t)) {
+            await editorRef.current.blocks.insert('header', { text: t, level: 3 });
+          } else if (t) {
+            await editorRef.current.blocks.insert('paragraph', { text: t });
           }
         }
         const saved = await editorRef.current.save();
@@ -346,17 +207,15 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
     }
   };
 
-  // ── AI Feature B: Generate comment reply ──
   const handleGenerateReply = async () => {
-    setAiLoading(true);
-    setReplyOutput('');
+    setAiLoading(true); setReplyOutput('');
     try {
-      let articleContext = '';
+      let ctx = '';
       if (editorRef.current) {
         const saved = await editorRef.current.save();
-        articleContext = blocksToHtml(saved.blocks).replace(/<[^>]+>/g, '').slice(0, 1500);
+        ctx = blocksToHtml(saved.blocks).replace(/<[^>]+>/g, '').slice(0, 1500);
       }
-      const prompt = `Bạn là biên tập viên Báo Hải Quân Việt Nam. Với ngữ cảnh bài báo:\n"${articleContext || '[Bài viết chưa có nội dung]'}"\n\nHãy soạn một câu trả lời lịch sự, chuyên nghiệp và có tính thông tin cho bình luận của độc giả:\n"${commentText}"\n\nYêu cầu: Viết bằng tiếng Việt, ngắn gọn (2-4 câu), thân thiện, thể hiện sự cảm ơn và cung cấp thông tin hữu ích. Chỉ trả về văn bản câu trả lời, không có giải thích thêm.`;
+      const prompt = `Bạn là biên tập viên Báo Hải Quân Việt Nam. Với ngữ cảnh bài báo:\n"${ctx || '[Bài viết chưa có nội dung]'}"\n\nHãy soạn một câu trả lời lịch sự, chuyên nghiệp và có tính thông tin cho bình luận của độc giả:\n"${commentText}"\n\nYêu cầu: Viết bằng tiếng Việt, ngắn gọn (2-4 câu), thân thiện, thể hiện sự cảm ơn và cung cấp thông tin hữu ích. Chỉ trả về văn bản câu trả lời, không có giải thích thêm.`;
       const result = await callGemini(prompt);
       setReplyOutput(result.replace(/<(?!br)[^>]+>/gi, '').trim());
     } catch (err: any) {
@@ -366,16 +225,10 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
     }
   };
 
-  // ── AI Feature C: Text buddy ──
   const handleTextBuddy = async (action: 'next' | 'fix' | 'humor') => {
     const selected = window.getSelection()?.toString() || '';
-    if (!selected.trim()) {
-      alert('Hãy bôi đen (chọn) một đoạn văn trong editor trước!');
-      return;
-    }
-    setAiLoading(true);
-    setBuddyResult('');
-    setBuddyAction(action);
+    if (!selected.trim()) { alert('Hãy bôi đen (chọn) một đoạn văn trong editor trước!'); return; }
+    setAiLoading(true); setBuddyResult(''); setBuddyAction(action);
     try {
       const prompts: Record<string, string> = {
         next: `Hãy viết đoạn văn tiếp theo cho đoạn này, giữ phong cách và chủ đề (tiếng Việt):\n"${selected}"\n\nChỉ trả về đoạn văn mới, không có giải thích.`,
@@ -399,7 +252,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
     setBuddyResult('');
   };
 
-  // ── Tab labels ──
   const tabs: { id: AiTab; label: string; emoji: string }[] = [
     { id: 'A', label: 'Dàn bài', emoji: '📝' },
     { id: 'B', label: 'Trả lời BL', emoji: '💬' },
@@ -414,9 +266,8 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
 
   return (
     <div className="flex gap-0 relative">
-      {/* ── Loading overlay ── */}
       {aiLoading && (
-        <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center pointer-events-all">
+        <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center">
           <div className="bg-white rounded-2xl px-8 py-6 shadow-2xl flex flex-col items-center gap-4">
             <div className="relative w-14 h-14">
               <div className="w-14 h-14 rounded-full border-4 border-[#e5e7eb] absolute" />
@@ -431,31 +282,23 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
         </div>
       )}
 
-      {/* ── Editor area ── */}
-      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${aiPanelOpen ? 'mr-0' : ''}`}>
-        {/* Error state */}
+      <div className="flex-1 min-w-0 flex flex-col">
         {loadError && (
           <div className="m-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
             <strong>Lỗi tải Editor.js:</strong> {loadError}
           </div>
         )}
-
-        {/* Loading state */}
         {!ready && !loadError && (
           <div className="flex items-center justify-center py-20 gap-3 text-gray-400">
             <div className="w-5 h-5 border-2 border-[#0059b2] border-t-transparent rounded-full animate-spin" />
             <span className="text-[13px]">Đang tải Editor.js...</span>
           </div>
         )}
-
-        {/* EditorJS holder */}
         <div
           ref={holderRef}
-          className={`min-h-[480px] prose max-w-none px-4 py-2 [&_.codex-editor]:min-h-[440px] [&_.ce-toolbar__plus]:text-[#0059b2] [&_.ce-toolbar__settings-btn]:text-[#0059b2] ${!ready ? 'hidden' : ''}`}
+          className={`min-h-[480px] prose max-w-none px-4 py-2 ${!ready ? 'hidden' : ''}`}
           style={{ fontFamily: 'Roboto, sans-serif' }}
         />
-
-        {/* Status bar */}
         {ready && (
           <div className="flex items-center justify-between px-5 py-2.5 bg-gradient-to-r from-[#f8fbff] to-[#eef5ff] border-t border-blue-100">
             <div className="flex items-center gap-4 text-[12px] text-gray-500">
@@ -480,10 +323,8 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
         )}
       </div>
 
-      {/* ── Gemini AI Panel ── */}
       {aiPanelOpen && (
         <div className="w-[300px] xl:w-[340px] flex-shrink-0 border-l border-blue-100 bg-gradient-to-b from-[#f8fbff] to-white flex flex-col">
-          {/* Panel header */}
           <div className="px-4 py-3 bg-gradient-to-r from-[#01122e] to-[#0059b2] text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -495,8 +336,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
               </div>
               <button onClick={() => setAiPanelOpen(false)} className="text-white/50 hover:text-white transition text-lg leading-none">×</button>
             </div>
-
-            {/* Tabs */}
             <div className="flex gap-1 mt-3">
               {tabs.map(t => (
                 <button
@@ -511,10 +350,7 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
             </div>
           </div>
 
-          {/* Panel body */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-            {/* ─ Feature A: Content Outline Generator ─ */}
             {aiTab === 'A' && (
               <div className="space-y-3">
                 <div>
@@ -554,12 +390,10 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
               </div>
             )}
 
-            {/* ─ Feature B: Comment Responder ─ */}
             {aiTab === 'B' && (
               <div className="space-y-3">
                 <p className="text-[11px] font-black text-[#0059b2] uppercase">💬 Phản hồi Bình Luận Độc Giả</p>
                 <p className="text-[11px] text-gray-500">AI đọc nội dung bài viết và soạn câu trả lời chuyên nghiệp cho bình luận bên dưới.</p>
-
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold">Đ</div>
@@ -568,7 +402,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
                   </div>
                   <p className="text-[12px] text-gray-700 italic">"{commentText}"</p>
                 </div>
-
                 <button
                   type="button"
                   onClick={handleGenerateReply}
@@ -577,7 +410,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
                 >
                   <span>🤖</span> Tạo Câu Trả Lời
                 </button>
-
                 {replyOutput && (
                   <div className="space-y-2">
                     <p className="text-[10px] font-black text-gray-400 uppercase">Câu trả lời được đề xuất:</p>
@@ -589,7 +421,7 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
                     />
                     <button
                       type="button"
-                      onClick={() => { navigator.clipboard.writeText(replyOutput); }}
+                      onClick={() => navigator.clipboard.writeText(replyOutput)}
                       className="w-full py-2 border border-green-300 text-green-700 text-[12px] font-bold rounded-xl hover:bg-green-50 transition"
                     >
                       📋 Sao chép câu trả lời
@@ -599,7 +431,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
               </div>
             )}
 
-            {/* ─ Feature C: Text Buddy ─ */}
             {aiTab === 'C' && (
               <div className="space-y-3">
                 <p className="text-[11px] font-black text-[#0059b2] uppercase">✨ Trợ Lý Văn Bản Thông Minh</p>
@@ -608,7 +439,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
                     <strong>Hướng dẫn:</strong> Bôi đen (chọn) một đoạn văn bất kỳ trong editor, sau đó nhấn một trong các nút bên dưới.
                   </p>
                 </div>
-
                 <div className="space-y-2">
                   {buddyActions.map(action => (
                     <button
@@ -627,7 +457,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
                     </button>
                   ))}
                 </div>
-
                 {buddyResult && (
                   <div className="space-y-2 border-t border-gray-100 pt-3">
                     <p className="text-[10px] font-black text-gray-400 uppercase">Kết quả AI:</p>
@@ -635,25 +464,13 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
                       {buddyResult}
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={insertBuddyResult}
-                        className="flex-1 py-2 bg-[#0059b2] text-white text-[12px] font-bold rounded-xl hover:bg-blue-700 transition"
-                      >
+                      <button type="button" onClick={insertBuddyResult} className="flex-1 py-2 bg-[#0059b2] text-white text-[12px] font-bold rounded-xl hover:bg-blue-700 transition">
                         ➕ Chèn vào Editor
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => navigator.clipboard.writeText(buddyResult)}
-                        className="px-3 py-2 border border-gray-200 text-gray-600 text-[12px] font-bold rounded-xl hover:bg-gray-50 transition"
-                      >
+                      <button type="button" onClick={() => navigator.clipboard.writeText(buddyResult)} className="px-3 py-2 border border-gray-200 text-gray-600 text-[12px] font-bold rounded-xl hover:bg-gray-50 transition">
                         📋
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setBuddyResult('')}
-                        className="px-3 py-2 border border-red-200 text-red-500 text-[12px] font-bold rounded-xl hover:bg-red-50 transition"
-                      >
+                      <button type="button" onClick={() => setBuddyResult('')} className="px-3 py-2 border border-red-200 text-red-500 text-[12px] font-bold rounded-xl hover:bg-red-50 transition">
                         ✕
                       </button>
                     </div>
@@ -663,7 +480,6 @@ export default function EditorJsEditor({ initialContent, onContentChange }: Edit
             )}
           </div>
 
-          {/* Panel footer */}
           <div className="border-t border-blue-100 px-4 py-3 bg-[#f8fbff]">
             <p className="text-[10px] text-gray-400 text-center">
               Gemini 2.5 Flash · AI có thể mắc lỗi, hãy kiểm tra lại nội dung
