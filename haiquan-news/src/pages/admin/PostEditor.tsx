@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
+import EditorJsEditor from '@/components/EditorJsEditor';
 import { useParams, useLocation } from 'wouter';
 import AdminLayout from './AdminLayout';
 import {
@@ -116,11 +117,12 @@ export default function PostEditor() {
   const [ogImage, setOgImage] = useState('');
 
   const editorRef = useRef<any>(null);
-  const [editorType, setEditorType] = useState<'tinymce' | 'quill'>(() => {
-    return (localStorage.getItem('hq-editor') as 'tinymce' | 'quill') || 'tinymce';
+  const [editorType, setEditorType] = useState<'tinymce' | 'quill' | 'editorjs'>(() => {
+    return (localStorage.getItem('hq-editor') as 'tinymce' | 'quill' | 'editorjs') || 'tinymce';
   });
   const quillContainerRef = useRef<HTMLDivElement>(null);
   const quillInstanceRef = useRef<any>(null);
+  const editorJsContentRef = useRef<string>('');
   const [editorInited, setEditorInited] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>('');
 
@@ -333,6 +335,8 @@ export default function PostEditor() {
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
         content: editorType === 'quill'
           ? (quillInstanceRef.current?.root?.innerHTML || form.content || '')
+          : editorType === 'editorjs'
+          ? (editorJsContentRef.current || form.content || '')
           : (editorRef.current?.getContent() || form.content || ''),
         status: actualStatus,
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
@@ -621,38 +625,45 @@ export default function PostEditor() {
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-gray-400 font-bold uppercase hidden sm:block">Trình soạn:</span>
                   <div className="flex rounded-lg overflow-hidden border border-gray-200 text-[12px]">
-                    {(['tinymce', 'quill'] as const).map(t => (
+                    {([
+                      { id: 'tinymce', label: 'TinyMCE' },
+                      { id: 'quill', label: 'Quill' },
+                      { id: 'editorjs', label: '✨ AI' },
+                    ] as const).map(t => (
                       <button
-                        key={t}
+                        key={t.id}
                         type="button"
                         onClick={() => {
                           quillInstanceRef.current = null;
-                          setEditorType(t);
-                          localStorage.setItem('hq-editor', t);
+                          setEditorType(t.id);
+                          localStorage.setItem('hq-editor', t.id);
                         }}
-                        className={`px-3 py-1.5 font-bold transition ${editorType === t ? 'bg-[#0059b2] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                        className={`px-3 py-1.5 font-bold transition whitespace-nowrap ${editorType === t.id ? 'bg-[#0059b2] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                        title={t.id === 'editorjs' ? 'Editor.js + Gemini AI Assistant' : t.label}
                       >
-                        {t === 'tinymce' ? 'TinyMCE' : 'Quill'}
+                        {t.label}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="px-6 py-3 border-b border-gray-100 bg-[#f8fbff]">
-                <p className="text-[12px] font-bold text-[#0059b2] uppercase mb-2">Mẫu khuôn chèn nhanh</p>
-                <div className="flex flex-wrap gap-2">
-                  {CONTENT_BLOCKS.map(block => (
-                    <button
-                      key={block.label}
-                      type="button"
-                      onClick={() => insertContentBlock(block.html)}
-                      className="px-3 py-1.5 rounded-full bg-white border border-blue-100 text-[12px] font-bold text-[#0059b2] hover:bg-[#0059b2] hover:text-white transition"
-                    >
-                      {block.label}
-                    </button>
-                  ))}
+              {editorType !== 'editorjs' && (
+                <div className="px-6 py-3 border-b border-gray-100 bg-[#f8fbff]">
+                  <p className="text-[12px] font-bold text-[#0059b2] uppercase mb-2">Mẫu khuôn chèn nhanh</p>
+                  <div className="flex flex-wrap gap-2">
+                    {CONTENT_BLOCKS.map(block => (
+                      <button
+                        key={block.label}
+                        type="button"
+                        onClick={() => insertContentBlock(block.html)}
+                        className="px-3 py-1.5 rounded-full bg-white border border-blue-100 text-[12px] font-bold text-[#0059b2] hover:bg-[#0059b2] hover:text-white transition"
+                      >
+                        {block.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               {editorType === 'tinymce' ? (
                 <Editor
                   apiKey="npvdnvz7bfumfuavqa4uc14zomqfz6lhd0g8xbq1i8yi9u0o"
@@ -693,8 +704,14 @@ export default function PostEditor() {
                     automatic_uploads: false,
                   }}
                 />
-              ) : (
+              ) : editorType === 'quill' ? (
                 <div ref={quillContainerRef} className="min-h-[500px]" />
+              ) : (
+                <EditorJsEditor
+                  key={form.id ? `ejs-${form.id}` : 'ejs-new'}
+                  initialContent={form.content}
+                  onContentChange={html => { editorJsContentRef.current = html; }}
+                />
               )}
             </div>
           )}
