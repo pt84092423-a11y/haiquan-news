@@ -130,7 +130,8 @@ export default function PostEditor() {
     post_type: 'article',
     video_url: '',
     audio_url: '',
-    author: 'Admin Hải Quân',
+    author: session?.display_name || session?.username || 'Admin Hải Quân',
+    author_id: session?.id,
     meta_title: '',
     meta_description: '',
     og_image: '',
@@ -150,7 +151,14 @@ export default function PostEditor() {
       supabase.from('posts').select('*, category:categories(*)').eq('id', params.id).single().then(({ data }) => {
         if (data) {
           setForm(data);
-          if (data.category_id) setSelectedCategoryIds([data.category_id]);
+          const catIds: number[] = data.category_id ? [data.category_id] : [];
+          if (data.extra_category_ids) {
+            try {
+              const extra = JSON.parse(data.extra_category_ids);
+              if (Array.isArray(extra)) extra.forEach((id: number) => { if (id && !catIds.includes(id)) catIds.push(id); });
+            } catch { /* ignore */ }
+          }
+          if (catIds.length > 0) setSelectedCategoryIds(catIds);
           const ogPayload = parseOgPayload(data.og_image);
           setOgTitle(ogPayload.title || '');
           setOgImage(ogPayload.image || '');
@@ -589,6 +597,7 @@ export default function PostEditor() {
                   menubar: true,
                   branding: false,
                   promotion: false,
+                  license_key: 'gpl',
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',

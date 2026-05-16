@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import AdminLayout from './AdminLayout';
-import { SQL_SCHEMA } from '@/lib/supabase';
+import { SQL_SCHEMA, SQL_SCHEMA_V2 } from '@/lib/supabase';
 import { ADMIN_SQL } from '@/lib/auth';
 
 const SUPABASE_URL = 'https://gqxrptccptfbzfdmaoyl.supabase.co';
@@ -145,6 +145,25 @@ export default function DBSetup() {
         </div>
         <pre className="p-5 text-[12px] text-[#222222] overflow-x-auto bg-gray-50 font-mono leading-relaxed max-h-[400px] overflow-y-auto whitespace-pre-wrap">
           {ADMIN_SQL}
+        </pre>
+      </div>
+
+      {/* Bước 3: Migration V2 — author, comments, avatar */}
+      <div className="bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden mb-6">
+        <div className="p-4 border-b border-orange-100 flex justify-between items-center">
+          <div>
+            <h3 className="font-bold text-[14px] text-orange-700">Bước 3 — Migration V2 (Bình luận, Avatar, Tác giả)</h3>
+            <p className="text-[12px] text-[#888] mt-0.5">Chạy SQL này để kích hoạt: bình luận bạn đọc, avatar admin, liên kết tác giả bài viết</p>
+          </div>
+          <button
+            onClick={() => handleCopy('v2', SQL_SCHEMA_V2)}
+            className="px-4 py-2 bg-orange-500 text-white text-[13px] font-bold rounded-lg hover:bg-orange-600 transition"
+          >
+            {copied === 'v2' ? '✅ Đã copy!' : '📋 Copy SQL V2'}
+          </button>
+        </div>
+        <pre className="p-5 text-[12px] text-[#222222] overflow-x-auto bg-orange-50 font-mono leading-relaxed max-h-[400px] overflow-y-auto whitespace-pre-wrap">
+          {SQL_SCHEMA_V2}
         </pre>
       </div>
 

@@ -25,6 +25,7 @@ import AdminBaoIn from "@/pages/admin/AdminBaoIn";
 import StructureManager from "@/pages/admin/StructureManager";
 import CommandManager from "@/pages/admin/CommandManager";
 import AdminAds from "@/pages/admin/AdminAds";
+import AdminComments from "@/pages/admin/AdminComments";
 import NavManager from "@/pages/admin/NavManager";
 import HadminPanel from "@/pages/admin/HadminPanel";
 import DiscordBot from "@/pages/admin/DiscordBot";
@@ -117,6 +118,7 @@ function Router() {
       <Route path="/admin/discord-reader" component={() => <ProtectedRoute component={DiscordReader} />} />
       <Route path="/admin/ip-monitor" component={() => <ProtectedRoute component={IpMonitor} action="view_audit_log" />} />
       <Route path="/admin/youtube" component={() => <ProtectedRoute component={YoutubeManager} />} />
+      <Route path="/admin/binh-luan" component={() => <ProtectedRoute component={AdminComments} action="manage_comments" />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />

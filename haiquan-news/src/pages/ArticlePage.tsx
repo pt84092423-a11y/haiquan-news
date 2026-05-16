@@ -3,7 +3,8 @@ import { useParams, Link } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import WebsiteLinks from '@/components/WebsiteLinks';
-import { getAllSettings, getPostBySlug, getPublishedPosts, getRelatedPostsSmart, incrementViewCount, parseOgPayload, type Post } from '@/lib/supabase';
+import { getAllSettings, getPostBySlug, getPublishedPosts, getRelatedPostsSmart, incrementViewCount, parseOgPayload, getCommentsByPost, addComment, getAdminUserPublicProfile, getAdminUserByName, type Post, type Comment } from '@/lib/supabase';
+import UserProfileModal from '@/components/UserProfileModal';
 import { formatDateLong, timeAgo } from '@/lib/utils';
 import { detectPlatform, toEmbedUrl, isShortFormat } from '@/lib/mediaEmbed';
 
@@ -27,6 +28,19 @@ export default function ArticlePage() {
   });
   const [ads, setAds] = useState<Record<string, string>>({});
   const ogPayload = parseOgPayload(post?.og_image);
+  const [authorInfo, setAuthorInfo] = useState<any>(null);
+  const [authorUserId, setAuthorUserId] = useState<number | null>(null);
+  const [authorModalOpen, setAuthorModalOpen] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentName, setCommentName] = useState(() => localStorage.getItem('hq-commentName') || '');
+  const [commentContent, setCommentContent] = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState('');
+  const [commentSuccess, setCommentSuccess] = useState('');
+  const [replyTo, setReplyTo] = useState<{ id: number; name: string } | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [replySubmitting, setReplySubmitting] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -47,8 +61,76 @@ export default function ArticlePage() {
       const sorted = [...(popular || [])].sort((a, b) => b.view_count - a.view_count);
       setMostRead(sorted.filter(p => p.id !== data.id && p.post_type !== 'baoin').slice(0, 8));
       setLatestBaoIn((baoIn || [])[0] || null);
+
+      // Load author info (by author_id first, then by name fallback)
+      const authorId = (data as any).author_id;
+      if (authorId) {
+        getAdminUserPublicProfile(authorId).then(p => {
+          if (p) { setAuthorInfo(p); setAuthorUserId(authorId); }
+        });
+      } else if (data.author) {
+        getAdminUserByName(data.author).then(p => {
+          if (p) { setAuthorInfo(p); setAuthorUserId(p.id); }
+        });
+      }
+
+      // Load comments
+      setCommentsLoading(true);
+      getCommentsByPost(data.id).then(c => {
+        setComments(c);
+        setCommentsLoading(false);
+      });
     });
   }, [slug]);
+
+  const submitComment = async () => {
+    if (!commentContent.trim()) { setCommentError('Vui lòng nhập nội dung bình luận.'); return; }
+    setCommentSubmitting(true); setCommentError('');
+    try {
+      let ip: string | undefined;
+      try {
+        const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+        const d = await r.json(); ip = d.ip;
+      } catch { /* ignore */ }
+      const newC = await addComment({
+        post_id: post!.id,
+        author_name: commentName.trim() || 'Ẩn danh',
+        content: commentContent.trim(),
+        ip_address: ip,
+        parent_id: null,
+      });
+      setComments(prev => [...prev, { ...newC, replies: [] }]);
+      setCommentContent('');
+      setCommentSuccess('Bình luận của bạn đã được đăng!');
+      setTimeout(() => setCommentSuccess(''), 4000);
+    } catch (e: any) {
+      setCommentError(e.message || 'Lỗi khi gửi bình luận. Vui lòng thử lại.');
+    } finally { setCommentSubmitting(false); }
+  };
+
+  const submitReply = async () => {
+    if (!replyTo || !replyContent.trim()) return;
+    setReplySubmitting(true);
+    try {
+      let ip: string | undefined;
+      try {
+        const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+        const d = await r.json(); ip = d.ip;
+      } catch { /* ignore */ }
+      const newReply = await addComment({
+        post_id: post!.id,
+        author_name: commentName.trim() || 'Ẩn danh',
+        content: replyContent.trim(),
+        ip_address: ip,
+        parent_id: replyTo.id,
+      });
+      setComments(prev => prev.map(c =>
+        c.id === replyTo!.id ? { ...c, replies: [...(c.replies || []), newReply] } : c
+      ));
+      setReplyContent('');
+      setReplyTo(null);
+    } catch { /* ignore */ } finally { setReplySubmitting(false); }
+  };
 
   useEffect(() => {
     getAllSettings().then(setAds);
@@ -224,9 +306,30 @@ export default function ArticlePage() {
                     dangerouslySetInnerHTML={{ __html: post.content || '' }}
                   />
 
-                  {post.author && (
-                    <div className="text-right font-bold font-['Roboto',sans-serif] text-[14px] text-[#222222] mt-6 mb-8">
-                      {post.author}
+                  {(post.author || authorInfo) && (
+                    <div className="flex items-center justify-end gap-3 mt-6 mb-6">
+                      <span className="text-[12px] text-gray-500 font-['Roboto',sans-serif]">Tác giả:</span>
+                      <button
+                        onClick={() => authorUserId ? setAuthorModalOpen(true) : undefined}
+                        className={`flex items-center gap-2 ${authorUserId ? 'cursor-pointer group' : 'cursor-default'} transition`}
+                        type="button"
+                      >
+                        {authorInfo?.avatar_url ? (
+                          <img src={authorInfo.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-[#0059b2] shadow-sm group-hover:border-[#FFD700] transition" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-[#0059b2] flex items-center justify-center text-white text-[13px] font-bold border-2 border-[#0059b2] group-hover:border-[#FFD700] transition">
+                            {(post.author || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="font-bold text-[#0059b2] text-[14px] font-['Roboto',sans-serif] group-hover:underline">
+                          {post.author || authorInfo?.display_name}
+                        </span>
+                        {authorUserId && (
+                          <svg className="w-3.5 h-3.5 text-[#0059b2]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   )}
 
@@ -255,6 +358,123 @@ export default function ArticlePage() {
                     </div>
                   </div>
 
+                  {/* ===== BÌNH LUẬN ===== */}
+                  <div className="mt-6 mb-8">
+                    <h3 className="font-['Playfair_Display',serif] text-[20px] font-black uppercase text-[#222] mb-5 flex items-center gap-2">
+                      <div className="flex gap-[3px]">
+                        <div className="w-[4px] h-[18px] bg-[#0059b2] -skew-x-[20deg]" />
+                        <div className="w-[4px] h-[18px] bg-sky-300 -skew-x-[20deg]" />
+                      </div>
+                      BÌNH LUẬN ({comments.length})
+                    </h3>
+
+                    {/* Comment form */}
+                    <div className="bg-[#f8faff] border border-[#d5e3f8] rounded-xl p-4 mb-5">
+                      {replyTo ? (
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-[12px] font-bold text-[#0059b2]">
+                            Đang trả lời <span className="text-gray-700">@{replyTo.name}</span>
+                          </p>
+                          <button onClick={() => { setReplyTo(null); setReplyContent(''); }} className="text-[11px] text-gray-400 hover:text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">✕ Hủy</button>
+                        </div>
+                      ) : (
+                        <p className="text-[13px] font-bold text-[#0059b2] mb-3">Để lại bình luận</p>
+                      )}
+                      {commentError && <p className="text-[12px] text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-2">{commentError}</p>}
+                      {commentSuccess && <p className="text-[12px] text-green-700 bg-green-50 px-3 py-2 rounded-lg mb-2">✓ {commentSuccess}</p>}
+                      {!replyTo && (
+                        <input
+                          value={commentName}
+                          onChange={e => { setCommentName(e.target.value); localStorage.setItem('hq-commentName', e.target.value); }}
+                          placeholder="Tên của bạn (để trống = Ẩn danh)"
+                          className="w-full px-3 py-2 text-[13px] border border-[#d5e3f8] rounded-lg focus:outline-none focus:border-[#0059b2] bg-white mb-2"
+                        />
+                      )}
+                      <textarea
+                        value={replyTo ? replyContent : commentContent}
+                        onChange={e => replyTo ? setReplyContent(e.target.value) : setCommentContent(e.target.value)}
+                        placeholder="Nhập nội dung bình luận của bạn..."
+                        rows={3}
+                        className="w-full px-3 py-2 text-[13px] border border-[#d5e3f8] rounded-lg focus:outline-none focus:border-[#0059b2] bg-white resize-none mb-3"
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          onClick={replyTo ? submitReply : submitComment}
+                          disabled={replyTo ? replySubmitting : commentSubmitting}
+                          className="px-5 py-2 bg-[#0059b2] text-white rounded-lg text-[13px] font-bold hover:bg-[#004a9a] transition disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {(replyTo ? replySubmitting : commentSubmitting) && (
+                            <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                          )}
+                          {replyTo ? 'Gửi trả lời' : 'Gửi bình luận'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Comments list */}
+                    {commentsLoading ? (
+                      <div className="space-y-3">
+                        {[...Array(2)].map((_, i) => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}
+                      </div>
+                    ) : comments.length === 0 ? (
+                      <p className="text-center text-[13px] text-gray-400 py-8 bg-gray-50 rounded-xl border border-gray-100">
+                        Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {comments.map(c => (
+                          <div key={c.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-[#0059b2]/10 flex items-center justify-center text-[#0059b2] font-bold text-[13px] flex-shrink-0">
+                                  {c.author_name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <span className="text-[13px] font-bold text-[#222]">{c.author_name}</span>
+                                  <span className="text-[11px] text-gray-400 ml-2">
+                                    {new Date(c.created_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setReplyTo({ id: c.id, name: c.author_name })}
+                                className="text-[11px] text-[#0059b2] font-bold hover:underline flex-shrink-0 flex items-center gap-1"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                                Trả lời
+                              </button>
+                            </div>
+                            <p className="text-[14px] text-[#333] leading-relaxed ml-10">{c.content}</p>
+
+                            {/* Replies */}
+                            {c.replies && c.replies.length > 0 && (
+                              <div className="mt-3 ml-10 space-y-3">
+                                {c.replies.map(r => (
+                                  <div key={r.id} className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <div className="w-6 h-6 rounded-full bg-[#0059b2]/20 flex items-center justify-center text-[#0059b2] font-bold text-[10px] flex-shrink-0">
+                                        {r.author_name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <span className="text-[12px] font-bold text-[#0059b2]">{r.author_name}</span>
+                                      <span className="text-[10px] text-gray-400">
+                                        {new Date(r.created_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                                      </span>
+                                    </div>
+                                    <p className="text-[13px] text-[#444] leading-relaxed ml-8">{r.content}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* ===== KẾT THÚC BÌNH LUẬN ===== */}
+
                   {relatedPosts.length > 0 && (
                     <div>
                       <h3 className="font-['Playfair_Display',serif] text-[20px] font-black uppercase text-[#0059b2] mb-5 flex items-center">
@@ -275,6 +495,13 @@ export default function ArticlePage() {
                         ))}
                       </div>
                     </div>
+                  )}
+                  {/* Author Profile Modal */}
+                  {authorModalOpen && authorUserId !== null && (
+                    <UserProfileModal
+                      userId={authorUserId}
+                      onClose={() => setAuthorModalOpen(false)}
+                    />
                   )}
                 </>
               ) : null}

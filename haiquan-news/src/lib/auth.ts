@@ -8,6 +8,10 @@ export interface AdminUser {
   role: UserRole;
   display_name?: string;
   avatar_url?: string;
+  created_by?: string;
+  created_at?: string;
+  last_login_at?: string;
+  last_login_ip?: string;
 }
 
 const SESSION_KEY = 'hqvn_admin_session';
@@ -38,11 +42,21 @@ async function simpleHash(str: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function getUserIp(): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+    const { ip } = await res.json();
+    return ip || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function login(username: string, password: string): Promise<AdminUser | null> {
   const hash = await simpleHash(password);
   const { data, error } = await supabase
     .from('admin_users')
-    .select('id, username, role, display_name, status')
+    .select('id, username, role, display_name, status, created_by, created_at')
     .eq('username', username)
     .eq('password_hash', hash)
     .eq('status', 'active')
@@ -60,12 +74,25 @@ export async function login(username: string, password: string): Promise<AdminUs
     avatar_url = av?.value ?? undefined;
   } catch { /* ignore */ }
 
+  const now = new Date().toISOString();
+
+  // Track login time + IP (non-blocking)
+  getUserIp().then(ip => {
+    supabase.from('admin_users').update({
+      last_login_at: now,
+      ...(ip ? { last_login_ip: ip } : {}),
+    }).eq('id', data.id).then(() => {});
+  });
+
   const user: AdminUser = {
     id: data.id,
     username: data.username,
     role: data.role as UserRole,
     display_name: data.display_name,
     avatar_url,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    last_login_at: now,
   };
   setSession(user);
   await addAuditLog('LOGIN', 'session', null, `Đăng nhập thành công`, user);
@@ -113,6 +140,7 @@ export function can(role: UserRole | undefined, action: string): boolean {
     manage_users: ['HADMIN', 'ADMIN'],
     approve_requests: ['HADMIN', 'ADMIN'],
     view_hadmin_panel: ['HADMIN'],
+    manage_comments: ['HADMIN', 'ADMIN', 'EDITOR'],
   };
   return (perms[action] || []).includes(role);
 }

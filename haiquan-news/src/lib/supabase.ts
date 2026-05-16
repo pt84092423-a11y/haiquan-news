@@ -33,9 +33,25 @@ export type Post = {
   video_url?: string;
   audio_url?: string;
   author?: string;
+  author_id?: number;
   created_at: string;
   updated_at?: string;
   published_at?: string;
+};
+
+export type Comment = {
+  id: number;
+  post_id: number;
+  author_name: string;
+  content: string;
+  ip_address?: string;
+  created_at: string;
+  updated_at: string;
+  edit_count: number;
+  parent_id?: number | null;
+  is_approved: boolean;
+  post?: { title: string; slug: string };
+  replies?: Comment[];
 };
 
 export type OgPayload = {
@@ -440,6 +456,131 @@ export async function getRelatedPostsSmart(postId: number, title: string, catego
 
   return smartPosts.slice(0, limit);
 }
+
+export async function getCommentsByPost(postId: number): Promise<Comment[]> {
+  const { data: top } = await supabase
+    .from('comments').select('*').eq('post_id', postId).eq('is_approved', true)
+    .is('parent_id', null).order('created_at', { ascending: true });
+  const topLevel = (top || []) as Comment[];
+  if (!topLevel.length) return [];
+  const { data: reps } = await supabase
+    .from('comments').select('*').eq('post_id', postId)
+    .not('parent_id', 'is', null).order('created_at', { ascending: true });
+  const replyMap: Record<number, Comment[]> = {};
+  for (const r of (reps || []) as Comment[]) {
+    if (r.parent_id != null) {
+      if (!replyMap[r.parent_id]) replyMap[r.parent_id] = [];
+      replyMap[r.parent_id].push(r);
+    }
+  }
+  return topLevel.map(c => ({ ...c, replies: replyMap[c.id] || [] }));
+}
+
+export async function addComment(payload: {
+  post_id: number; author_name: string; content: string;
+  ip_address?: string; parent_id?: number | null;
+}): Promise<Comment> {
+  const { data, error } = await supabase.from('comments').insert({
+    post_id: payload.post_id,
+    author_name: payload.author_name.trim() || 'Ẩn danh',
+    content: payload.content.trim(),
+    ip_address: payload.ip_address || null,
+    parent_id: payload.parent_id ?? null,
+    is_approved: true,
+  }).select().single();
+  if (error) throw error;
+  return data as Comment;
+}
+
+export async function getAllCommentsAdmin(opts?: { limit?: number; offset?: number; search?: string }): Promise<{ comments: Comment[]; count: number }> {
+  let q = supabase.from('comments').select('*, post:posts(title,slug)', { count: 'exact' })
+    .order('created_at', { ascending: false });
+  if (opts?.search) q = (q as any).ilike('content', `%${opts.search}%`);
+  if (opts?.limit) q = q.limit(opts.limit);
+  if (opts?.offset) q = q.range(opts.offset, (opts.offset + (opts.limit || 30)) - 1);
+  const { data, count, error } = await q;
+  if (error) return { comments: [], count: 0 };
+  return { comments: (data || []) as Comment[], count: count ?? 0 };
+}
+
+export async function deleteComment(id: number) {
+  const { error } = await supabase.from('comments').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateCommentApproval(id: number, approved: boolean) {
+  const { error } = await supabase.from('comments').update({ is_approved: approved }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function getAdminUserPublicProfile(userId: number) {
+  const { data } = await supabase
+    .from('admin_users')
+    .select('id,username,display_name,created_by,created_at,role,status,last_login_at,last_login_ip,password_hash')
+    .eq('id', userId).single();
+  if (!data) return null;
+  const { data: av } = await supabase.from('settings').select('value').eq('key', `avatar_user_${userId}`).maybeSingle();
+  const { data: posts, count } = await supabase.from('posts')
+    .select('view_count', { count: 'exact' }).eq('author_id', userId).eq('status', 'published');
+  const post_count = count || 0;
+  const total_views = ((posts || []) as any[]).reduce((s: number, p: any) => s + (p.view_count || 0), 0);
+  return { ...(data as any), avatar_url: av?.value || null, post_count, total_views };
+}
+
+export async function getAdminUserByName(authorName: string) {
+  if (!authorName) return null;
+  const { data } = await supabase.from('admin_users')
+    .select('id,username,display_name,created_by,created_at,role,last_login_at')
+    .or(`display_name.eq.${authorName},username.eq.${authorName}`)
+    .eq('status', 'active').limit(1).maybeSingle();
+  return data || null;
+}
+
+export const SQL_SCHEMA_V2 = `
+-- Chạy các lệnh này trong Supabase SQL Editor để kích hoạt tính năng mới:
+
+-- 1. Multi-category: thêm cột extra_category_ids vào posts
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS extra_category_ids TEXT;
+
+-- 2. Liên kết tác giả: thêm author_id vào posts
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_id INTEGER;
+
+-- 3. Theo dõi đăng nhập: thêm các cột vào admin_users
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_ip TEXT;
+
+-- 4. Bảng Comments (Bình luận bài viết)
+CREATE TABLE IF NOT EXISTS comments (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  author_name VARCHAR(100) NOT NULL DEFAULT 'Ẩn danh',
+  content TEXT NOT NULL,
+  ip_address TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  edit_count INTEGER DEFAULT 0,
+  parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+  is_approved BOOLEAN DEFAULT TRUE
+);
+CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at DESC);
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='comments' AND policyname='Allow public read comments') THEN
+    CREATE POLICY "Allow public read comments" ON comments FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='comments' AND policyname='Allow anon insert comments') THEN
+    CREATE POLICY "Allow anon insert comments" ON comments FOR INSERT WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='comments' AND policyname='Allow anon update comments') THEN
+    CREATE POLICY "Allow anon update comments" ON comments FOR UPDATE USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='comments' AND policyname='Allow anon delete comments') THEN
+    CREATE POLICY "Allow anon delete comments" ON comments FOR DELETE USING (true);
+  END IF;
+END $$;
+`;
 
 export const SQL_SCHEMA = `
 -- Bảng Categories (Danh mục đa cấp)
