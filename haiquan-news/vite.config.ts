@@ -374,7 +374,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   optimizeDeps: {
-    include: ["@tinymce/tinymce-react"],
+    include: ["react", "react-dom", "react/jsx-runtime"],
   },
   server: {
     port,
