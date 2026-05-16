@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
+import QuillEditor, { type QuillEditorRef } from '@/components/QuillEditor';
 import { useParams, useLocation } from 'wouter';
 import AdminLayout from './AdminLayout';
 import {
@@ -116,6 +117,10 @@ export default function PostEditor() {
   const [ogImage, setOgImage] = useState('');
 
   const editorRef = useRef<any>(null);
+  const quillEditorRef = useRef<QuillEditorRef>(null);
+  const [editorType, setEditorType] = useState<'tiny' | 'quill'>(() =>
+    (localStorage.getItem('hq-editorType') as 'tiny' | 'quill') || 'tiny'
+  );
   const [editorInited, setEditorInited] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>('');
 
@@ -206,8 +211,11 @@ export default function PostEditor() {
   };
 
   const insertContentBlock = (html: string) => {
-    if (!editorRef.current) return;
-    editorRef.current.insertContent(html);
+    if (editorType === 'quill') {
+      quillEditorRef.current?.insertContent(html);
+    } else {
+      editorRef.current?.insertContent(html);
+    }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -281,7 +289,9 @@ export default function PostEditor() {
         ...form,
         category_id: selectedCategoryIds[0] ?? form.category_id,
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
-        content: editorRef.current?.getContent() || form.content || '',
+        content: editorType === 'quill'
+          ? (quillEditorRef.current?.getContent() || form.content || '')
+          : (editorRef.current?.getContent() || form.content || ''),
         status: actualStatus,
         published_at: actualStatus === 'published' ? new Date().toISOString() : form.published_at,
         updated_at: new Date().toISOString(),
@@ -335,7 +345,9 @@ export default function PostEditor() {
         ...form,
         category_id: selectedCategoryIds[0] ?? form.category_id,
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
-        content: editorRef.current?.getContent() || form.content || '',
+        content: editorType === 'quill'
+          ? (quillEditorRef.current?.getContent() || form.content || '')
+          : (editorRef.current?.getContent() || form.content || ''),
         status: 'published',
         published_at: scheduledAt,
         updated_at: new Date().toISOString(),
@@ -564,9 +576,61 @@ export default function PostEditor() {
           {/* TinyMCE Editor (conditional) */}
           {showQuill && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+              {/* Header: title + editor toggle */}
+              <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between gap-4">
                 <span className="text-[13px] font-bold text-[#555] uppercase tracking-wider">Nội dung chi tiết</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[11px] text-gray-400 hidden sm:block">Trình soạn thảo:</span>
+                  <div className="flex rounded-lg overflow-hidden border border-gray-200">
+                    {/* TinyMCE button */}
+                    <button
+                      type="button"
+                      title="TinyMCE — đầy đủ tính năng"
+                      onClick={() => {
+                        if (editorType === 'tiny') return;
+                        const content = quillEditorRef.current?.getContent() || form.content || '';
+                        setForm(prev => ({ ...prev, content }));
+                        setEditorType('tiny');
+                        localStorage.setItem('hq-editorType', 'tiny');
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-[12px] font-bold transition select-none ${
+                        editorType === 'tiny'
+                          ? 'bg-[#0059b2] text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 5h18v2H3V5zm0 4h18v2H3V9zm0 4h12v2H3v-2zm0 4h8v2H3v-2z"/>
+                      </svg>
+                      TinyMCE
+                    </button>
+                    {/* Quill button */}
+                    <button
+                      type="button"
+                      title="Quill — nhẹ, nhanh"
+                      onClick={() => {
+                        if (editorType === 'quill') return;
+                        const content = editorRef.current?.getContent() || form.content || '';
+                        setForm(prev => ({ ...prev, content }));
+                        setEditorType('quill');
+                        localStorage.setItem('hq-editorType', 'quill');
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-[12px] font-bold transition select-none border-l border-gray-200 ${
+                        editorType === 'quill'
+                          ? 'bg-[#0059b2] text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                      </svg>
+                      Quill
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              {/* Quick insert blocks */}
               <div className="px-6 py-3 border-b border-gray-100 bg-[#f8fbff]">
                 <p className="text-[12px] font-bold text-[#0059b2] uppercase mb-2">Mẫu khuôn chèn nhanh</p>
                 <div className="flex flex-wrap gap-2">
@@ -582,46 +646,58 @@ export default function PostEditor() {
                   ))}
                 </div>
               </div>
-              <Editor
-                apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
-                onInit={(_evt, editor) => {
-                  editorRef.current = editor;
-                  setEditorInited(true);
-                  if (form.content) {
-                    editor.setContent(form.content);
-                    (editor as any)._loaded = true;
-                  }
-                }}
-                init={{
-                  height: 540,
-                  menubar: true,
-                  branding: false,
-                  promotion: false,
-                  license_key: 'gpl',
-                  plugins: [
-                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'wordcount',
-                  ],
-                  toolbar: [
-                    'undo redo | cut copy paste | bold italic underline strikethrough | subscript superscript | removeformat | forecolor backcolor',
-                    'bullist numlist | outdent indent | blockquote | alignleft aligncenter alignright alignjustify | link image media table | code fullscreen',
-                  ],
-                  toolbar_mode: 'wrap',
-                  font_family_formats: 'Roboto=Roboto,sans-serif;Arial=Arial,sans-serif;Times New Roman=Times New Roman,serif;Courier New=Courier New,monospace;',
-                  font_size_formats: '10pt 11pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 36pt',
-                  content_style: [
-                    'body { font-family: Roboto, sans-serif; font-size: 15px; line-height: 1.85; color: #222; max-width: 100%; }',
-                    'img { max-width: 100%; height: auto; border-radius: 8px; }',
-                    'blockquote { border-left: 4px solid #0059b2; margin: 1em 0; padding: 0.5em 1em; background: #f0f5ff; color: #333; }',
-                    'table { border-collapse: collapse; width: 100%; }',
-                    'td, th { border: 1px solid #ddd; padding: 8px; }',
-                  ].join(''),
-                  placeholder: 'Bắt đầu soạn thảo nội dung bài báo...',
-                  image_uploadtab: true,
-                  automatic_uploads: false,
-                }}
-              />
+
+              {/* Editor area */}
+              {editorType === 'tiny' ? (
+                <Editor
+                  apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                  onInit={(_evt, editor) => {
+                    editorRef.current = editor;
+                    setEditorInited(true);
+                    if (form.content) {
+                      editor.setContent(form.content);
+                      (editor as any)._loaded = true;
+                    }
+                  }}
+                  init={{
+                    height: 540,
+                    menubar: true,
+                    branding: false,
+                    promotion: false,
+                    license_key: 'gpl',
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                      'insertdatetime', 'media', 'table', 'wordcount',
+                    ],
+                    toolbar: [
+                      'undo redo | cut copy paste | bold italic underline strikethrough | subscript superscript | removeformat | forecolor backcolor',
+                      'bullist numlist | outdent indent | blockquote | alignleft aligncenter alignright alignjustify | link image media table | code fullscreen',
+                    ],
+                    toolbar_mode: 'wrap',
+                    font_family_formats: 'Roboto=Roboto,sans-serif;Arial=Arial,sans-serif;Times New Roman=Times New Roman,serif;Courier New=Courier New,monospace;',
+                    font_size_formats: '10pt 11pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 36pt',
+                    content_style: [
+                      'body { font-family: Roboto, sans-serif; font-size: 15px; line-height: 1.85; color: #222; max-width: 100%; }',
+                      'img { max-width: 100%; height: auto; border-radius: 8px; }',
+                      'blockquote { border-left: 4px solid #0059b2; margin: 1em 0; padding: 0.5em 1em; background: #f0f5ff; color: #333; }',
+                      'table { border-collapse: collapse; width: 100%; }',
+                      'td, th { border: 1px solid #ddd; padding: 8px; }',
+                    ].join(''),
+                    placeholder: 'Bắt đầu soạn thảo nội dung bài báo...',
+                    image_uploadtab: true,
+                    automatic_uploads: false,
+                  }}
+                />
+              ) : (
+                <QuillEditor
+                  ref={quillEditorRef}
+                  value={form.content || ''}
+                  onChange={html => setForm(prev => ({ ...prev, content: html }))}
+                  height={540}
+                  onImageUpload={uploadImage}
+                />
+              )}
             </div>
           )}
 
