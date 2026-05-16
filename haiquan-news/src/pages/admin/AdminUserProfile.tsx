@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { supabase } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
