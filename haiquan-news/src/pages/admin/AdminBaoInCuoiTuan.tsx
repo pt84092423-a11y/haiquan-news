@@ -208,7 +208,7 @@ function NewspaperPage1({ articles, issueNumber, pubDate }: NpProps) {
               <Img src={a1.thumbnail} h={168} />
               <div style={{ padding: '9px 12px', flex: 1, overflow: 'hidden' }}>
                 <div style={{ fontFamily: SERIF, fontSize: 14.5, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 6 }}>{a1.title}</div>
-                {a1.author_name && (
+                {a1.author && (
                   <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS }}>
                     {a1.author_name}
                   </div>
@@ -468,7 +468,7 @@ export default function AdminBaoInCuoiTuan() {
         const [{ data: posts, error: postsError }, { data: setting }] = await Promise.all([
           supabase
             .from('posts')
-            .select('id, title, thumbnail, content, author_name, published_at, created_at, slug, category_id, post_type, status')
+            .select('id, title, thumbnail, content, author, published_at, created_at, slug, category_id, post_type, status')
             .in('post_type', ['article', 'longform'])
             .order('created_at', { ascending: false })
             .limit(100),
@@ -566,7 +566,7 @@ export default function AdminBaoInCuoiTuan() {
   const canGenerate = selected.length === 5 && !generating;
   const placeholder = (i: number): Post => ({
     id: -i as any, title: `[Chưa chọn bài ${i + 1}]`,
-    content: '', thumbnail: '', author_name: '',
+    content: '', thumbnail: '', author: '',
     published_at: '', created_at: '', slug: '',
     post_type: 'article', status: 'published', category_id: 0 as any,
   });
