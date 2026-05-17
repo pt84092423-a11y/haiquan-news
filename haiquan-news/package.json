@@ -78,6 +78,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",
     "@tinymce/tinymce-react": "^6.3.0",
+    "canvg": "^4.0.3",
     "discord.js": "^14.26.4",
     "express": "^5.2.1",
     "html2canvas": "^1.4.1",
@@ -85,6 +86,7 @@
     "pdfjs-dist": "^5.6.205",
     "quill": "^2.0.3",
     "react-helmet": "^6.1.0",
+    "react-quill": "^2.0.0",
     "tinymce": "^8.5.0"
   }
 }

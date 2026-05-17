@@ -1,3 +1,4 @@
+import React from 'react';
 export default function WebsiteLinks() {
   return (
     <div className="bg-[#f2f7fb] p-3 rounded-md border border-blue-100 space-y-2">

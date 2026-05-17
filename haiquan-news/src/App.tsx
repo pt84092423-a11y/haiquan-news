@@ -34,6 +34,8 @@ import ImportVideo from "@/pages/admin/ImportVideo";
 import DiscordReader from "@/pages/admin/DiscordReader";
 import IpMonitor from "@/pages/admin/IpMonitor";
 import YoutubeManager from "@/pages/admin/YoutubeManager";
+import CommentManager from "@/pages/admin/CommentManager";
+import AdminUserProfile from "@/pages/admin/AdminUserProfile";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import SearchPage from "@/pages/SearchPage";
 import TermsPage from "@/pages/TermsPage";

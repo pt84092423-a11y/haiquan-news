@@ -1,3 +1,4 @@
+import React from 'react';
   import { Link } from 'wouter';
   import type { Post } from '@/lib/supabase';
   import { timeAgo, truncate } from '@/lib/utils';

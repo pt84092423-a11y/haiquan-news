@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'wouter';
+import {  useState, useEffect  } from 'react';
+import {  Link  } from 'wouter';
 import AdminLayout from './AdminLayout';
-import { getAllPosts, getAllCategories, getPostsForStats } from '@/lib/supabase';
+import {  getAllPosts, getAllCategories, getPostsForStats  } from '@/lib/supabase';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend,

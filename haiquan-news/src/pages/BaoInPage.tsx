@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import {  useState, useEffect, useCallback  } from 'react';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
-import { supabase } from '@/lib/supabase';
+import {  supabase  } from '@/lib/supabase';
 
 interface PageEntry {
   url: string;

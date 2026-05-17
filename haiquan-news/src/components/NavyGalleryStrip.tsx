@@ -1,3 +1,4 @@
+import React from 'react';
 import gameImg1 from '@assets/image_1774966333834.png';
 import gameImg2 from '@assets/image_1774966348252.png';
 import gameImg3 from '@assets/image_1774966365837.png';

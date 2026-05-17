@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAllSettings, upsertSetting, uploadImage } from '@/lib/supabase';
+import {  getAllSettings, upsertSetting, uploadImage  } from '@/lib/supabase';
 
 const SETTINGS_FIELDS = [
   { key: 'site_name', label: 'Tên website', type: 'text' },

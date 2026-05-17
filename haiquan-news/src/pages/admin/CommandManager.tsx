@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import {  useEffect, useState  } from 'react';
 import AdminLayout from './AdminLayout';
-import { getSiteSetting, parseJsonSetting, upsertSetting, uploadImage } from '@/lib/supabase';
-import { DEFAULT_COMMAND_DATA, RANKS, type ActivityMilestone, type CommandData, type Commander } from '../CommandPage';
+import {  getSiteSetting, parseJsonSetting, upsertSetting, uploadImage  } from '@/lib/supabase';
+import {  DEFAULT_COMMAND_DATA, RANKS, type ActivityMilestone, type CommandData, type Commander  } from '../CommandPage';
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const parseWorkChart = (value?: { label: string; value: number }[]) => (value || []).map(item => `${item.label}|${item.value}`).join('\n');

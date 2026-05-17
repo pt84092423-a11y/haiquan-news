@@ -27,7 +27,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd haiquan-news && npm run dev"
+args = "npm run dev"
 waitForPort = 5000
 
 [[ports]]
@@ -41,7 +41,6 @@ externalPort = 3000
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-publicDir = "haiquan-news/dist"
 run = ["node", "./dist/index.cjs"]
 
 [userenv]

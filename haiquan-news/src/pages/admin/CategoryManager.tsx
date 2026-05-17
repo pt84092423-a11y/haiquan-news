@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import AdminLayout from './AdminLayout';
-import { generateSlug } from '@/lib/supabase';
+import {  generateSlug  } from '@/lib/supabase';
 
 type Category = {
   id: number;

@@ -180,13 +180,6 @@ export default function PostEditor() {
     }
   }, [params.id]);
 
-  // Load content into TinyMCE when editing an existing post (content arrives async)
-  useEffect(() => {
-    if (editorInited && editorRef.current && form.content && !(editorRef.current as any)._loaded) {
-      editorRef.current.setContent(form.content);
-      (editorRef.current as any)._loaded = true;
-    }
-  }, [editorInited, form.content]);
 
   const handleTitleChange = (title: string) => {
     setForm(f => ({ ...f, title, slug: isNew ? generateSlug(title) : f.slug }));
@@ -287,6 +280,7 @@ export default function PostEditor() {
       const extraIds = selectedCategoryIds.slice(1);
       const payload: Partial<Post> = {
         ...form,
+        author_id: session?.id,
         category_id: selectedCategoryIds[0] ?? form.category_id,
         extra_category_ids: extraIds.length > 0 ? JSON.stringify(extraIds) : '',
         content: editorType === 'quill'

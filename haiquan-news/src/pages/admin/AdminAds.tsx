@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import {  useEffect, useState  } from 'react';
 import AdminLayout from './AdminLayout';
-import { getAllSettings, upsertSetting, uploadImage } from '@/lib/supabase';
+import {  getAllSettings, upsertSetting, uploadImage  } from '@/lib/supabase';
 
 const AD_FIELDS = [
   { key: 'home_ad_main_images', label: 'Poster trang chủ 1 - nhiều ảnh tự đổi (mỗi dòng 1 URL)', type: 'textarea', upload: true },

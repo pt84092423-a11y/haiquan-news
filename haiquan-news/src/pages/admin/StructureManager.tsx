@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import {  useEffect, useState  } from 'react';
 import AdminLayout from './AdminLayout';
-import { getSiteSetting, parseJsonSetting, upsertSetting, uploadImage } from '@/lib/supabase';
-import { DEFAULT_STRUCTURE_DATA, type StructureData, type StructureUnit } from '../StructurePage';
+import {  getSiteSetting, parseJsonSetting, upsertSetting, uploadImage  } from '@/lib/supabase';
+import {  DEFAULT_STRUCTURE_DATA, type StructureData, type StructureUnit  } from '../StructurePage';
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const splitLines = (value: string) => value.split('\n').map(item => item.trim()).filter(Boolean);

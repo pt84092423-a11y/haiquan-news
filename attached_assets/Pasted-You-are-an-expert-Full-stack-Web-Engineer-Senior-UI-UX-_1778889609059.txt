@@ -1,0 +1,63 @@
+You are an expert Full-stack Web Engineer, Senior UI/UX Architect, and Google Gemini API integration specialist.
+
+Task: Write a complete, production-ready implementation of Editor.js configured as an "Ultimate Mega Editor" using Vanilla JavaScript (Pure JS). This setup must feature-richly outperform TinyMCE, have a fully functional UI layout, and integrate directly with the Google Gemini API using a provided API Key for smart AI assistant features. The code must be clean, modular, and compatible with both PHP (injected via <script> and CDN) and React (wrapped in useEffect).
+
+CRITICAL RULE: Do NOT write placeholder comments like // implement later or // add tools here. Write EVERY single line of configuration, UI rendering, and API logic completely.
+
+1. HARDCODED CREDENTIALS & API ENGINE
+Use the following exact credentials to write a robust asynchronous fetch function:
+
+API Key: AIzaSyD-jzH0ckOGlbBtanqrl75fOUpcmWp0Ih0
+
+Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyD-jzH0ckOGlbBtanqrl75fOUpcmWp0Ih0
+
+Create a helper function async function callGemini(promptText) that handles the POST request payload exactly in Google's expected format: {"contents": [{"parts":[{"text": promptText}]}]}.
+
+Implement a full-screen loading overlay block toggle (#ai-loader) that activates during API calls.
+
+2. EDITOR.JS CONFIGURATION (THE TINYMCE KILLER)
+Initialize new EditorJS({...}) inside a wrapper function function initMegaEditor(holderId). You must fully configure the following plugins using official CDN links (which you must list at the top):
+
+Header: Configured with shortcuts, alignment tunes, and placeholders for H1, H2, H3, H4.
+
+Paragraph: Integrated with AlignmentBlockTune (default left) and full inlineToolbar.
+
+List (Nested ordered/unordered) & Checklist.
+
+Table: With full contextual row/column insertion menus.
+
+Marker (Highlight text), Underline, and InlineCode.
+
+Implement a real-time Status Bar function at the bottom connected to the onChange hook to calculate: Word Count and Estimated Reading Time (Words / 200).
+
+3. DETAILED AI ASSISTANT FEATURES (REALTIME UI LOGIC)
+Create DOM elements and pure JS event listeners for a sidebar/dashboard that handles 3 specific AI workflows:
+
+Feature A: Content Idea & Outline Generator
+
+UI: An input field #ai-topic-input and a button.
+
+Logic: When clicked, send a prompt to Gemini asking for a detailed article outline wrapped in clean HTML tags (<h2>, <h3>, <p>). Use editorInstance.blocks.insert() to automatically inject the AI's response into the editor workspace.
+
+Feature B: Context-Aware Comment Responder
+
+UI: A simulated "Reader Comments" section containing a sample user comment div #user-comment-1 ("Bài viết rất hay, nhưng ứng dụng thực tế thế nào?"). Underneath, a textarea #ai-reply-output and a "Generate Reply" button.
+
+Logic: When clicked, the script must run editorInstance.save(), stringify the entire current article content, and send a prompt to Gemini: "Given this article context: [ARTICLE_CONTENT], draft a polite and professional reply to this reader comment: [COMMENT_TEXT]". Strip any stray HTML tags from the AI response and populate the textarea.
+
+Feature C: Selected Text Inline Buddy
+
+UI: Three action buttons: "Write Next Paragraph", "Fix Grammar & Enhance", "Change Tone to Humorous".
+
+Logic: Read the active text selection via window.getSelection().toString(). If text is highlighted, pass it to Gemini with specific contextual instructions based on the button clicked. Alert or modal-display the polished text back to the user.
+
+4. OUTPUT REQUIREMENTS
+Provide the solution split clearly into 3 blocks:
+
+CDN Script Includes: All required HTML <script> and <link> tags for Editor.js core, plugins, and FontAwesome icons.
+
+editor-gemini-setup.js: The monolithic, production-ready JavaScript code containing the API logic, Editor.js setup, status bar counters, and AI UI actions.
+
+PHP Admin Dashboard View Layout: A complete sample HTML/PHP file utilizing TailwindCSS grid layout (grid-cols-12) displaying the Editor space on the left (8 cols), and the sticky Gemini AI Assistant Panel on the right (4 cols), complete with the loading overlay markup.
+
+React Wrapper Guide: A brief boilerplate showing how to correctly mount this setup inside a React useEffect hook and properly destroy() the instance on unmount to prevent duplicate DOM render bugs.

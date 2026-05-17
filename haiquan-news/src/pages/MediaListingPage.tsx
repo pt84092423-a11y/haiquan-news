@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'wouter';
+import {  useEffect, useState  } from 'react';
+import {  Link  } from 'wouter';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
-import { getPublishedPosts, type Post } from '@/lib/supabase';
-import { timeAgo } from '@/lib/utils';
+import {  getPublishedPosts, type Post  } from '@/lib/supabase';
+import {  timeAgo  } from '@/lib/utils';
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
 const PAGE_SIZE = 12;

@@ -1,3 +1,4 @@
+import React from 'react';
 export default function PrivacyPage() {
   return (
     <div className="container mx-auto max-w-[860px] px-4 py-10 md:py-16">

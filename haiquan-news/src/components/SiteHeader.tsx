@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'wouter';
-import { realtimeClock } from '@/lib/utils';
-import { getSiteSetting, parseJsonSetting, searchPostsSuggestions, type Post } from '@/lib/supabase';
+import {  useState, useEffect, useRef  } from 'react';
+import {  Link, useLocation  } from 'wouter';
+import {  realtimeClock  } from '@/lib/utils';
+import {  getSiteSetting, parseJsonSetting, searchPostsSuggestions, type Post  } from '@/lib/supabase';
 import logoImg from '@assets/logo_haiquan.png';
 
 export type NavItem = { href: string; label: string; icon?: boolean };

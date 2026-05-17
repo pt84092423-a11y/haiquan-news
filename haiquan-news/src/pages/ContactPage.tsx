@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import {  useEffect, useState  } from 'react';
 import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
-import { getAllSettings } from '@/lib/supabase';
+import {  getAllSettings  } from '@/lib/supabase';
 
 const DEFAULT_DISCORD = 'donkey3959';
 const DEFAULT_ADDRESS = 'Phòng Công tác Truyền thông - Hải quân Nhân dân Việt Nam, Số 36 phường Cam Ranh, Khánh Hòa';

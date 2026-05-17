@@ -341,7 +341,7 @@ export default function ArticlePage() {
                     <a href="mailto:pt84092423@gmail.com" className="font-bold text-[#0059b2] hover:underline">pt84092423@gmail.com</a>
                   </div>
 
-                  <div className="flex items-center justify-between border-b border-[#e1e1e1] pb-6 mb-8">
+                  <div className="flex items-center justify-between border-b border-[#e1e1e1] pb-4 mb-4">
                     <span className="text-[13px] text-[#555555] font-bold">Chia sẻ:</span>
                     <div className="flex gap-2">
                       <button
