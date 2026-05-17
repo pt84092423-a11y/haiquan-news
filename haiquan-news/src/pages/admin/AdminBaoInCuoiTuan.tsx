@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import AdminLayout from './AdminLayout';
-import { supabase } from '@/lib/supabase';
+import { supabase, uploadImage } from '@/lib/supabase';
 import type { Post } from '@/lib/supabase';
 import logoUrl from '@assets/logo_haiquan.png';
 
@@ -23,33 +23,30 @@ function stripHtml(html: string): string {
     const div = document.createElement('div');
     div.innerHTML = html || '';
     return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
-  } catch {
-    return '';
-  }
+  } catch { return ''; }
 }
-
 function excpt(content: string, len: number): string {
   const text = stripHtml(content);
   if (text.length <= len) return text;
   return text.slice(0, len).replace(/\s+\S*$/, '') + '…';
 }
-
 function viDate(d: Date) {
   const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
   return `${days[d.getDay()]}, ngày ${String(d.getDate()).padStart(2, '0')} tháng ${String(d.getMonth() + 1).padStart(2, '0')} năm ${d.getFullYear()}`;
 }
-
 function fmtDate(ds: string) {
   if (!ds) return '';
   const d = new Date(ds);
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
+function auth(a: Post) { return (a as any).author || ''; }
 
 interface NpProps {
   articles: Post[];
   issueNumber: number;
   pubDate: string;
   bongHoaBien?: string;
+  bongHoaBienImg?: string;
   chamNgon?: string;
   memeUrl?: string;
 }
@@ -58,62 +55,51 @@ function Img({ src, h, style }: { src?: string; h: number; style?: React.CSSProp
   if (!src) return null;
   return (
     <div style={{ width: '100%', height: h, overflow: 'hidden', flexShrink: 0, ...style }}>
-      <img
-        src={src}
-        alt=""
-        crossOrigin="anonymous"
+      <img src={src} alt="" crossOrigin="anonymous"
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-      />
+        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
     </div>
   );
 }
-
 function Rule({ color = '#999', thick = 1 }: { color?: string; thick?: number }) {
   return <div style={{ width: '100%', height: thick, background: color, flexShrink: 0 }} />;
+}
+function ColRule() {
+  return <div style={{ width: 1, background: '#ccc', flexShrink: 0, alignSelf: 'stretch' }} />;
+}
+function SectionBanner({ label, bg = NAVY, color = GOLD }: { label: string; bg?: string; color?: string }) {
+  const SANS = 'Roboto, Arial, sans-serif';
+  return (
+    <div style={{ background: bg, padding: '4px 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ fontSize: 10.5, color, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', fontFamily: SANS }}>★  {label}  ★</span>
+    </div>
+  );
 }
 
 function PaperHeader({ issueNumber, pubDate }: { issueNumber: number; pubDate: string }) {
   const dateObj = new Date(pubDate + 'T00:00:00');
   const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
   const SANS = 'Roboto, Arial, sans-serif';
-
   return (
     <div style={{ width: '100%', flexShrink: 0, background: '#fff' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 18px', background: '#f5f5f0', borderBottom: '1px solid #ccc' }}>
-        <span style={{ fontStyle: 'italic', fontSize: 9.5, color: '#555', fontFamily: SANS, flex: 1, letterSpacing: 0.2 }}>
-          {PAPER_SLOGAN}
-        </span>
+        <span style={{ fontStyle: 'italic', fontSize: 9.5, color: '#555', fontFamily: SANS, flex: 1, letterSpacing: 0.2 }}>{PAPER_SLOGAN}</span>
         <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 16 }}>
-          <div style={{ fontSize: 9, color: '#444', fontFamily: SANS, fontWeight: 700, lineHeight: 1.4 }}>
-            RA THỨ HAI HẰNG TUẦN
-          </div>
+          <div style={{ fontSize: 9, color: '#444', fontFamily: SANS, fontWeight: 700, lineHeight: 1.4 }}>RA THỨ HAI HẰNG TUẦN</div>
         </div>
       </div>
-
       <div style={{ display: 'flex', alignItems: 'center', padding: '10px 18px', gap: 14, minHeight: 108 }}>
         <div style={{ flexShrink: 0 }}>
           <img src={logoUrl} alt="Logo" style={{ height: 84, width: 'auto', display: 'block' }} />
         </div>
-
         <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #bbb', borderRight: '1px solid #bbb', padding: '6px 14px' }}>
-          <div style={{
-            fontFamily: SERIF,
-            fontSize: 46,
-            fontWeight: 900,
-            color: RED,
-            letterSpacing: 5,
-            lineHeight: 1,
-            textTransform: 'uppercase',
-            whiteSpace: 'nowrap',
-          }}>
+          <div style={{ fontFamily: SERIF, fontSize: 46, fontWeight: 900, color: RED, letterSpacing: 5, lineHeight: 1, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
             {PAPER_NAME}
           </div>
           <div style={{ fontFamily: SANS, fontSize: 10, color: NAVY, fontWeight: 700, letterSpacing: 1.5, marginTop: 6, textTransform: 'uppercase' }}>
             {PAPER_SUBTITLE}
           </div>
         </div>
-
         <div style={{ flexShrink: 0, textAlign: 'center', width: 108 }}>
           <div style={{ fontSize: 10, color: '#444', fontFamily: SANS, fontWeight: 700, lineHeight: 1.5, textTransform: 'uppercase' }}>SỐ</div>
           <div style={{ fontSize: 28, color: NAVY, fontFamily: SANS, fontWeight: 900, lineHeight: 1 }}>{issueNumber}</div>
@@ -123,11 +109,7 @@ function PaperHeader({ issueNumber, pubDate }: { issueNumber: number; pubDate: s
           </div>
         </div>
       </div>
-
-      <div style={{ background: NAVY, color: 'rgba(255,255,255,0.82)', fontSize: 9.5, padding: '4px 18px', fontFamily: SANS, letterSpacing: 0.3 }}>
-        {PAPER_ADDR}
-      </div>
-
+      <div style={{ background: NAVY, color: 'rgba(255,255,255,0.82)', fontSize: 9.5, padding: '4px 18px', fontFamily: SANS, letterSpacing: 0.3 }}>{PAPER_ADDR}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '3px 0', background: '#fff' }}>
         <Rule color="#555" thick={2} />
         <Rule color="#999" thick={1} />
@@ -140,167 +122,115 @@ function PageBand({ pageNum, issueNumber, pubDate, section }: { pageNum: number;
   const d = new Date(pubDate + 'T00:00:00');
   const dateStr = `SỐ ${issueNumber} - NGÀY ${String(d.getDate()).padStart(2, '0')} THÁNG ${String(d.getMonth() + 1).padStart(2, '0')} NĂM ${d.getFullYear()}`;
   const SANS = 'Roboto, Arial, sans-serif';
-  const isEven = pageNum % 2 === 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', padding: '4px 16px', borderBottom: '2px solid #777', background: '#fff', flexShrink: 0, fontSize: 10, fontFamily: SANS }}>
-      {isEven ? (
-        <>
-          <span style={{ fontWeight: 900, color: '#111', marginRight: 8 }}>{pageNum} — Hải quân Việt Nam</span>
-          <div style={{ width: 1, height: 12, background: '#999', margin: '0 8px' }} />
-          <span style={{ flex: 1, textAlign: 'center', textTransform: 'uppercase', fontWeight: 700, color: NAVY, letterSpacing: 1 }}>{section || 'TIN TỨC - SỰ KIỆN'}</span>
-          <div style={{ width: 1, height: 12, background: '#999', margin: '0 8px' }} />
-          <span style={{ color: '#555' }}>{dateStr}</span>
-        </>
-      ) : (
-        <>
-          <span style={{ color: '#555', marginRight: 8 }}>{dateStr}</span>
-          <div style={{ width: 1, height: 12, background: '#999', margin: '0 8px' }} />
-          <span style={{ flex: 1, textAlign: 'center', textTransform: 'uppercase', fontWeight: 700, color: NAVY, letterSpacing: 1 }}>{section || 'TIN TỨC - SỰ KIỆN'}</span>
-          <div style={{ width: 1, height: 12, background: '#999', margin: '0 8px' }} />
-          <span style={{ fontWeight: 900, color: '#111' }}>Hải quân Việt Nam — {pageNum}</span>
-        </>
-      )}
+      <span style={{ color: '#555', marginRight: 8 }}>{dateStr}</span>
+      <div style={{ width: 1, height: 12, background: '#999', margin: '0 8px' }} />
+      <span style={{ flex: 1, textAlign: 'center', textTransform: 'uppercase', fontWeight: 700, color: NAVY, letterSpacing: 1 }}>{section || 'TIN TỨC - SỰ KIỆN'}</span>
+      <div style={{ width: 1, height: 12, background: '#999', margin: '0 8px' }} />
+      <span style={{ fontWeight: 900, color: '#111' }}>Hải quân Việt Nam — {pageNum}</span>
     </div>
   );
 }
 
-function SectionBanner({ label, bg = NAVY, color = GOLD }: { label: string; bg?: string; color?: string }) {
-  return (
-    <div style={{ background: bg, padding: '5px 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <span style={{ fontSize: 11, color, fontWeight: 900, letterSpacing: 3, textTransform: 'uppercase', fontFamily: 'Roboto, Arial, sans-serif' }}>
-        ★  {label}  ★
-      </span>
-    </div>
-  );
-}
-
-function ColRule() {
-  return <div style={{ width: 1, background: '#ccc', flexShrink: 0, alignSelf: 'stretch' }} />;
-}
-
-function NewspaperPage1({ articles, issueNumber, pubDate, bongHoaBien }: NpProps) {
+/* ─── PAGE 1 ─── */
+function NewspaperPage1({ articles, issueNumber, pubDate, bongHoaBien, bongHoaBienImg }: NpProps) {
   const [a1, a2, a3, a4, a5] = articles;
   const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
   const SANS = 'Roboto, Arial, sans-serif';
 
   return (
-    <div style={{ width: PAGE_W, height: PAGE_H, background: '#fff', position: 'relative', display: 'flex', flexDirection: 'column', fontFamily: SANS, overflow: 'hidden' }}>
+    <div style={{ width: PAGE_W, height: PAGE_H, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: SANS, overflow: 'hidden' }}>
       <PaperHeader issueNumber={issueNumber} pubDate={pubDate} />
-
       <div style={{ padding: '3px 18px', background: '#f5f5f0', borderBottom: '1px solid #ddd', fontSize: 9.5, color: '#666', fontFamily: SANS, flexShrink: 0 }}>
         {viDate(new Date(pubDate + 'T00:00:00'))}
       </div>
 
-      {/* 3-column top section */}
-      <div style={{ flex: '0 0 660px', display: 'flex', borderBottom: '2px solid #777', overflow: 'hidden' }}>
-        {/* Col A: Article 1 - tall thumbnail */}
+      {/* 3-column top */}
+      <div style={{ flex: '0 0 640px', display: 'flex', borderBottom: '2px solid #777', overflow: 'hidden' }}>
+        {/* Col A */}
         <div style={{ flex: '0 0 27%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {a1 && (
-            <>
-              <div style={{ background: RED, color: '#fff', fontSize: 9, fontWeight: 900, padding: '3px 12px', letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: SANS, flexShrink: 0 }}>
-                TIN TỨC - SỰ KIỆN
-              </div>
-              <Img src={a1.thumbnail} h={230} />
-              <div style={{ padding: '9px 12px', flex: 1, overflow: 'hidden' }}>
-                <div style={{ fontFamily: SERIF, fontSize: 14.5, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 6 }}>{a1.title}</div>
-                {(a1 as any).author && (
-                  <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS }}>
-                    {(a1 as any).author}
-                  </div>
-                )}
-                <div style={{ fontSize: 10.5, color: '#333', lineHeight: 1.7 }}>{excpt(a1.content || '', 250)}</div>
-                {a1.published_at && (
-                  <div style={{ fontSize: 8.5, color: '#888', fontStyle: 'italic', marginTop: 6, fontFamily: SANS }}>{fmtDate(a1.published_at)}</div>
-                )}
-              </div>
-            </>
-          )}
+          {a1 && <>
+            <div style={{ background: RED, color: '#fff', fontSize: 9, fontWeight: 900, padding: '3px 12px', letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: SANS, flexShrink: 0 }}>TIN TỨC - SỰ KIỆN</div>
+            <Img src={a1.thumbnail} h={230} />
+            <div style={{ padding: '9px 12px', flex: 1, overflow: 'hidden' }}>
+              <div style={{ fontFamily: SERIF, fontSize: 14.5, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 5 }}>{a1.title}</div>
+              {auth(a1) && <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, fontFamily: SANS }}>{auth(a1)}</div>}
+              <div style={{ fontSize: 10.5, color: '#333', lineHeight: 1.7 }}>{excpt(a1.content || '', 240)}</div>
+              {a1.published_at && <div style={{ fontSize: 8.5, color: '#888', fontStyle: 'italic', marginTop: 5, fontFamily: SANS }}>{fmtDate(a1.published_at)}</div>}
+            </div>
+          </>}
         </div>
-
         <ColRule />
 
-        {/* Col B: Article 2 - tall hero thumbnail */}
+        {/* Col B — hero tall */}
         <div style={{ flex: '0 0 46%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {a2 && (
-            <>
-              <Img src={a2.thumbnail} h={350} />
-              <div style={{ padding: '10px 14px', flex: 1, overflow: 'hidden' }}>
-                <div style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 900, color: '#111', lineHeight: 1.25, marginBottom: 6 }}>{a2.title}</div>
-                {(a2 as any).author && (
-                  <div style={{ fontSize: 9, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, fontFamily: SANS }}>
-                    {(a2 as any).author}
-                  </div>
-                )}
-                <div style={{ fontSize: 11, color: '#222', lineHeight: 1.75 }}>{excpt(a2.content || '', 280)}</div>
-              </div>
-            </>
-          )}
+          {a2 && <>
+            <Img src={a2.thumbnail} h={350} />
+            <div style={{ padding: '10px 14px', flex: 1, overflow: 'hidden' }}>
+              <div style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 900, color: '#111', lineHeight: 1.25, marginBottom: 5 }}>{a2.title}</div>
+              {auth(a2) && <div style={{ fontSize: 9, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS }}>{auth(a2)}</div>}
+              <div style={{ fontSize: 11, color: '#222', lineHeight: 1.75 }}>{excpt(a2.content || '', 275)}</div>
+            </div>
+          </>}
         </div>
-
         <ColRule />
 
-        {/* Col C: Article 3 */}
+        {/* Col C */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {a3 && (
-            <>
-              <Img src={a3.thumbnail} h={148} />
-              <div style={{ padding: '9px 12px', flex: 1, overflow: 'hidden' }}>
-                <div style={{ fontFamily: SERIF, fontSize: 13.5, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 5 }}>{a3.title}</div>
-                {(a3 as any).author && (
-                  <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, fontFamily: SANS }}>
-                    {(a3 as any).author}
-                  </div>
-                )}
-                <div style={{ fontSize: 10.5, color: '#333', lineHeight: 1.65 }}>{excpt(a3.content || '', 220)}</div>
-              </div>
-            </>
-          )}
+          {a3 && <>
+            <Img src={a3.thumbnail} h={148} />
+            <div style={{ padding: '9px 12px', flex: 1, overflow: 'hidden' }}>
+              <div style={{ fontFamily: SERIF, fontSize: 13.5, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 4 }}>{a3.title}</div>
+              {auth(a3) && <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, fontFamily: SANS }}>{auth(a3)}</div>}
+              <div style={{ fontSize: 10.5, color: '#333', lineHeight: 1.65 }}>{excpt(a3.content || '', 215)}</div>
+            </div>
+          </>}
         </div>
       </div>
 
       {/* Section banner */}
       <SectionBanner label="NHỮNG BÔNG HOA BIỂN" />
 
-      {/* Bottom: Những Bông Hoa Biển box + 2 reading suggestions */}
+      {/* Bottom: compact BHB left + 2 big suggestion boxes right */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left: admin-written Những Bông Hoa Biển content */}
-        <div style={{ flex: '0 0 57%', padding: '11px 14px', overflow: 'hidden', borderRight: '1px solid #ccc', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ border: `2px solid ${NAVY}`, borderRadius: 3, padding: '10px 14px', flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: NAVY, textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: SANS, marginBottom: 8, borderBottom: `1px solid ${NAVY}`, paddingBottom: 5, flexShrink: 0 }}>
-              ✦ Những Bông Hoa Biển
+        {/* Left: compact Những Bông Hoa Biển */}
+        <div style={{ flex: '0 0 30%', padding: '10px 12px', overflow: 'hidden', borderRight: '1px solid #ccc', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {bongHoaBienImg && (
+            <div style={{ width: '100%', height: 130, overflow: 'hidden', borderRadius: 2, flexShrink: 0 }}>
+              <img src={bongHoaBienImg} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
-            <div style={{ flex: 1, fontSize: 11.5, color: '#222', lineHeight: 1.9, fontFamily: SANS, overflow: 'hidden', whiteSpace: 'pre-wrap' }}>
-              {bongHoaBien || <span style={{ color: '#aaa', fontStyle: 'italic' }}>Nội dung do ban biên tập soạn...</span>}
-            </div>
+          )}
+          <div style={{ fontSize: 10, fontWeight: 900, color: NAVY, textTransform: 'uppercase', letterSpacing: 1, fontFamily: SANS, borderBottom: `1px solid ${NAVY}`, paddingBottom: 4, flexShrink: 0 }}>
+            ✦ Bông Hoa Biển
+          </div>
+          <div style={{ flex: 1, fontSize: 10.5, color: '#222', lineHeight: 1.8, fontFamily: SANS, overflow: 'hidden', whiteSpace: 'pre-wrap' }}>
+            {bongHoaBien || <span style={{ color: '#aaa', fontStyle: 'italic' }}>Nội dung ban biên tập soạn...</span>}
           </div>
         </div>
 
-        {/* Right: 2 reading suggestions */}
-        <div style={{ flex: 1, padding: '11px 12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: 10, fontWeight: 900, color: NAVY, textTransform: 'uppercase', letterSpacing: 1.5, fontFamily: SANS, marginBottom: 10, borderBottom: `2px solid ${RED}`, paddingBottom: 4 }}>
-            ★ Gợi Ý Đọc Bài
-          </div>
+        {/* Right: 2 large reading suggestion boxes */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {[a4, a5].map((art, i) => art && (
-            <div key={i} style={{ display: 'flex', gap: 9, paddingBottom: 12, marginBottom: 12, borderBottom: i === 0 ? '1px solid #e5e5e5' : 'none', overflow: 'hidden' }}>
+            <div key={i} style={{ flex: 1, display: 'flex', overflow: 'hidden', borderBottom: i === 0 ? '1px solid #ddd' : 'none' }}>
               {art.thumbnail && (
-                <div style={{ flex: '0 0 68px', height: 52, overflow: 'hidden', borderRadius: 2, flexShrink: 0 }}>
+                <div style={{ flex: '0 0 160px', overflow: 'hidden', flexShrink: 0 }}>
                   <img src={art.thumbnail} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 </div>
               )}
-              <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
-                <div style={{ fontFamily: SERIF, fontSize: 12.5, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 3 }}>{art.title}</div>
-                {(art as any).author && (
-                  <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', fontFamily: SANS, marginBottom: 3 }}>{(art as any).author}</div>
-                )}
-                <div style={{ fontSize: 10, color: '#555', lineHeight: 1.6 }}>{excpt(art.content || '', 110)}</div>
+              <div style={{ flex: 1, padding: '12px 14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: 9, color: RED, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, fontFamily: SANS, marginBottom: 5 }}>★ GỢI Ý ĐỌC BÀI {i + 1}</div>
+                <div style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 5 }}>{art.title}</div>
+                {auth(art) && <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', fontFamily: SANS, marginBottom: 5 }}>{auth(art)}</div>}
+                <div style={{ flex: 1, fontSize: 11, color: '#333', lineHeight: 1.75, overflow: 'hidden' }}>{excpt(art.content || '', 280)}</div>
+                {art.published_at && <div style={{ fontSize: 8.5, color: '#888', fontStyle: 'italic', marginTop: 5, fontFamily: SANS }}>{fmtDate(art.published_at)}</div>}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ height: 30, background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', flexShrink: 0 }}>
+      <div style={{ height: 28, background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', flexShrink: 0 }}>
         <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.75)', fontFamily: SANS }}>© Báo Hải Quân Việt Nam — Số {issueNumber}</span>
         <span style={{ fontSize: 9.5, color: GOLD, fontFamily: SANS, fontWeight: 700 }}>{WEBSITE}</span>
       </div>
@@ -308,120 +238,97 @@ function NewspaperPage1({ articles, issueNumber, pubDate, bongHoaBien }: NpProps
   );
 }
 
+/* ─── PAGE 2 ─── */
 function NewspaperPage2({ articles, issueNumber, pubDate, chamNgon, memeUrl }: NpProps) {
-  const [a1, a2, a3] = articles;
+  const [a1, a2, a3, a4, a5] = articles;
   const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
   const SANS = 'Roboto, Arial, sans-serif';
 
+  const ArtCol = ({ art, label }: { art: Post; label?: string }) => (
+    <div style={{ flex: 1, padding: '9px 11px', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRight: '1px solid #ddd' }}>
+      {label && <div style={{ background: RED, color: '#fff', fontSize: 8, fontWeight: 900, padding: '2px 6px', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6, fontFamily: SANS, flexShrink: 0 }}>{label}</div>}
+      <div style={{ fontFamily: SERIF, fontSize: 13.5, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 4, flexShrink: 0 }}>{art.title}</div>
+      {auth(art) && <div style={{ fontSize: 8, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, fontFamily: SANS, flexShrink: 0 }}>Tác giả: {auth(art)}</div>}
+      {art.thumbnail && <Img src={art.thumbnail} h={110} style={{ marginBottom: 6, borderRadius: 1, flexShrink: 0 }} />}
+      <div style={{ flex: 1, fontSize: 10.5, color: '#222', lineHeight: 1.75, overflow: 'hidden' }}>{excpt(art.content || '', 380)}</div>
+      {art.published_at && <div style={{ fontSize: 8, color: '#888', fontStyle: 'italic', marginTop: 4, textAlign: 'right', fontFamily: SANS, flexShrink: 0 }}>{fmtDate(art.published_at)}</div>}
+    </div>
+  );
+
   return (
-    <div style={{ width: PAGE_W, height: PAGE_H, background: '#fff', position: 'relative', display: 'flex', flexDirection: 'column', fontFamily: SANS, overflow: 'hidden' }}>
+    <div style={{ width: PAGE_W, height: PAGE_H, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: SANS, overflow: 'hidden' }}>
       <PageBand pageNum={2} issueNumber={issueNumber} pubDate={pubDate} section="TIN TỨC - SỰ KIỆN" />
 
-      {/* Top half: 3-column article content */}
-      <div style={{ flex: '0 0 870px', display: 'flex', overflow: 'hidden', borderBottom: '2px solid #777' }}>
-        {/* Col 1 */}
-        <div style={{ flex: '0 0 33.33%', padding: '11px 13px', overflow: 'hidden', borderRight: '1px solid #ccc' }}>
-          {a1 && (
-            <div>
-              <div style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 5 }}>{a1.title}</div>
-              {(a1 as any).author && (
-                <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS }}>
-                  Tác giả: {(a1 as any).author}
-                </div>
-              )}
-              <Img src={a1.thumbnail} h={180} style={{ marginBottom: 7, borderRadius: 1 }} />
-              <div style={{ fontSize: 11, color: '#222', lineHeight: 1.8 }}>{excpt(a1.content || '', 560)}</div>
-              {a1.published_at && (
-                <div style={{ fontSize: 8.5, color: '#888', fontStyle: 'italic', marginTop: 6, textAlign: 'right', fontFamily: SANS }}>{fmtDate(a1.published_at)}</div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <ColRule />
-
-        {/* Col 2 */}
-        <div style={{ flex: '0 0 33.33%', padding: '11px 13px', overflow: 'hidden', borderRight: '1px solid #ccc' }}>
-          {a2 && (
-            <div>
-              <div style={{ background: NAVY, color: '#fff', padding: '4px 8px', fontSize: 8.5, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8, fontFamily: SANS }}>
-                HỌC TẬP VÀ LÀM THEO TƯ TƯỞNG, ĐẠO ĐỨC HỒ CHÍ MINH
-              </div>
-              <div style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 6 }}>{a2.title}</div>
-              {(a2 as any).author && (
-                <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS }}>
-                  Tác giả: {(a2 as any).author}
-                </div>
-              )}
-              <Img src={a2.thumbnail} h={168} style={{ marginBottom: 7, borderRadius: 1 }} />
-              <div style={{ fontSize: 11, color: '#222', lineHeight: 1.8 }}>{excpt(a2.content || '', 500)}</div>
-            </div>
-          )}
-        </div>
-
-        <ColRule />
-
-        {/* Col 3 */}
-        <div style={{ flex: 1, padding: '11px 13px', overflow: 'hidden' }}>
-          {a3 && (
-            <div>
-              <div style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 5 }}>{a3.title}</div>
-              {(a3 as any).author && (
-                <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS }}>
-                  Tác giả: {(a3 as any).author}
-                </div>
-              )}
-              <Img src={a3.thumbnail} h={148} style={{ marginBottom: 7, borderRadius: 1 }} />
-              <div style={{ fontSize: 11, color: '#222', lineHeight: 1.8 }}>{excpt(a3.content || '', 440)}</div>
-            </div>
-          )}
-        </div>
+      {/* Row 1: articles 1-3 */}
+      <div style={{ flex: '0 0 490px', display: 'flex', overflow: 'hidden', borderBottom: '2px solid #888' }}>
+        {a1 && <ArtCol art={a1} label="TIN TỨC - SỰ KIỆN" />}
+        {a2 && <ArtCol art={a2} label="HỌC TẬP VÀ LÀM THEO HỒ CHÍ MINH" />}
+        {a3 && <ArtCol art={a3} />}
       </div>
 
-      {/* Bottom half: Meme of the Week + Châm Ngôn */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left: Meme of the Week */}
-        <div style={{ flex: '0 0 55%', padding: '11px 14px', overflow: 'hidden', borderRight: '1px solid #ccc', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: RED, textTransform: 'uppercase', letterSpacing: 2, fontFamily: SANS, marginBottom: 8, borderBottom: `2px solid ${RED}`, paddingBottom: 5, flexShrink: 0 }}>
-            ★ Meme of the Week ★
+      {/* Row 2: articles 4-5 (gợi ý đọc bài) */}
+      <SectionBanner label="GỢI Ý ĐỌC BÀI" bg={RED} color="#fff" />
+      <div style={{ flex: '0 0 390px', display: 'flex', overflow: 'hidden', borderBottom: '2px solid #888' }}>
+        {a4 && (
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', borderRight: '1px solid #ddd' }}>
+            {a4.thumbnail && (
+              <div style={{ flex: '0 0 170px', overflow: 'hidden', flexShrink: 0 }}>
+                <img src={a4.thumbnail} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+            )}
+            <div style={{ flex: 1, padding: '10px 12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontFamily: SERIF, fontSize: 14, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 5, flexShrink: 0 }}>{a4.title}</div>
+              {auth(a4) && <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS, flexShrink: 0 }}>{auth(a4)}</div>}
+              <div style={{ flex: 1, fontSize: 10.5, color: '#222', lineHeight: 1.75, overflow: 'hidden' }}>{excpt(a4.content || '', 500)}</div>
+              {a4.published_at && <div style={{ fontSize: 8.5, color: '#888', fontStyle: 'italic', marginTop: 5, fontFamily: SANS, flexShrink: 0 }}>{fmtDate(a4.published_at)}</div>}
+            </div>
           </div>
+        )}
+        {a5 && (
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            {a5.thumbnail && (
+              <div style={{ flex: '0 0 170px', overflow: 'hidden', flexShrink: 0 }}>
+                <img src={a5.thumbnail} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+            )}
+            <div style={{ flex: 1, padding: '10px 12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontFamily: SERIF, fontSize: 14, fontWeight: 900, color: '#111', lineHeight: 1.3, marginBottom: 5, flexShrink: 0 }}>{a5.title}</div>
+              {auth(a5) && <div style={{ fontSize: 8.5, color: RED, fontWeight: 700, textTransform: 'uppercase', marginBottom: 5, fontFamily: SANS, flexShrink: 0 }}>{auth(a5)}</div>}
+              <div style={{ flex: 1, fontSize: 10.5, color: '#222', lineHeight: 1.75, overflow: 'hidden' }}>{excpt(a5.content || '', 500)}</div>
+              {a5.published_at && <div style={{ fontSize: 8.5, color: '#888', fontStyle: 'italic', marginTop: 5, fontFamily: SANS, flexShrink: 0 }}>{fmtDate(a5.published_at)}</div>}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom: Meme of the Week + Châm Ngôn */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div style={{ flex: '0 0 55%', padding: '10px 13px', overflow: 'hidden', borderRight: '1px solid #ccc', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 900, color: RED, textTransform: 'uppercase', letterSpacing: 2, fontFamily: SANS, marginBottom: 7, borderBottom: `2px solid ${RED}`, paddingBottom: 4, flexShrink: 0 }}>★ Meme of the Week ★</div>
           {memeUrl ? (
             <div style={{ flex: 1, overflow: 'hidden', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src={memeUrl} alt="Meme of the week" crossOrigin="anonymous"
-                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
-                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img src={memeUrl} alt="Meme" crossOrigin="anonymous" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #ccc', borderRadius: 3 }}>
-              <span style={{ color: '#bbb', fontSize: 11, fontStyle: 'italic', fontFamily: SANS }}>Chưa có ảnh meme</span>
+              <span style={{ color: '#bbb', fontSize: 10.5, fontStyle: 'italic', fontFamily: SANS }}>Chưa có ảnh meme</span>
             </div>
           )}
         </div>
-
-        {/* Right: Châm Ngôn */}
-        <div style={{ flex: 1, padding: '14px 16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: NAVY, textTransform: 'uppercase', letterSpacing: 2, fontFamily: SANS, marginBottom: 16, borderBottom: `2px solid ${GOLD}`, paddingBottom: 6 }}>
-            ★ Châm Ngôn ★
-          </div>
+        <div style={{ flex: 1, padding: '12px 14px', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 900, color: NAVY, textTransform: 'uppercase', letterSpacing: 2, fontFamily: SANS, marginBottom: 14, borderBottom: `2px solid ${GOLD}`, paddingBottom: 5 }}>★ Châm Ngôn ★</div>
           {chamNgon ? (
             <>
-              <div style={{ fontSize: 16, color: '#222', lineHeight: 2, fontFamily: SERIF, fontStyle: 'italic', textAlign: 'center', padding: '0 8px' }}>
-                "{chamNgon}"
-              </div>
-              <div style={{ marginTop: 12, textAlign: 'center' }}>
-                <div style={{ display: 'inline-block', width: 40, height: 2, background: GOLD }} />
-              </div>
+              <div style={{ fontSize: 15, color: '#222', lineHeight: 2, fontFamily: SERIF, fontStyle: 'italic', textAlign: 'center', padding: '0 8px' }}>"{chamNgon}"</div>
+              <div style={{ marginTop: 10, textAlign: 'center' }}><div style={{ display: 'inline-block', width: 40, height: 2, background: GOLD }} /></div>
             </>
           ) : (
-            <div style={{ textAlign: 'center', color: '#bbb', fontSize: 11, fontStyle: 'italic', fontFamily: SANS }}>
-              Chưa có châm ngôn...
-            </div>
+            <div style={{ textAlign: 'center', color: '#bbb', fontSize: 10.5, fontStyle: 'italic', fontFamily: SANS }}>Chưa có châm ngôn...</div>
           )}
         </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ height: 30, background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', flexShrink: 0 }}>
+      <div style={{ height: 28, background: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', flexShrink: 0 }}>
         <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.75)', fontFamily: SANS }}>© Báo Hải Quân Việt Nam — Trang 2</span>
         <span style={{ fontSize: 9.5, color: GOLD, fontFamily: SANS, fontWeight: 700 }}>{WEBSITE}</span>
       </div>
@@ -438,6 +345,37 @@ function Spinner() {
   );
 }
 
+function ImgUploadBtn({ label, url, uploading, onChange }: {
+  label: string; url: string; uploading: boolean;
+  onChange: (file: File) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onChange(f); e.target.value = ''; }} />
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        disabled={uploading}
+        className="flex items-center gap-2 border border-dashed border-gray-300 hover:border-[#003380] bg-gray-50 hover:bg-blue-50/40 text-gray-500 hover:text-[#003380] rounded-lg px-3 py-2 text-[12px] font-semibold transition w-full justify-center disabled:opacity-50"
+      >
+        {uploading ? <Spinner /> : (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+        )}
+        {uploading ? 'Đang tải lên ImgBB...' : label}
+      </button>
+      {url && (
+        <div className="relative group">
+          <img src={url} alt="" className="w-full h-20 object-contain rounded border border-gray-100 bg-gray-50" />
+          <button onClick={() => onChange(new File([], ''))} className="hidden group-hover:flex absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] items-center justify-center leading-none">×</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminBaoInCuoiTuan() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [selected, setSelected] = useState<Post[]>([]);
@@ -449,8 +387,11 @@ export default function AdminBaoInCuoiTuan() {
   const [searchQ, setSearchQ] = useState('');
   const [tab, setTab] = useState<'p1' | 'p2'>('p1');
   const [bongHoaBien, setBongHoaBien] = useState('');
+  const [bongHoaBienImg, setBongHoaBienImg] = useState('');
+  const [bhbUploading, setBhbUploading] = useState(false);
   const [chamNgon, setChamNgon] = useState('');
   const [memeUrl, setMemeUrl] = useState('');
+  const [memeUploading, setMemeUploading] = useState(false);
 
   const page1Ref = useRef<HTMLDivElement>(null);
   const page2Ref = useRef<HTMLDivElement>(null);
@@ -468,15 +409,10 @@ export default function AdminBaoInCuoiTuan() {
             .limit(100),
           supabase.from('settings').select('value').eq('key', SETTING_KEY).maybeSingle(),
         ]);
-
-        if (postsError) {
-          console.error('Posts query error:', postsError);
-        }
-
+        if (postsError) console.error('Posts query error:', postsError);
         const postList = (posts as Post[]) || [];
         setAllPosts(postList);
         if (postList.length > 0) setSelected(postList.slice(0, 5));
-
         const num = setting?.value ? parseInt(setting.value) : 1;
         setIssueNumber(isNaN(num) ? 1 : num);
       } catch (err) {
@@ -487,22 +423,25 @@ export default function AdminBaoInCuoiTuan() {
     })();
   }, []);
 
-  const filteredPosts = allPosts.filter(p =>
-    !searchQ || p.title.toLowerCase().includes(searchQ.toLowerCase())
-  );
+  const handleUpload = useCallback(async (file: File, setter: (u: string) => void, setUploading: (v: boolean) => void) => {
+    if (!file.name) { setter(''); return; }
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      if (url) setter(url);
+      else alert('Tải ảnh lên ImgBB thất bại. Kiểm tra kết nối mạng.');
+    } finally {
+      setUploading(false);
+    }
+  }, []);
 
+  const filteredPosts = allPosts.filter(p => !searchQ || p.title.toLowerCase().includes(searchQ.toLowerCase()));
   const isSelected = (id: number) => selected.some(p => (p as any).id === id);
-
   const toggleSelect = (post: Post) => {
     const id = (post as any).id;
-    if (isSelected(id)) {
-      setSelected(prev => prev.filter(p => (p as any).id !== id));
-    } else {
-      if (selected.length >= 5) return;
-      setSelected(prev => [...prev, post]);
-    }
+    if (isSelected(id)) setSelected(prev => prev.filter(p => (p as any).id !== id));
+    else if (selected.length < 5) setSelected(prev => [...prev, post]);
   };
-
   const moveSelected = (idx: number, dir: -1 | 1) => {
     setSelected(prev => {
       const next = [...prev];
@@ -516,35 +455,22 @@ export default function AdminBaoInCuoiTuan() {
   const generatePDF = useCallback(async () => {
     if (selected.length < 5) { alert('Vui lòng chọn đúng 5 bài viết'); return; }
     if (!page1Ref.current || !page2Ref.current) return;
-    setGenerating(true);
-    setProgress('Đang khởi tạo...');
+    setGenerating(true); setProgress('Đang khởi tạo...');
     try {
       const [html2canvas, { default: jsPDF }] = await Promise.all([
         import('html2canvas').then(m => m.default),
         import('jspdf'),
       ]);
-
       setProgress('Đang chụp trang 1...');
-      const canvas1 = await html2canvas(page1Ref.current, {
-        scale: 2, useCORS: true, allowTaint: true,
-        backgroundColor: '#ffffff', width: PAGE_W, height: PAGE_H, logging: false,
-      });
-
+      const canvas1 = await html2canvas(page1Ref.current, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', width: PAGE_W, height: PAGE_H, logging: false });
       setProgress('Đang chụp trang 2...');
-      const canvas2 = await html2canvas(page2Ref.current, {
-        scale: 2, useCORS: true, allowTaint: true,
-        backgroundColor: '#ffffff', width: PAGE_W, height: PAGE_H, logging: false,
-      });
-
+      const canvas2 = await html2canvas(page2Ref.current, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', width: PAGE_W, height: PAGE_H, logging: false });
       setProgress('Đang tạo PDF...');
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a3' });
       pdf.addImage(canvas1.toDataURL('image/jpeg', 0.93), 'JPEG', 0, 0, 297, 420);
       pdf.addPage();
       pdf.addImage(canvas2.toDataURL('image/jpeg', 0.93), 'JPEG', 0, 0, 297, 420);
-
-      const dateStr = pubDate.replace(/-/g, '');
-      pdf.save(`BaoHaiQuan-So${issueNumber}-${dateStr}.pdf`);
-
+      pdf.save(`BaoHaiQuan-So${issueNumber}-${pubDate.replace(/-/g, '')}.pdf`);
       setProgress('Đang lưu số báo...');
       await supabase.from('settings').upsert({ key: SETTING_KEY, value: String(issueNumber + 1) });
       setIssueNumber(prev => prev + 1);
@@ -552,28 +478,22 @@ export default function AdminBaoInCuoiTuan() {
     } catch (err: any) {
       alert('Lỗi tạo PDF: ' + (err?.message || err));
       setProgress('');
-    } finally {
-      setGenerating(false);
-    }
+    } finally { setGenerating(false); }
   }, [selected, issueNumber, pubDate]);
 
   const canGenerate = selected.length === 5 && !generating;
   const placeholder = (i: number): Post => ({
-    id: -i as any, title: `[Chưa chọn bài ${i + 1}]`,
-    content: '', thumbnail: '', author: '' as any,
-    published_at: '', created_at: '', slug: '',
-    post_type: 'article', status: 'published', category_id: 0 as any,
+    id: -i as any, title: `[Chưa chọn bài ${i + 1}]`, content: '', thumbnail: '', author: '' as any,
+    published_at: '', created_at: '', slug: '', post_type: 'article', status: 'published', category_id: 0 as any,
   });
-  const previewArticles = selected.length === 5
-    ? selected
-    : Array.from({ length: 5 }, (_, i) => selected[i] || placeholder(i + 1));
+  const previewArticles = selected.length === 5 ? selected : Array.from({ length: 5 }, (_, i) => selected[i] || placeholder(i + 1));
 
   return (
     <AdminLayout title="Báo In Hải Quân">
-      {/* Hidden capture divs */}
+      {/* Hidden capture */}
       <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1, pointerEvents: 'none' }}>
         <div ref={page1Ref} style={{ width: PAGE_W, height: PAGE_H }}>
-          <NewspaperPage1 articles={previewArticles} issueNumber={issueNumber} pubDate={pubDate} bongHoaBien={bongHoaBien} />
+          <NewspaperPage1 articles={previewArticles} issueNumber={issueNumber} pubDate={pubDate} bongHoaBien={bongHoaBien} bongHoaBienImg={bongHoaBienImg} />
         </div>
         <div ref={page2Ref} style={{ width: PAGE_W, height: PAGE_H }}>
           <NewspaperPage2 articles={previewArticles} issueNumber={issueNumber} pubDate={pubDate} chamNgon={chamNgon} memeUrl={memeUrl} />
@@ -584,13 +504,10 @@ export default function AdminBaoInCuoiTuan() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-[22px] font-bold text-[#003380]">Báo In Hải Quân Việt Nam</h1>
-            <p className="text-[13px] text-gray-500 mt-0.5">Chọn 5 bài viết, tạo báo in 2 trang A3 — Hải Quân Việt Nam</p>
+            <p className="text-[13px] text-gray-500 mt-0.5">Chọn 5 bài viết, tạo báo in 2 trang A3</p>
           </div>
-          <button
-            onClick={generatePDF}
-            disabled={!canGenerate}
-            className="flex items-center gap-2 bg-[#003380] hover:bg-[#002260] disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-bold text-[14px] transition shadow-sm"
-          >
+          <button onClick={generatePDF} disabled={!canGenerate}
+            className="flex items-center gap-2 bg-[#003380] hover:bg-[#002260] disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-bold text-[14px] transition shadow-sm">
             {generating ? <Spinner /> : (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -601,79 +518,64 @@ export default function AdminBaoInCuoiTuan() {
         </div>
 
         <div className="flex gap-5 items-start">
-          {/* LEFT: settings + inputs + article selector */}
+          {/* LEFT panel */}
           <div className="flex-shrink-0 w-[340px] flex flex-col gap-4">
+
             {/* Issue info */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3">
               <p className="text-[13px] font-bold text-[#003380] uppercase tracking-wider">Thông tin số báo</p>
               <div>
                 <label className="block text-[12px] font-bold text-gray-500 mb-1">Số báo</label>
-                <input
-                  type="number" min={1} value={issueNumber}
+                <input type="number" min={1} value={issueNumber}
                   onChange={e => setIssueNumber(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[14px] font-bold text-[#003380] focus:outline-none focus:ring-2 focus:ring-[#003380]/30"
-                />
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[14px] font-bold text-[#003380] focus:outline-none focus:ring-2 focus:ring-[#003380]/30" />
                 <p className="text-[11px] text-gray-400 mt-1">Tự động +1 sau khi xuất PDF</p>
               </div>
               <div>
                 <label className="block text-[12px] font-bold text-gray-500 mb-1">Ngày đăng</label>
-                <input
-                  type="date" value={pubDate}
-                  onChange={e => setPubDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#003380]/30"
-                />
+                <input type="date" value={pubDate} onChange={e => setPubDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#003380]/30" />
               </div>
             </div>
 
             {/* Những Bông Hoa Biển */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-2">
-              <p className="text-[13px] font-bold text-[#003380] uppercase tracking-wider">✦ Những Bông Hoa Biển</p>
-              <p className="text-[11px] text-gray-400">Nội dung hiển thị trên trang 1 — admin tự soạn</p>
-              <textarea
-                value={bongHoaBien}
-                onChange={e => setBongHoaBien(e.target.value)}
-                placeholder="Nhập nội dung Những Bông Hoa Biển..."
-                rows={5}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#003380]/30 resize-none"
-              />
+              <p className="text-[13px] font-bold text-[#003380] uppercase tracking-wider">✦ Những Bông Hoa Biển <span className="text-[11px] text-gray-400 normal-case font-normal">(Trang 1)</span></p>
+              <ImgUploadBtn label="Tải ảnh lên ImgBB" url={bongHoaBienImg} uploading={bhbUploading}
+                onChange={f => handleUpload(f, setBongHoaBienImg, setBhbUploading)} />
+              <textarea value={bongHoaBien} onChange={e => setBongHoaBien(e.target.value)}
+                placeholder="Nhập nội dung Những Bông Hoa Biển..." rows={4}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#003380]/30 resize-none" />
             </div>
 
             {/* Meme of the Week */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-2">
-              <p className="text-[13px] font-bold text-[#cc0000] uppercase tracking-wider">★ Meme of the Week</p>
-              <p className="text-[11px] text-gray-400">Dán URL ảnh meme hiển thị trên trang 2</p>
-              <input
-                type="url"
-                value={memeUrl}
-                onChange={e => setMemeUrl(e.target.value)}
+              <p className="text-[13px] font-bold text-[#cc0000] uppercase tracking-wider">★ Meme of the Week <span className="text-[11px] text-gray-400 normal-case font-normal">(Trang 2)</span></p>
+              <ImgUploadBtn label="Tải ảnh meme lên ImgBB" url={memeUrl} uploading={memeUploading}
+                onChange={f => handleUpload(f, setMemeUrl, setMemeUploading)} />
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-[11px] text-gray-400">hoặc dán URL</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+              <input type="url" value={memeUrl} onChange={e => setMemeUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#cc0000]/30"
-              />
-              {memeUrl && (
-                <img src={memeUrl} alt="preview" className="w-full h-28 object-contain rounded border border-gray-100 bg-gray-50 mt-1" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              )}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#cc0000]/30" />
             </div>
 
             {/* Châm Ngôn */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col gap-2">
-              <p className="text-[13px] font-bold text-[#c8a800] uppercase tracking-wider">★ Châm Ngôn</p>
-              <p className="text-[11px] text-gray-400">Câu châm ngôn hiển thị trên trang 2</p>
-              <textarea
-                value={chamNgon}
-                onChange={e => setChamNgon(e.target.value)}
-                placeholder="Nhập câu châm ngôn..."
-                rows={3}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#c8a800]/30 resize-none"
-              />
+              <p className="text-[13px] font-bold text-[#c8a800] uppercase tracking-wider">★ Châm Ngôn <span className="text-[11px] text-gray-400 normal-case font-normal">(Trang 2)</span></p>
+              <textarea value={chamNgon} onChange={e => setChamNgon(e.target.value)}
+                placeholder="Nhập câu châm ngôn..." rows={3}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#c8a800]/30 resize-none" />
             </div>
 
             {/* Selected articles */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[13px] font-bold text-[#003380] uppercase tracking-wider">Bài đã chọn</p>
-                <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full ${selected.length === 5 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                  {selected.length}/5
-                </span>
+                <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full ${selected.length === 5 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{selected.length}/5</span>
               </div>
               {selected.length === 0 ? (
                 <p className="text-[12px] text-gray-400 text-center py-4">Chọn bài từ danh sách bên dưới</p>
@@ -697,11 +599,8 @@ export default function AdminBaoInCuoiTuan() {
             {/* Article list */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
               <p className="text-[13px] font-bold text-[#003380] uppercase tracking-wider mb-3">Chọn bài viết</p>
-              <input
-                type="text" placeholder="Tìm kiếm bài..."
-                value={searchQ} onChange={e => setSearchQ(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] mb-3 focus:outline-none focus:ring-2 focus:ring-[#003380]/30"
-              />
+              <input type="text" placeholder="Tìm kiếm bài..." value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] mb-3 focus:outline-none focus:ring-2 focus:ring-[#003380]/30" />
               {loading ? (
                 <div className="flex justify-center py-6"><Spinner /></div>
               ) : (
@@ -710,19 +609,9 @@ export default function AdminBaoInCuoiTuan() {
                     const sel = isSelected((post as any).id);
                     const disabled = !sel && selected.length >= 5;
                     return (
-                      <button
-                        key={(post as any).id}
-                        onClick={() => !disabled && toggleSelect(post)}
-                        disabled={disabled}
-                        className={`flex items-start gap-2 p-2.5 rounded-lg border text-left transition w-full ${
-                          sel ? 'bg-blue-50 border-[#003380]/40 text-[#003380]'
-                            : disabled ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
-                            : 'bg-white border-gray-100 hover:border-[#003380]/40 hover:bg-blue-50/40'
-                        }`}
-                      >
-                        {post.thumbnail && (
-                          <img src={post.thumbnail} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />
-                        )}
+                      <button key={(post as any).id} onClick={() => !disabled && toggleSelect(post)} disabled={disabled}
+                        className={`flex items-start gap-2 p-2.5 rounded-lg border text-left transition w-full ${sel ? 'bg-blue-50 border-[#003380]/40 text-[#003380]' : disabled ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed' : 'bg-white border-gray-100 hover:border-[#003380]/40 hover:bg-blue-50/40'}`}>
+                        {post.thumbnail && <img src={post.thumbnail} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <p className="text-[12px] font-semibold line-clamp-2 leading-snug">{post.title}</p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -746,49 +635,37 @@ export default function AdminBaoInCuoiTuan() {
             </div>
           </div>
 
-          {/* RIGHT: newspaper preview */}
+          {/* RIGHT: preview */}
           <div className="flex-1 min-w-0">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
               <div className="flex items-center gap-3 mb-4">
                 <p className="text-[13px] font-bold text-[#003380] uppercase tracking-wider mr-2">Xem trước</p>
-                <button
-                  onClick={() => setTab('p1')}
-                  className={`px-4 py-1.5 rounded-lg text-[12px] font-bold border transition ${tab === 'p1' ? 'bg-[#003380] text-white border-[#003380]' : 'bg-white text-gray-500 border-gray-200 hover:border-[#003380]/50'}`}
-                >
+                <button onClick={() => setTab('p1')}
+                  className={`px-4 py-1.5 rounded-lg text-[12px] font-bold border transition ${tab === 'p1' ? 'bg-[#003380] text-white border-[#003380]' : 'bg-white text-gray-500 border-gray-200 hover:border-[#003380]/50'}`}>
                   Trang 1 (Bìa)
                 </button>
-                <button
-                  onClick={() => setTab('p2')}
-                  className={`px-4 py-1.5 rounded-lg text-[12px] font-bold border transition ${tab === 'p2' ? 'bg-[#003380] text-white border-[#003380]' : 'bg-white text-gray-500 border-gray-200 hover:border-[#003380]/50'}`}
-                >
+                <button onClick={() => setTab('p2')}
+                  className={`px-4 py-1.5 rounded-lg text-[12px] font-bold border transition ${tab === 'p2' ? 'bg-[#003380] text-white border-[#003380]' : 'bg-white text-gray-500 border-gray-200 hover:border-[#003380]/50'}`}>
                   Trang 2 (Nội dung)
                 </button>
                 <span className="ml-auto text-[11px] text-gray-400">Khổ A3 — Thu nhỏ để xem trước</span>
               </div>
-
-              <div
-                className="overflow-hidden rounded-lg border border-gray-200 shadow-inner bg-gray-100 flex items-center justify-center"
-                style={{ width: '100%', height: Math.round(PAGE_H * SCALE) + 8 }}
-              >
+              <div className="overflow-hidden rounded-lg border border-gray-200 shadow-inner bg-gray-100 flex items-center justify-center"
+                style={{ width: '100%', height: Math.round(PAGE_H * SCALE) + 8 }}>
                 <div style={{ width: PAGE_W * SCALE, height: PAGE_H * SCALE, overflow: 'hidden', borderRadius: 2, boxShadow: '0 2px 12px rgba(0,0,0,0.2)', flexShrink: 0 }}>
                   <div style={{ width: PAGE_W, height: PAGE_H, transform: `scale(${SCALE})`, transformOrigin: 'top left' }}>
                     {tab === 'p1'
-                      ? <NewspaperPage1 articles={previewArticles} issueNumber={issueNumber} pubDate={pubDate} bongHoaBien={bongHoaBien} />
+                      ? <NewspaperPage1 articles={previewArticles} issueNumber={issueNumber} pubDate={pubDate} bongHoaBien={bongHoaBien} bongHoaBienImg={bongHoaBienImg} />
                       : <NewspaperPage2 articles={previewArticles} issueNumber={issueNumber} pubDate={pubDate} chamNgon={chamNgon} memeUrl={memeUrl} />
                     }
                   </div>
                 </div>
               </div>
-
               {selected.length < 5 && (
-                <p className="text-[12px] text-amber-600 font-semibold text-center mt-3">
-                  ⚠ Cần chọn đủ 5 bài để xuất PDF — đã chọn {selected.length}/5
-                </p>
+                <p className="text-[12px] text-amber-600 font-semibold text-center mt-3">⚠ Cần chọn đủ 5 bài để xuất PDF — đã chọn {selected.length}/5</p>
               )}
               {selected.length === 5 && !generating && (
-                <p className="text-[12px] text-green-600 font-semibold text-center mt-3">
-                  ✓ Sẵn sàng xuất PDF — nhấn nút "Xuất PDF" để tạo báo in
-                </p>
+                <p className="text-[12px] text-green-600 font-semibold text-center mt-3">✓ Sẵn sàng xuất PDF — nhấn nút "Xuất PDF" để tạo báo in</p>
               )}
             </div>
           </div>
