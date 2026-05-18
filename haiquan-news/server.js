@@ -553,13 +553,57 @@ app.get('/bai-viet/:slug', async (req, res) => {
   res.send(injectOgIntoHtml(indexHtml, buildOgHtml({ title: SITE_NAME, excerpt: DEFAULT_DESC, thumbnail: DEFAULT_IMG }, slug)));
 });
 
+// Static SEO content injected into homepage HTML before React mounts.
+// Content is real and visible to everyone — fully Google-compliant (no cloaking).
+const HOMEPAGE_STATIC_HTML = `
+<div id="hq-static-seo" style="font-family:sans-serif;background:#f0f4f8;border-top:3px solid #003380;padding:28px 20px;color:#222;line-height:1.75;font-size:15px;">
+  <div style="max-width:900px;margin:0 auto;">
+    <h2 style="color:#003380;font-size:20px;font-weight:700;margin:0 0 10px;">Giới thiệu về Báo Hải Quân Việt Nam – SROV</h2>
+    <p style="margin:0 0 10px;">
+      <strong>Báo Hải Quân Việt Nam – SROV</strong> là cổng thông tin điện tử chuyên cập nhật tin tức sự kiện,
+      cơ cấu tổ chức và hoạt động chính thức của Sư đoàn 162 thuộc Quân chủng Hải quân Nhân dân Việt Nam.
+      Trang cung cấp thông tin đa dạng, bao gồm: tin tức &amp; sự kiện hải quân, chủ quyền biển đảo,
+      tâm tình lính biển, lịch sử hải quân, hệ thống chỉ huy, truyền hình hải quân và ấn phẩm báo in kỹ thuật số cuối tuần.
+    </p>
+    <p style="margin:0 0 10px;">
+      Hệ thống hoạt động như một tòa soạn báo chính quy, cập nhật liên tục các thông báo quân sự,
+      tư liệu huấn luyện và tài liệu lịch sử hữu ích cho cán bộ, chiến sĩ và cộng đồng quan tâm.
+      Mọi nội dung được kiểm duyệt bởi ban biên tập trước khi đăng tải.
+    </p>
+    <p style="margin:0;font-size:13px;color:#555;">
+      📍 Trụ sở: Số 36, Phường Cam Ranh, Tỉnh Khánh Hoà &nbsp;|&nbsp;
+      🌐 <a href="https://baohaiquansrov.xo.je" style="color:#003380;">baohaiquansrov.xo.je</a> &nbsp;|&nbsp;
+      ✉ toasoan@haiquan-srov.vn
+    </p>
+  </div>
+</div>
+<script>
+  // Hide the static section once React has mounted to avoid duplication
+  document.addEventListener('DOMContentLoaded', function() {
+    var el = document.getElementById('hq-static-seo');
+    var root = document.getElementById('root');
+    if (!el || !root) return;
+    var obs = new MutationObserver(function() {
+      if (root.children.length > 0) { el.style.display = 'none'; obs.disconnect(); }
+    });
+    obs.observe(root, { childList: true, subtree: false });
+    // Fallback: hide after 4 seconds regardless
+    setTimeout(function() { if (el) el.style.display = 'none'; }, 4000);
+  });
+</script>`;
+
 app.get(/.*/, (req, res) => {
   const indexHtml = getIndexHtml();
   if (!indexHtml) {
     return res.status(503).send('App not built yet');
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send(indexHtml);
+  // Inject static SEO section before </body> for homepage only
+  const isHomepage = req.path === '/' || req.path === '';
+  const html = isHomepage
+    ? indexHtml.replace('</body>', `${HOMEPAGE_STATIC_HTML}\n</body>`)
+    : indexHtml;
+  res.send(html);
 });
 
 createServer(app).listen(PORT, '0.0.0.0', () => {
