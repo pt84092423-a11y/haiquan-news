@@ -473,6 +473,60 @@ app.delete('/api/admin/categories/:id', async (req, res) => {
   } catch (e) { return res.status(500).json({ error: e.message }); }
 });
 
+// ── Sitemap XML (dynamic — fetches from Supabase) ──
+app.get('/sitemap.xml', async (req, res) => {
+  const STATIC_PAGES = [
+    { loc: '', priority: '1.0', changefreq: 'daily' },
+    { loc: '/tin-tuc', priority: '0.9', changefreq: 'daily' },
+    { loc: '/cau-truc', priority: '0.7', changefreq: 'monthly' },
+    { loc: '/vi-chu-quyen', priority: '0.8', changefreq: 'weekly' },
+    { loc: '/tam-tinh', priority: '0.7', changefreq: 'weekly' },
+    { loc: '/goc-van-nghe', priority: '0.6', changefreq: 'weekly' },
+    { loc: '/video', priority: '0.7', changefreq: 'weekly' },
+  ];
+
+  try {
+    // Fetch all published post slugs + dates
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/posts?status=eq.published&select=slug,updated_at,published_at&order=published_at.desc&limit=1000`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    const posts = r.ok ? await r.json() : [];
+
+    const now = new Date().toISOString().split('T')[0];
+
+    const staticUrls = STATIC_PAGES.map(p => `
+  <url>
+    <loc>${PUBLIC_SITE_URL}${p.loc}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`).join('');
+
+    const postUrls = posts.map(p => {
+      const lastmod = (p.updated_at || p.published_at || now).split('T')[0];
+      return `
+  <url>
+    <loc>${PUBLIC_SITE_URL}/bai-viet/${encodeURIComponent(p.slug)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+    }).join('');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${staticUrls}${postUrls}
+</urlset>`;
+
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    return res.send(xml);
+  } catch (err) {
+    console.error('Sitemap error:', err);
+    res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+});
+
 app.use(express.static(DIST_DIR, { index: false }));
 
 app.get('/bai-viet/:slug', async (req, res) => {
