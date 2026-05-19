@@ -36,6 +36,7 @@ import IpMonitor from "@/pages/admin/IpMonitor";
 import YoutubeManager from "@/pages/admin/YoutubeManager";
 import CommentManager from "@/pages/admin/CommentManager";
 import AdminUserProfile from "@/pages/admin/AdminUserProfile";
+import AdminSEO from "@/pages/admin/AdminSEO";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import SearchPage from "@/pages/SearchPage";
 import TermsPage from "@/pages/TermsPage";
@@ -123,6 +124,7 @@ function Router() {
       <Route path="/admin/ip-monitor" component={() => <ProtectedRoute component={IpMonitor} action="view_audit_log" />} />
       <Route path="/admin/youtube" component={() => <ProtectedRoute component={YoutubeManager} />} />
       <Route path="/admin/binh-luan" component={() => <ProtectedRoute component={AdminComments} action="manage_comments" />} />
+      <Route path="/admin/seo" component={() => <ProtectedRoute component={AdminSEO} />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />

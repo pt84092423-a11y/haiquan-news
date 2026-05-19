@@ -473,6 +473,81 @@ app.delete('/api/admin/categories/:id', async (req, res) => {
   } catch (e) { return res.status(500).json({ error: e.message }); }
 });
 
+// ── SEO Settings cache (read from Supabase, refreshed every 5 min) ──
+let seoCache = null;
+let seoCacheTime = 0;
+let robotsCache = null;
+let robotsCacheTime = 0;
+let redirectsCache = null;
+let redirectsCacheTime = 0;
+const SEO_CACHE_TTL = 5 * 60 * 1000;
+
+async function getSeoSettings() {
+  if (seoCache && Date.now() - seoCacheTime < SEO_CACHE_TTL) return seoCache;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/settings?key=eq.seo_global&select=value&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    const data = r.ok ? await r.json() : [];
+    seoCache = data?.[0]?.value ? JSON.parse(data[0].value) : null;
+    seoCacheTime = Date.now();
+    return seoCache;
+  } catch { return null; }
+}
+
+async function getRobotsContent() {
+  if (robotsCache && Date.now() - robotsCacheTime < SEO_CACHE_TTL) return robotsCache;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/settings?key=eq.robots_txt&select=value&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    const data = r.ok ? await r.json() : [];
+    robotsCache = data?.[0]?.value || null;
+    robotsCacheTime = Date.now();
+    return robotsCache;
+  } catch { return null; }
+}
+
+async function getRedirects() {
+  if (redirectsCache && Date.now() - redirectsCacheTime < SEO_CACHE_TTL) return redirectsCache;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/settings?key=eq.seo_redirects&select=value&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    const data = r.ok ? await r.json() : [];
+    redirectsCache = data?.[0]?.value ? JSON.parse(data[0].value) : [];
+    redirectsCacheTime = Date.now();
+    return redirectsCache;
+  } catch { return []; }
+}
+
+// ── Redirect middleware (reads from Supabase seo_redirects setting) ──
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/admin')) return next();
+  try {
+    const redirects = await getRedirects();
+    const match = redirects.find(r => r.from && (r.from === req.path || r.from === req.url));
+    if (match) return res.redirect(match.type || 301, match.to);
+  } catch {}
+  next();
+});
+
+// ── Robots.txt (dynamic from Supabase settings) ──
+const DEFAULT_ROBOTS_TXT = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\n\nSitemap: ${PUBLIC_SITE_URL}/sitemap.xml`;
+
+app.get('/robots.txt', async (req, res) => {
+  const content = (await getRobotsContent()) || DEFAULT_ROBOTS_TXT;
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  return res.send(content);
+});
+
+// ── Admin: clear server-side caches ──
+app.post('/api/admin/clear-cache', (req, res) => {
+  seoCache = null; seoCacheTime = 0;
+  robotsCache = null; robotsCacheTime = 0;
+  redirectsCache = null; redirectsCacheTime = 0;
+  Object.keys(ytCache).forEach(k => delete ytCache[k]);
+  return res.json({ ok: true, message: 'Đã xóa toàn bộ cache server.' });
+});
+
 // ── Sitemap XML (dynamic — fetches from Supabase) ──
 app.get('/sitemap.xml', async (req, res) => {
   const STATIC_PAGES = [

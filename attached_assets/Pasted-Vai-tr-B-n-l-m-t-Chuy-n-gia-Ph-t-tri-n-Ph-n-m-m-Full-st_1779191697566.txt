@@ -1,0 +1,35 @@
+Vai trò: Bạn là một Chuyên gia Phát triển Phần mềm (Full-stack Developer) và Chuyên gia UX/UI tối ưu hóa cho Hệ thống Quản trị (Admin Dashboard).
+
+Nhiệm vụ: Hãy thiết kế cấu trúc database, logic xử lý (backend) và giao diện (frontend) cho một mục tính năng mới trong Admin Panel có tên là "Siêu Quản Lý SEO & Website". Tính năng này giúp Admin có toàn quyền cấu hình, theo dõi và tối ưu hóa mọi yếu tố liên quan đến SEO và vận hành Web mà không cần can thiệp vào code.
+
+Hãy chi tiết hóa mục này thành các tab chức năng con sau đây:
+
+1. Tab 1: Cấu Hình SEO Tổng Thể (Global SEO Settings)
+- Cho phép chỉnh sửa Meta Title, Meta Description, Meta Keywords mặc định cho toàn trang (Homepage).
+- Mục upload: Favicon, Apple Touch Icon, Og:image (Ảnh khi chia sẻ link lên MXH) mặc định.
+- Tích hợp bật/tắt và cấu hình tự động cho cấu trúc Schema Markup (Local Business, Organization, Website).
+- Ô nhập mã nhúng tự động (Header/Footer Scripts) như: Google Analytics (GA4), Google Search Console, Facebook Pixel, Google Tag Manager.
+
+2. Tab 2: Quản Lý Sơ Đồ Web & Điều Hướng (Sitemap & Robots.txt)
+- Tự động tạo (Auto-generate) tệp sitemap.xml khi có bài viết/sản phẩm mới. Cho phép xem, cập nhật thủ công và cấu hình tần suất quét (Daily, Weekly, Monthly).
+- Trình chỉnh sửa trực tiếp (Live Editor) tệp robots.txt có kiểm tra lỗi cú pháp cơ bản.
+- Cấu hình thẻ Meta Robots toàn trang (Index/Noindex, Follow/Nofollow).
+
+3. Tab 3: Hệ Thống Điều Hướng URL & Thuộc Tính (URL Redirects & Canonical)
+- Công cụ Quản lý Redirect: Cho phép thêm/sửa/xóa các lệnh chuyển hướng URL (Redirect 301, 302). Hỗ trợ upload file Excel để import hàng loạt.
+- Tự động phát hiện và cảnh báo link lỗi 404 trong hệ thống, kèm nút "Sửa nhanh" bằng cách trỏ link đó sang URL mới.
+- Cấu hình thẻ Tự tham chiếu (Self-canonicalization) mặc định để tránh trùng lặp nội dung.
+
+4. Tab 4: Tối Ưu Hóa Hiệu Năng & Hình Ảnh (Web Performance Optimization)
+- Tự động nén hình ảnh (Image Compression) khi user upload lên hệ thống (chuyển đổi sang định dạng WebP/Avif, tùy chỉnh độ nén).
+- Bật/Tắt tính năng Lazy Loading cho hình ảnh và iframe.
+- Công cụ xóa bộ nhớ đệm (Clear Cache) toàn trang hoặc theo từng URL cụ thể.
+
+5. Tab 5: Dashboard Báo Cáo & Chẩn Đoán (SEO Health Dashboard)
+- Tích hợp API (nếu có) hoặc tạo hệ thống quét nội bộ để chấm điểm SEO Audit (Checklist: Thiếu alt ảnh, trùng lặp thẻ H1, meta quá dài/quá ngắn, thiếu thẻ canonical).
+- Bảng thống kê trực quan (Biểu đồ) về các lỗi 404 phát sinh theo thời gian thực.
+
+Yêu cầu về mặt kỹ thuật và UI/UX:
+- Giao diện: Sạch sẽ, sử dụng các thành phần như Toggle Switch (nút bật/tắt), Input Tag (để nhập keywords), Alert Badge (hiển thị trạng thái lỗi màu đỏ/xanh).
+- Bảo mật: Chỉ những tài khoản có quyền "Super Admin" mới được truy cập và chỉnh sửa mục này. Có Nhật ký hoạt động (Activity Log) để lưu lại ai đã sửa cấu hình gì.
+- Đầu ra mong muốn: Hãy cung cấp sơ đồ cơ sở dữ liệu (Database Schema) gợi ý, mô tả luồng xử lý (Workflow) và các đoạn code mẫu (hoặc wireframe mô tả giao diện) để dev có thể bắt tay vào làm được ngay.
