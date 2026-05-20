@@ -664,7 +664,28 @@ app.get('/sitemap.xml', async (req, res) => {
   }
 });
 
-app.use(express.static(DIST_DIR, { index: false }));
+// Serve hashed assets with 1-year immutable cache
+app.use('/assets', express.static(join(DIST_DIR, 'assets'), {
+  index: false,
+  maxAge: 365 * 24 * 60 * 60 * 1000,
+  immutable: true,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  },
+}));
+// Serve other static files with short cache
+app.use(express.static(DIST_DIR, {
+  index: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (/\.(jpg|jpeg|png|gif|webp|svg|ico|woff2|woff)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    } else if (/\.(js|css)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    }
+  },
+}));
 
 app.get('/bai-viet/:slug', async (req, res) => {
   const { slug } = req.params;

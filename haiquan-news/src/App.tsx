@@ -45,7 +45,16 @@ import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import { getSession, can } from "@/lib/auth";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 3 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (

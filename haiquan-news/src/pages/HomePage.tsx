@@ -11,7 +11,6 @@ import {  DEFAULT_COMMAND_DATA, type CommandData, type Commander  } from '@/page
 
 const PLACEHOLDER = 'https://via.placeholder.com/800x500/00305f/ffffff?text=Báo+Hải+Quân';
 const DEFAULT_MAIN_AD = 'https://baohaiquanvietnam.vn/storage/users/user_12/2025/TH%C3%81NG%2011/14/z7226029114068_f556938a4a781dddde927265a1a30a65.jpg';
-const DEFAULT_BOTTOM_AD = 'https://baohaiquanvietnam.vn/storage/users/user_12/2026/Banner/126.png';
 
 const getAdImages = (settings: Record<string, string>, multiKey: string, singleKey: string, fallback: string) => {
   const raw = settings[multiKey] || settings[singleKey] || fallback;
@@ -317,14 +316,11 @@ export default function HomePage() {
 
   const featured = spotlight[featuredIdx];
   const mainAdImages = getAdImages(ads, 'home_ad_main_images', 'home_ad_main_image', DEFAULT_MAIN_AD);
-  const bottomAdImages = getAdImages(ads, 'home_ad_bottom_images', 'home_ad_bottom_image', DEFAULT_BOTTOM_AD);
   const activeMainAd = mainAdImages[mainAdIdx % mainAdImages.length] || DEFAULT_MAIN_AD;
-  const activeBottomAd = bottomAdImages[bottomAdIdx % bottomAdImages.length] || DEFAULT_BOTTOM_AD;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setMainAdIdx(i => i + 1);
-      setBottomAdIdx(i => i + 1);
     }, 5000);
     return () => clearInterval(timer);
   }, []);

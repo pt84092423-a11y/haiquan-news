@@ -211,7 +211,10 @@
 /* Article content styles */
 .article-content p { margin-bottom: 1rem; text-align: justify; text-align-last: left; hyphens: auto; }
 .article-content img { width: 100%; height: auto; border-radius: 2px; margin-top: 1rem; }
-.article-content figcaption { text-align: center; font-style: italic; color: #555; font-size: 13px; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+.article-content figcaption { text-align: center; font-style: italic; color: #555; font-size: 13px; margin-top: 0.5rem; margin-bottom: 1.5rem; display: block; }
+.article-content p:has(> strong:only-child) { text-align: center; font-style: italic; color: #555; font-size: 13px; }
+.article-content figure { text-align: center; margin: 1rem 0; }
+.article-content img { max-width: 100%; height: auto; display: block; margin-left: auto; margin-right: auto; }
 .article-content h2 { font-size: 22px; font-weight: 700; margin: 1.5rem 0 0.75rem; color: #222; }
 .article-content h3 { font-size: 18px; font-weight: 700; margin: 1.25rem 0 0.5rem; color: #333; }
 .article-content blockquote { border-left: 4px solid #0059b2; padding-left: 1rem; margin: 1rem 0; color: #555; font-style: italic; }
