@@ -1,37 +1,39 @@
 import { useState } from 'react';
 
-// Image actual size: 795 x 988 px
+// Map image: vietnam-sea-map-new.png — actual size 703 x 682 px
+// SVG viewBox matches image dimensions exactly: 0 0 703 682
+// Coordinates below are calibrated directly against the image pixels.
 const ZONES = [
   {
-    id: 1, name: 'Vùng 1 Hải quân', hq: 'Hải Phòng', cx: 112, cy: 134,
+    id: 1, name: 'Vùng 1 Hải quân', hq: 'Hải Phòng', cx: 279, cy: 105,
     color: '#e53935',
     cover: 'Vịnh Bắc Bộ, vùng biển Đông Bắc',
     ships: 'Tàu tên lửa, tàu pháo, tàu ngầm',
     desc: 'Quản lý vùng biển miền Bắc, Vịnh Bắc Bộ và các đảo phía Bắc.',
   },
   {
-    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 143, cy: 314,
+    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 237, cy: 258,
     color: '#1e88e5',
     cover: 'Biển miền Trung, bờ biển miền Trung Việt Nam',
     ships: 'Tàu hộ vệ, tàu tuần tra, tàu đổ bộ',
     desc: 'Bảo vệ vùng biển miền Trung từ Quảng Bình đến Bình Định.',
   },
   {
-    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 163, cy: 439,
+    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 252, cy: 378,
     color: '#43a047',
     cover: 'Vùng biển Nam Trung Bộ và Trường Sa',
     ships: 'Tàu tên lửa, tàu ngầm, tàu đặc công nước',
     desc: 'Phụ trách vùng biển Nam Trung Bộ và quần đảo Trường Sa.',
   },
   {
-    id: 4, name: 'Vùng 4 Hải quân', hq: 'TP. Hồ Chí Minh', cx: 163, cy: 535,
+    id: 4, name: 'Vùng 4 Hải quân', hq: 'TP. Hồ Chí Minh', cx: 280, cy: 476,
     color: '#fb8c00',
     cover: 'Vùng biển Đông Nam, cửa sông Mekong',
     ships: 'Tàu tuần tra, tàu pháo, tàu đặc nhiệm',
     desc: 'Quản lý vùng biển phía Đông Nam và các cửa sông vùng Đồng bằng sông Cửu Long.',
   },
   {
-    id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 88, cy: 602,
+    id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 148, cy: 540,
     color: '#8e24aa',
     cover: 'Vịnh Thái Lan, vùng biển Tây Nam',
     ships: 'Tàu tên lửa, tàu tuần tra duyên hải, tàu ngầm',
@@ -80,126 +82,122 @@ export default function VietnamNavyMap() {
 
   return (
     <div className="w-full bg-[#0d1e3d] rounded-2xl overflow-hidden shadow-2xl border border-[#1a3a6a]">
-      {/* Header */}
-      <div className="px-5 py-3 bg-gradient-to-r from-[#0d2247] via-[#003580] to-[#0059b2] flex items-center justify-between flex-wrap gap-2">
+      {/* Header — solid bright blue, no gradient */}
+      <div className="px-5 py-3 bg-[#0055cc] flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-white font-black text-[14px] uppercase tracking-widest flex items-center gap-2">
             <span className="text-yellow-400 text-lg">⚓</span>
             BẢN ĐỒ HẢI QUÂN NHÂN DÂN VIỆT NAM
           </h3>
-          <p className="text-blue-200 text-[11px] mt-0.5">5 Vùng Hải quân · Hoàng Sa · Trường Sa · Biển Đông</p>
+          <p className="text-blue-100 text-[11px] mt-0.5">5 Vùng Hải quân · Hoàng Sa · Trường Sa · Biển Đông</p>
         </div>
-        <div className="text-right hidden sm:block">
-          <p className="text-yellow-400 text-[10px] font-black uppercase tracking-widest">SROV</p>
-          <p className="text-blue-300 text-[9px]">Biển Đông là của Việt Nam</p>
+        {/* Quốc huy + khẩu hiệu */}
+        <div className="hidden sm:flex flex-col items-center gap-1">
+          <img src="/quoc-huy.png" alt="Quốc huy Việt Nam" className="h-12 w-12 object-contain drop-shadow-lg" />
+          <p className="text-yellow-300 text-[9px] font-black uppercase tracking-widest whitespace-nowrap">
+            Hoàng Sa - Trường Sa Là của Việt Nam
+          </p>
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row">
-        {/* Geographic Map with SVG overlay */}
+        {/* Map — viewBox = 703 × 682 matches image pixel dimensions exactly */}
         <div className="flex-1 relative bg-[#0a1628]">
           <svg
-            viewBox="0 0 795 988"
+            viewBox="0 0 703 682"
             className="w-full h-auto block"
             style={{ display: 'block' }}
           >
-            {/* Geographic map image as base */}
             <image
-              href="/vietnam-sea-map.jpg"
+              href="/vietnam-sea-map-new.png"
               x="0" y="0"
-              width="795" height="988"
+              width="703" height="682"
               preserveAspectRatio="xMidYMid meet"
             />
 
-            {/* Semi-transparent dark overlay to improve contrast of markers */}
-            <rect x="0" y="0" width="795" height="988" fill="rgba(0,0,0,0.08)" />
+            {/* Subtle overlay for marker contrast */}
+            <rect x="0" y="0" width="703" height="682" fill="rgba(0,0,0,0.06)" />
 
-            {/* Clickable: Vịnh Bắc Việt ellipse (cy scaled to 988px image) */}
+            {/* Vịnh Bắc Bộ — vùng nước bên phải bắc VN */}
             <g className="cursor-pointer" onClick={() => handleIslandClick('vinhbacbo')} opacity={activeIsland === 'vinhbacbo' ? 1 : 0.7}>
-              <ellipse cx="195" cy="228" rx="72" ry="82"
-                fill={activeIsland === 'vinhbacbo' ? 'rgba(92,107,192,0.35)' : 'rgba(92,107,192,0.18)'}
+              <ellipse cx="378" cy="155" rx="62" ry="50"
+                fill={activeIsland === 'vinhbacbo' ? 'rgba(92,107,192,0.38)' : 'rgba(92,107,192,0.18)'}
                 stroke={activeIsland === 'vinhbacbo' ? '#7986cb' : 'rgba(121,134,203,0.5)'}
                 strokeWidth={activeIsland === 'vinhbacbo' ? 2 : 1.5}
                 strokeDasharray={activeIsland === 'vinhbacbo' ? '' : '6 3'}
               />
               {activeIsland === 'vinhbacbo' && (
-                <text x="195" y="232" fill="#c5cae9" fontSize="9" textAnchor="middle" fontWeight="bold">VỊNH BẮC BỘ</text>
+                <text x="378" y="159" fill="#c5cae9" fontSize="8" textAnchor="middle" fontWeight="bold">VỊNH BẮC BỘ</text>
               )}
             </g>
 
-            {/* Clickable: Hoàng Sa ellipse */}
+            {/* Hoàng Sa — phía phải giữa bản đồ (G.Đ HOÀNG SA) */}
             <g className="cursor-pointer" onClick={() => handleIslandClick('hoangsa')} opacity={activeIsland === 'hoangsa' ? 1 : 0.75}>
-              <ellipse cx="218" cy="355" rx="82" ry="58"
-                fill={activeIsland === 'hoangsa' ? 'rgba(229,57,53,0.35)' : 'rgba(229,57,53,0.15)'}
+              <ellipse cx="468" cy="234" rx="48" ry="34"
+                fill={activeIsland === 'hoangsa' ? 'rgba(229,57,53,0.38)' : 'rgba(229,57,53,0.18)'}
                 stroke={activeIsland === 'hoangsa' ? '#ef5350' : 'rgba(239,83,80,0.55)'}
                 strokeWidth={activeIsland === 'hoangsa' ? 2 : 1.5}
                 strokeDasharray={activeIsland === 'hoangsa' ? '' : '6 3'}
               />
               {activeIsland === 'hoangsa' && (
-                <text x="218" y="359" fill="#ffcdd2" fontSize="9" textAnchor="middle" fontWeight="bold">HOÀNG SA</text>
+                <text x="468" y="238" fill="#ffcdd2" fontSize="8" textAnchor="middle" fontWeight="bold">HOÀNG SA</text>
               )}
             </g>
 
-            {/* Clickable: Trường Sa ellipse */}
+            {/* Trường Sa — phía phải, dưới giữa (G.Đ TRƯỜNG SA) */}
             <g className="cursor-pointer" onClick={() => handleIslandClick('truongsa')} opacity={activeIsland === 'truongsa' ? 1 : 0.75}>
-              <ellipse cx="348" cy="633" rx="96" ry="70"
-                fill={activeIsland === 'truongsa' ? 'rgba(251,140,0,0.35)' : 'rgba(251,140,0,0.15)'}
+              <ellipse cx="463" cy="483" rx="50" ry="36"
+                fill={activeIsland === 'truongsa' ? 'rgba(251,140,0,0.38)' : 'rgba(251,140,0,0.18)'}
                 stroke={activeIsland === 'truongsa' ? '#ffa726' : 'rgba(255,167,38,0.55)'}
                 strokeWidth={activeIsland === 'truongsa' ? 2 : 1.5}
                 strokeDasharray={activeIsland === 'truongsa' ? '' : '6 3'}
               />
               {activeIsland === 'truongsa' && (
-                <text x="348" y="637" fill="#ffe0b2" fontSize="9" textAnchor="middle" fontWeight="bold">TRƯỜNG SA</text>
+                <text x="463" y="487" fill="#ffe0b2" fontSize="8" textAnchor="middle" fontWeight="bold">TRƯỜNG SA</text>
               )}
             </g>
 
-            {/* Clickable: Nam Trường Sa ellipse */}
+            {/* Nam Trường Sa — dưới cùng bên phải (NAM BIỂN ĐÔNG) */}
             <g className="cursor-pointer" onClick={() => handleIslandClick('namtruongsa')} opacity={activeIsland === 'namtruongsa' ? 1 : 0.7}>
-              <ellipse cx="128" cy="796" rx="116" ry="62"
-                fill={activeIsland === 'namtruongsa' ? 'rgba(0,137,123,0.35)' : 'rgba(0,137,123,0.15)'}
+              <ellipse cx="455" cy="576" rx="52" ry="30"
+                fill={activeIsland === 'namtruongsa' ? 'rgba(0,137,123,0.38)' : 'rgba(0,137,123,0.18)'}
                 stroke={activeIsland === 'namtruongsa' ? '#26a69a' : 'rgba(38,166,154,0.5)'}
                 strokeWidth={activeIsland === 'namtruongsa' ? 2 : 1.5}
                 strokeDasharray={activeIsland === 'namtruongsa' ? '' : '6 3'}
               />
               {activeIsland === 'namtruongsa' && (
-                <text x="128" y="800" fill="#b2dfdb" fontSize="9" textAnchor="middle" fontWeight="bold">NAM TRƯỜNG SA</text>
+                <text x="455" y="580" fill="#b2dfdb" fontSize="8" textAnchor="middle" fontWeight="bold">NAM TRƯỜNG SA</text>
               )}
             </g>
 
-            {/* 5 Naval Zone markers on Vietnam coast */}
+            {/* 5 markers vùng hải quân — trên bờ biển VN */}
             {ZONES.map(zone => (
-              <g
-                key={zone.id}
-                className="cursor-pointer"
-                onClick={() => handleZoneClick(zone)}
-              >
-                {/* Pulse ring when active */}
+              <g key={zone.id} className="cursor-pointer" onClick={() => handleZoneClick(zone)}>
                 {activeZone?.id === zone.id && (
-                  <circle cx={zone.cx} cy={zone.cy} r="17"
+                  <circle cx={zone.cx} cy={zone.cy} r="16"
                     fill="none" stroke={zone.color} strokeWidth="2" opacity="0.6"
                     strokeDasharray="4 2"
                   />
                 )}
                 <circle
                   cx={zone.cx} cy={zone.cy}
-                  r={activeZone?.id === zone.id ? 13 : 11}
+                  r={activeZone?.id === zone.id ? 12 : 10}
                   fill={zone.color}
                   stroke="#fff"
                   strokeWidth="1.5"
-                  style={{ filter: `drop-shadow(0 0 5px ${zone.color}99)` }}
+                  style={{ filter: `drop-shadow(0 0 4px ${zone.color}99)` }}
                 />
-                <text x={zone.cx} y={zone.cy + 4} fill="white" fontSize="8" textAnchor="middle" fontWeight="bold">
+                <text x={zone.cx} y={zone.cy + 4} fill="white" fontSize="7.5" textAnchor="middle" fontWeight="bold">
                   V{zone.id}
                 </text>
-                {/* Zone label on hover/active */}
                 {activeZone?.id === zone.id && (
                   <text
-                    x={zone.cx + (zone.cx < 200 ? 16 : -16)}
+                    x={zone.cx + (zone.cx < 350 ? 15 : -15)}
                     y={zone.cy}
                     fill={zone.color}
                     fontSize="7"
                     fontWeight="bold"
-                    textAnchor={zone.cx < 200 ? 'start' : 'end'}
+                    textAnchor={zone.cx < 350 ? 'start' : 'end'}
                     style={{ filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.9))' }}
                   >
                     {zone.hq}
@@ -208,14 +206,26 @@ export default function VietnamNavyMap() {
               </g>
             ))}
 
-            {/* Touch-hint dots on island ellipses (visible indicator) */}
-            <circle cx="218" cy="370" r="3" fill="#ef5350" opacity="0.9" className="pointer-events-none" />
-            <circle cx="350" cy="660" r="3" fill="#ffa726" opacity="0.9" className="pointer-events-none" />
-            <circle cx="195" cy="240" r="3" fill="#7986cb" opacity="0.9" className="pointer-events-none" />
-            <circle cx="130" cy="830" r="3" fill="#26a69a" opacity="0.9" className="pointer-events-none" />
+            {/* Dots nhỏ trên các quần đảo */}
+            <circle cx="468" cy="234" r="3" fill="#ef5350" opacity="0.9" className="pointer-events-none" />
+            <circle cx="463" cy="483" r="3" fill="#ffa726" opacity="0.9" className="pointer-events-none" />
+            <circle cx="378" cy="155" r="3" fill="#7986cb" opacity="0.9" className="pointer-events-none" />
+            <circle cx="455" cy="576" r="3" fill="#26a69a" opacity="0.9" className="pointer-events-none" />
+
+            {/* Watermark chủ quyền nghiêng trên vùng biển */}
+            <text
+              x="490" y="360"
+              fill="rgba(255,220,50,0.50)"
+              fontSize="9.5"
+              fontWeight="bold"
+              textAnchor="middle"
+              transform="rotate(-60, 490, 360)"
+              style={{ pointerEvents: 'none', letterSpacing: '1px' }}
+            >
+              HOÀNG SA - TRƯỜNG SA LÀ CỦA VIỆT NAM
+            </text>
           </svg>
 
-          {/* Interaction hint */}
           <div className="absolute bottom-2 left-2 text-[10px] text-white/60 pointer-events-none">
             Nhấn vào các vùng để xem thông tin
           </div>
@@ -224,7 +234,6 @@ export default function VietnamNavyMap() {
         {/* Info Panel */}
         <div className="lg:w-[280px] flex flex-col bg-[#0a1628] border-t lg:border-t-0 lg:border-l border-[#1a3a6a]">
           <div className="flex-1 p-4 space-y-3">
-            {/* Active zone or island info */}
             {activeZone ? (
               <div className="rounded-xl border p-4" style={{ borderColor: activeZone.color, backgroundColor: 'rgba(255,255,255,0.04)' }}>
                 <div className="flex items-center gap-2 mb-3">
@@ -265,7 +274,6 @@ export default function VietnamNavyMap() {
                 <p className="text-blue-100 text-[11px] leading-relaxed">{info.body}</p>
               </div>
             ) : (
-              /* Legend / default view */
               <div className="space-y-1">
                 <p className="text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-2">5 Vùng Hải quân</p>
                 {ZONES.map(z => (
