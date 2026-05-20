@@ -12,14 +12,14 @@ const ZONES = [
     desc: 'Quản lý vùng biển miền Bắc, Vịnh Bắc Bộ và các đảo phía Bắc.',
   },
   {
-    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 237, cy: 258,
+    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 318, cy: 265,
     color: '#1e88e5',
     cover: 'Biển miền Trung, bờ biển miền Trung Việt Nam',
     ships: 'Tàu hộ vệ, tàu tuần tra, tàu đổ bộ',
     desc: 'Bảo vệ vùng biển miền Trung từ Quảng Bình đến Bình Định.',
   },
   {
-    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 252, cy: 378,
+    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 330, cy: 385,
     color: '#43a047',
     cover: 'Vùng biển Nam Trung Bộ và Trường Sa',
     ships: 'Tàu tên lửa, tàu ngầm, tàu đặc công nước',
