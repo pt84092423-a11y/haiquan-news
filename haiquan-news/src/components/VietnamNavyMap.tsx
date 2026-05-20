@@ -5,35 +5,35 @@ import { useState } from 'react';
 // Coordinates below are calibrated directly against the image pixels.
 const ZONES = [
   {
-    id: 1, name: 'Vùng 1 Hải quân', hq: 'Hải Phòng', cx: 279, cy: 105,
+    id: 1, name: 'Vùng 1 Hải quân', hq: 'Hải Phòng', cx: 395, cy: 95,
     color: '#e53935',
     cover: 'Vịnh Bắc Bộ, vùng biển Đông Bắc',
     ships: 'Tàu tên lửa, tàu pháo, tàu ngầm',
     desc: 'Quản lý vùng biển miền Bắc, Vịnh Bắc Bộ và các đảo phía Bắc.',
   },
   {
-    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 318, cy: 265,
+    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 366, cy: 252,
     color: '#1e88e5',
     cover: 'Biển miền Trung, bờ biển miền Trung Việt Nam',
     ships: 'Tàu hộ vệ, tàu tuần tra, tàu đổ bộ',
     desc: 'Bảo vệ vùng biển miền Trung từ Quảng Bình đến Bình Định.',
   },
   {
-    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 330, cy: 385,
+    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 385, cy: 362,
     color: '#43a047',
     cover: 'Vùng biển Nam Trung Bộ và Trường Sa',
     ships: 'Tàu tên lửa, tàu ngầm, tàu đặc công nước',
     desc: 'Phụ trách vùng biển Nam Trung Bộ và quần đảo Trường Sa.',
   },
   {
-    id: 4, name: 'Vùng 4 Hải quân', hq: 'TP. Hồ Chí Minh', cx: 280, cy: 476,
+    id: 4, name: 'Vùng 4 Hải quân', hq: 'TP. Hồ Chí Minh', cx: 330, cy: 478,
     color: '#fb8c00',
     cover: 'Vùng biển Đông Nam, cửa sông Mekong',
     ships: 'Tàu tuần tra, tàu pháo, tàu đặc nhiệm',
     desc: 'Quản lý vùng biển phía Đông Nam và các cửa sông vùng Đồng bằng sông Cửu Long.',
   },
   {
-    id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 148, cy: 540,
+    id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 90, cy: 558,
     color: '#8e24aa',
     cover: 'Vịnh Thái Lan, vùng biển Tây Nam',
     ships: 'Tàu tên lửa, tàu tuần tra duyên hải, tàu ngầm',
@@ -86,7 +86,7 @@ export default function VietnamNavyMap() {
       <div className="px-5 py-3 bg-[#0055cc] flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-white font-black text-[14px] uppercase tracking-widest flex items-center gap-2">
-            <span className="text-yellow-400 text-lg">⚓</span>
+            <img src="/logo-haiquan.png" alt="Logo Hải quân" className="h-8 w-8 object-contain drop-shadow" />
             BẢN ĐỒ HẢI QUÂN NHÂN DÂN VIỆT NAM
           </h3>
           <p className="text-blue-100 text-[11px] mt-0.5">5 Vùng Hải quân · Hoàng Sa · Trường Sa · Biển Đông</p>
