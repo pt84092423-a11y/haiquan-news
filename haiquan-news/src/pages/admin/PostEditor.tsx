@@ -151,6 +151,10 @@ export default function PostEditor() {
     og_image: '',
   });
 
+  useEffect(() => {
+    if (form.thumbnail && !ogImage) setOgImage(form.thumbnail);
+  }, [form.thumbnail]); // eslint-disable-line
+
   const loadCategories = () => fetch('/api/admin/categories').then(r => r.json()).then(setCategories).catch(() => getAllCategories().then(setCategories));
   useEffect(() => { loadCategories(); }, []);
 

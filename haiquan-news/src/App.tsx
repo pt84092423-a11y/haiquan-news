@@ -36,6 +36,8 @@ import IpMonitor from "@/pages/admin/IpMonitor";
 import YoutubeManager from "@/pages/admin/YoutubeManager";
 import CommentManager from "@/pages/admin/CommentManager";
 import AdminUserProfile from "@/pages/admin/AdminUserProfile";
+import AdminAnalytics from "@/pages/admin/AdminAnalytics";
+import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 import AdminSEO from "@/pages/admin/AdminSEO";
 import NavyGalleryStrip from "@/components/NavyGalleryStrip";
 import SearchPage from "@/pages/SearchPage";
@@ -95,9 +97,16 @@ function ProtectedRoute({ component: Comp, action }: { component: React.Componen
   return <Comp />;
 }
 
+function TrackingLayer() {
+  useVisitorTracking();
+  return null;
+}
+
 function Router() {
   return (
-    <Switch>
+    <>
+      <TrackingLayer />
+      <Switch>
       {/* Admin routes phải đứng TRƯỚC các public routes */}
       <Route path="/admin/login" component={Login} />
       <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} />} />
@@ -127,6 +136,7 @@ function Router() {
       <Route path="/admin/seo" component={() => <ProtectedRoute component={AdminSEO} />} />
       <Route path="/admin/ho-so" component={() => <ProtectedRoute component={AdminUserProfile} />} />
       <Route path="/admin/ho-so-nguoi-dung" component={() => <ProtectedRoute component={AdminUserProfile} />} />
+      <Route path="/admin/phan-tich" component={() => <ProtectedRoute component={AdminAnalytics} />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />
@@ -173,6 +183,7 @@ function Router() {
         </PublicLayout>
       )} />
     </Switch>
+    </>
   );
 }
 

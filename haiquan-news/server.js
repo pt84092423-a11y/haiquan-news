@@ -548,6 +548,68 @@ app.post('/api/admin/clear-cache', (req, res) => {
   return res.json({ ok: true, message: 'Đã xóa toàn bộ cache server.' });
 });
 
+// ── Visitor Tracking ──
+app.post('/api/track', async (req, res) => {
+  try {
+    const { path, referrer, screenWidth, userAgent, language } = req.body || {};
+    if (!userAgent || /bot|crawl|spider|prerender|googlebot|bingbot|yandex|baidu|slurp/i.test(userAgent)) {
+      return res.json({ ok: true });
+    }
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = (typeof forwarded === 'string' ? forwarded.split(',')[0] : req.socket?.remoteAddress || '').trim();
+    const isTablet = /ipad|tablet|playbook|silk/i.test(userAgent);
+    const isMobile = !isTablet && /mobile|android|iphone|ipod|blackberry|opera mini|windows phone/i.test(userAgent);
+    const deviceType = isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop';
+    let os = 'Khác';
+    if (/windows nt/i.test(userAgent)) os = 'Windows';
+    else if (/macintosh|mac os x/i.test(userAgent)) os = 'macOS';
+    else if (/android/i.test(userAgent)) os = 'Android';
+    else if (/iphone|ipad|ipod/i.test(userAgent)) os = 'iOS';
+    else if (/chromeos|cros/i.test(userAgent)) os = 'ChromeOS';
+    else if (/linux/i.test(userAgent)) os = 'Linux';
+    let browser = 'Khác';
+    if (/edg\//i.test(userAgent)) browser = 'Edge';
+    else if (/opr\/|opera/i.test(userAgent)) browser = 'Opera';
+    else if (/firefox/i.test(userAgent)) browser = 'Firefox';
+    else if (/chrome/i.test(userAgent)) browser = 'Chrome';
+    else if (/safari/i.test(userAgent)) browser = 'Safari';
+    let geo = {};
+    const isLocal = !ip || ip === '::1' || ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('192.168.');
+    if (!isLocal) {
+      try {
+        const geoRes = await Promise.race([
+          fetch(`http://ip-api.com/json/${ip}?lang=vi&fields=status,country,countryCode,regionName,city,district`),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000)),
+        ]);
+        if (geoRes.ok) {
+          const g = await geoRes.json();
+          if (g.status === 'success') geo = { country: g.country || null, country_code: g.countryCode || null, region: g.regionName || null, city: g.city || null, district: g.district || null };
+        }
+      } catch (_) {}
+    }
+    await fetch(`${SUPABASE_URL}/rest/v1/visitor_logs`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ path: (path || '/').substring(0, 500), referrer: referrer ? String(referrer).substring(0, 500) : null, device_type: deviceType, os, browser, screen_width: typeof screenWidth === 'number' ? screenWidth : null, ip: ip || null, language: language ? String(language).substring(0, 20) : null, ...geo }),
+    });
+    res.json({ ok: true });
+  } catch (_) { res.json({ ok: true }); }
+});
+
+// ── Analytics Stats ──
+app.get('/api/analytics-stats', async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 30, 365);
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/visitor_logs?created_at=gte.${since}&select=path,country,country_code,region,city,district,device_type,os,browser,screen_width,created_at,language&limit=50000&order=created_at.desc`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    const logs = r.ok ? await r.json() : [];
+    if (!Array.isArray(logs)) return res.json({ total: 0, countries: [], regions: [], cities: [], districts: [], devices: [], os: [], browsers: [], topPages: [], daily: [], error: 'Table not found' });
+    const tally = (key) => { const c = {}; for (const l of logs) { const v = l[key]; if (v) c[v] = (c[v] || 0) + 1; } return Object.entries(c).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })); };
+    const daily = {}; for (const l of logs) { const d = l.created_at?.split('T')[0]; if (d) daily[d] = (daily[d] || 0) + 1; }
+    res.json({ total: logs.length, countries: tally('country').slice(0,15), regions: tally('region').slice(0,20), cities: tally('city').slice(0,20), districts: tally('district').slice(0,20), devices: tally('device_type'), os: tally('os').slice(0,10), browsers: tally('browser').slice(0,10), topPages: tally('path').slice(0,15), languages: tally('language').slice(0,10), daily: Object.entries(daily).sort((a,b) => a[0].localeCompare(b[0])).map(([date,count]) => ({ date, count })) });
+  } catch (err) { console.error('Analytics error:', err); res.json({ total: 0, countries: [], regions: [], cities: [], districts: [], devices: [], os: [], browsers: [], topPages: [], daily: [] }); }
+});
+
 // ── Sitemap XML (dynamic — fetches from Supabase) ──
 app.get('/sitemap.xml', async (req, res) => {
   const STATIC_PAGES = [

@@ -5,6 +5,7 @@ import SEOHead from '@/components/SEOHead';
 import SectionTitle from '@/components/SectionTitle';
 import PostCard from '@/components/PostCard';
 import WebsiteLinks from '@/components/WebsiteLinks';
+import VietnamNavyMap from '@/components/VietnamNavyMap';
 import {  getAllSettings, getPublishedPosts, getSiteSetting, parseJsonSetting, type Post  } from '@/lib/supabase';
 import {  DEFAULT_COMMAND_DATA, type CommandData, type Commander  } from '@/pages/CommandPage';
 
@@ -174,7 +175,6 @@ export default function HomePage() {
   const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
   const [ads, setAds] = useState<Record<string, string>>({});
   const [mainAdIdx, setMainAdIdx] = useState(0);
-  const [bottomAdIdx, setBottomAdIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -728,11 +728,9 @@ export default function HomePage() {
              </div>
           </div>
 
-          {/* Banner Đặc công Hải quân */}
+          {/* Bản đồ Hải quân Việt Nam */}
           <div className="w-full">
-            <a href={ads.home_ad_bottom_link || "#"} className="block hover:opacity-95 transition rounded-md overflow-hidden shadow-md">
-               <img src={activeBottomAd} alt="Banner Đặc công Hải quân" className="w-full h-auto object-cover" />
-            </a>
+            <VietnamNavyMap />
           </div>
         </section>
 
