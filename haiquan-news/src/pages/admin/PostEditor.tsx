@@ -124,6 +124,15 @@ export default function PostEditor() {
   const [editorInited, setEditorInited] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>('');
 
+  const [sessionAvatar, setSessionAvatar] = useState<string | null>(session?.avatar_url || null);
+
+  useEffect(() => {
+    if (session?.id && !sessionAvatar) {
+      supabase.from('settings').select('value').eq('key', `avatar_user_${session.id}`).maybeSingle()
+        .then(({ data }) => { if (data?.value) setSessionAvatar(data.value); });
+    }
+  }, []);
+
   const [form, setForm] = useState<Partial<Post>>({
     title: '',
     slug: '',
@@ -1199,6 +1208,20 @@ export default function PostEditor() {
                   className="w-full p-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#0059b2]"
                   placeholder="Admin Hải Quân"
                 />
+                {/* Author preview card */}
+                <div className="mt-2 flex items-center gap-2.5 bg-[#f8faff] border border-[#d5e3f8] rounded-xl px-3 py-2.5">
+                  {sessionAvatar ? (
+                    <img src={sessionAvatar} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-[#0059b2] shadow-sm flex-shrink-0" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-[#0059b2] flex items-center justify-center text-white text-[13px] font-bold border-2 border-[#0059b2] flex-shrink-0">
+                      {(form.author || session?.username || '?').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-bold text-[13px] text-[#0059b2] truncate">{form.author || session?.username || 'Tác giả'}</p>
+                    <p className="text-[10px] text-gray-400">Xem trước góc tác giả trong bài viết</p>
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Đặt lịch đăng tự động</label>

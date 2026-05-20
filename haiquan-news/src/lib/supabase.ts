@@ -533,7 +533,9 @@ export async function getAdminUserByName(authorName: string) {
     .select('id,username,display_name,created_by,created_at,role,last_login_at')
     .or(`display_name.eq.${authorName},username.eq.${authorName}`)
     .eq('status', 'active').limit(1).maybeSingle();
-  return data || null;
+  if (!data) return null;
+  const { data: av } = await supabase.from('settings').select('value').eq('key', `avatar_user_${data.id}`).maybeSingle();
+  return { ...data, avatar_url: av?.value || null };
 }
 
 export const SQL_SCHEMA_V2 = `

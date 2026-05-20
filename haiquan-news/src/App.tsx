@@ -125,6 +125,8 @@ function Router() {
       <Route path="/admin/youtube" component={() => <ProtectedRoute component={YoutubeManager} />} />
       <Route path="/admin/binh-luan" component={() => <ProtectedRoute component={AdminComments} action="manage_comments" />} />
       <Route path="/admin/seo" component={() => <ProtectedRoute component={AdminSEO} />} />
+      <Route path="/admin/ho-so" component={() => <ProtectedRoute component={AdminUserProfile} />} />
+      <Route path="/admin/ho-so-nguoi-dung" component={() => <ProtectedRoute component={AdminUserProfile} />} />
 
       {/* Public routes */}
       <Route path="/" component={() => <PublicLayout><HomePage /></PublicLayout>} />
