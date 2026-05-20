@@ -155,110 +155,158 @@ async function fetchYoutubeChannel(ch: { channelId: string; handle: string }): P
   return [];
 }
 
+// ── Module-level cache helpers ─────────────────────────────────────────────
+// Đọc localStorage đồng bộ → khởi tạo state TRƯỚC render đầu tiên
+// → không bao giờ hiện skeleton nếu cache tồn tại
+const _HQ_CACHE_KEY = 'hq_home_v2';
+const _HQ_CACHE_TTL = 5 * 60 * 1000; // 5 phút
+
+function _readHQCache(): any | null {
+  try {
+    const raw = localStorage.getItem(_HQ_CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (Date.now() - c.ts < _HQ_CACHE_TTL && c.d) return c.d;
+  } catch {}
+  return null;
+}
+
+function _deriveHQState(d: any) {
+  const articles = ((d?.all || []) as Post[]).filter((p: Post) => p.post_type !== 'baoin');
+  const sorted = [...articles].sort((a: Post, b: Post) => b.view_count - a.view_count);
+  let commanders: Commander[] = [];
+  try {
+    const cmd = parseJsonSetting<CommandData>(d?.commandRaw ?? null, DEFAULT_COMMAND_DATA);
+    const ppl = Array.isArray(cmd?.people) ? cmd.people : DEFAULT_COMMAND_DATA.people;
+    commanders = [...ppl]
+      .filter((p: any) => p.group === 'navy')
+      .sort((a: any, b: any) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+  } catch {}
+  return {
+    spotlight:    articles.slice(0, 3),
+    newPosts:     articles.slice(0, 4),
+    mostRead:     sorted.slice(0, 6),
+    generalPosts: articles.slice(3, 7),
+    chuQuyenPosts: articles.slice(11, 16),
+    tamTinhPosts:  (d?.tamTinh  || []) as Post[],
+    lichSuPosts:   (d?.lichSu   || []) as Post[],
+    commanders,
+    mediaPosts:   ((d?.media    || []) as Post[]).slice(0, 4),
+    podcastPosts: ((d?.podcasts || []) as Post[]).slice(0, 4),
+    videoPosts:   ((d?.media    || []) as Post[]).slice(0, 3),
+    shortVideos:  ((d?.shorts   || []) as Post[]).slice(0, 5),
+    latestBaoIn:  ((d?.baoIn   || []) as Post[])[0] || null,
+    ads:           (d?.settings || {}) as Record<string, string>,
+  };
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 export default function HomePage() {
-  const [spotlight, setSpotlight] = useState<Post[]>([]);
+  // Đọc cache đồng bộ ngay lần render đầu — chạy một lần duy nhất
+  const [_cs] = useState(() => {
+    const d = _readHQCache();
+    return d ? _deriveHQState(d) : null;
+  });
+
+  const [spotlight, setSpotlight]     = useState<Post[]>(() => _cs?.spotlight    ?? []);
   const [featuredIdx, setFeaturedIdx] = useState(0);
-  const [newPosts, setNewPosts] = useState<Post[]>([]);
-  const [mostRead, setMostRead] = useState<Post[]>([]);
-  const [generalPosts, setGeneralPosts] = useState<Post[]>([]);
-  
-  const [chuQuyenPosts, setChuQuyenPosts] = useState<Post[]>([]);
-  const [tamTinhPosts, setTamTinhPosts] = useState<Post[]>([]);
-  const [lichSuPosts, setLichSuPosts] = useState<Post[]>([]);
-  const [commanders, setCommanders] = useState<Commander[]>([]);
-  
-  const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
-  const [podcastPosts, setPodcastPosts] = useState<Post[]>([]);
-  const [videoPosts, setVideoPosts] = useState<Post[]>([]);
-  const [shortVideos, setShortVideos] = useState<Post[]>([]);
-  const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(null);
-  const [ads, setAds] = useState<Record<string, string>>({});
-  const [mainAdIdx, setMainAdIdx] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [newPosts, setNewPosts]       = useState<Post[]>(() => _cs?.newPosts      ?? []);
+  const [mostRead, setMostRead]       = useState<Post[]>(() => _cs?.mostRead      ?? []);
+  const [generalPosts, setGeneralPosts] = useState<Post[]>(() => _cs?.generalPosts ?? []);
+
+  const [chuQuyenPosts, setChuQuyenPosts] = useState<Post[]>(() => _cs?.chuQuyenPosts ?? []);
+  const [tamTinhPosts, setTamTinhPosts]   = useState<Post[]>(() => _cs?.tamTinhPosts  ?? []);
+  const [lichSuPosts, setLichSuPosts]     = useState<Post[]>(() => _cs?.lichSuPosts   ?? []);
+  const [commanders, setCommanders]       = useState<Commander[]>(() => _cs?.commanders ?? []);
+
+  const [mediaPosts, setMediaPosts]   = useState<Post[]>(() => _cs?.mediaPosts   ?? []);
+  const [podcastPosts, setPodcastPosts] = useState<Post[]>(() => _cs?.podcastPosts ?? []);
+  const [videoPosts, setVideoPosts]   = useState<Post[]>(() => _cs?.videoPosts   ?? []);
+  const [shortVideos, setShortVideos] = useState<Post[]>(() => _cs?.shortVideos  ?? []);
+  const [latestBaoIn, setLatestBaoIn] = useState<Post | null>(() => _cs?.latestBaoIn ?? null);
+  const [ads, setAds]                 = useState<Record<string, string>>(() => _cs?.ads ?? {});
+  const [mainAdIdx, setMainAdIdx]     = useState(0);
+  // loading = false ngay nếu cache có — không bao giờ hiện skeleton
+  const [loading, setLoading]         = useState(() => !_cs);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   // YouTube live RSS state
   const [ytMediaVideos, setYtMediaVideos] = useState<YTVideo[]>([]);
-  const [ytTVVideos, setYtTVVideos] = useState<YTVideo[]>([]);
-  const [ytLoading, setYtLoading] = useState(true);
+  const [ytTVVideos, setYtTVVideos]       = useState<YTVideo[]>([]);
+  const [ytLoading, setYtLoading]         = useState(true);
+
+  function applyHomeData(
+    all: Post[], media: Post[], shorts: Post[], podcasts: Post[],
+    baoIn: Post[], tamTinh: Post[], lichSu: Post[],
+    settings: Record<string, string>, commandRaw: string | null
+  ) {
+    const articles = (all || []).filter(p => p.post_type !== 'baoin');
+    setSpotlight(articles.slice(0, 3));
+    setNewPosts(articles.slice(0, 4));
+    const sorted = [...articles].sort((a, b) => b.view_count - a.view_count);
+    setMostRead(sorted.slice(0, 6));
+    setGeneralPosts(articles.slice(3, 7));
+    setChuQuyenPosts(articles.slice(11, 16));
+    setTamTinhPosts(tamTinh || []);
+    setLichSuPosts(lichSu || []);
+    try {
+      const command = parseJsonSetting<CommandData>(commandRaw, DEFAULT_COMMAND_DATA);
+      const peopleArr = Array.isArray(command?.people) ? command.people : DEFAULT_COMMAND_DATA.people;
+      setCommanders([...peopleArr].filter(p => p.group === 'navy').sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999)));
+    } catch { setCommanders([]); }
+    setMediaPosts((media || []).slice(0, 4));
+    setPodcastPosts((podcasts || []).slice(0, 4));
+    setVideoPosts((media || []).slice(0, 3));
+    setShortVideos((shorts || []).slice(0, 5));
+    setLatestBaoIn((baoIn || [])[0] || null);
+    setAds(settings || {});
+  }
 
   useEffect(() => {
     async function load() {
+      // State đã được khởi tạo đồng bộ từ cache (xem _readHQCache / _deriveHQState ở trên)
+      // Ở đây chỉ fetch mới từ Supabase để cập nhật dữ liệu, chạy ở nền
       try {
-        console.log('[HomePage] load() start');
-        // Mỗi call có timeout 8s để không bị treo nếu một query nào đó chậm/hang.
-        const withTimeout = <T,>(p: Promise<T>, label: string, ms = 8000): Promise<T> =>
-          Promise.race<T>([
-            p,
-            new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} timeout ${ms}ms`)), ms)),
-          ]);
+        const withTimeout = <T,>(p: Promise<T>, ms = 8000): Promise<T> =>
+          Promise.race<T>([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
         const results = await Promise.allSettled([
-          withTimeout(getPublishedPosts({ limit: 40 }), 'all'),
-          withTimeout(getPublishedPosts({ postType: 'video', limit: 6 }), 'video6'),
-          withTimeout(getPublishedPosts({ postType: 'video', limit: 5 }), 'video5'),
-          withTimeout(getPublishedPosts({ postType: 'podcast', limit: 4 }), 'podcast'),
-          withTimeout(getPublishedPosts({ postType: 'baoin', limit: 1 }), 'baoin'),
-          withTimeout(getPublishedPosts({ categorySlug: 'tam-tinh', limit: 4 }), 'tam-tinh'),
-          withTimeout(getPublishedPosts({ categorySlug: 'lich-su', limit: 4 }), 'lich-su'),
-          withTimeout(getAllSettings(), 'settings'),
-          withTimeout(getSiteSetting('command_page_data'), 'command'),
+          withTimeout(getPublishedPosts({ limit: 40 })),
+          withTimeout(getPublishedPosts({ postType: 'video', limit: 6 })),
+          withTimeout(getPublishedPosts({ postType: 'video', limit: 5 })),
+          withTimeout(getPublishedPosts({ postType: 'podcast', limit: 4 })),
+          withTimeout(getPublishedPosts({ postType: 'baoin', limit: 1 })),
+          withTimeout(getPublishedPosts({ categorySlug: 'tam-tinh', limit: 4 })),
+          withTimeout(getPublishedPosts({ categorySlug: 'lich-su', limit: 4 })),
+          withTimeout(getAllSettings()),
+          withTimeout(getSiteSetting('command_page_data')),
         ]);
-        console.log('[HomePage] allSettled done', results.map(r => r.status));
         function pickAt<T>(i: number, fallback: T): T {
           const r = results[i];
           return r.status === 'fulfilled' && r.value != null ? (r.value as T) : fallback;
         }
-        results.forEach((r, i) => {
-          if (r.status === 'rejected') console.warn(`HomePage load[${i}] failed:`, r.reason);
-        });
-        const all = pickAt<Post[]>(0, []);
-        const media = pickAt<Post[]>(1, []);
-        const shorts = pickAt<Post[]>(2, []);
-        const podcasts = pickAt<Post[]>(3, []);
-        const baoIn = pickAt<Post[]>(4, []);
-        const tamTinh = pickAt<Post[]>(5, []);
-        const lichSu = pickAt<Post[]>(6, []);
-        const settings = pickAt<Record<string, string>>(7, {});
+        const all        = pickAt<Post[]>(0, []);
+        const media      = pickAt<Post[]>(1, []);
+        const shorts     = pickAt<Post[]>(2, []);
+        const podcasts   = pickAt<Post[]>(3, []);
+        const baoIn      = pickAt<Post[]>(4, []);
+        const tamTinh    = pickAt<Post[]>(5, []);
+        const lichSu     = pickAt<Post[]>(6, []);
+        const settings   = pickAt<Record<string, string>>(7, {});
         const commandRaw = pickAt<string | null>(8, null);
-        const posts = all || [];
-        const articles = posts.filter(p => p.post_type !== 'baoin');
 
-        setSpotlight(articles.slice(0, 3));
-        setNewPosts(articles.slice(0, 4));
+        applyHomeData(all, media, shorts, podcasts, baoIn, tamTinh, lichSu, settings, commandRaw);
 
-        const sorted = [...articles].sort((a, b) => b.view_count - a.view_count);
-        setMostRead(sorted.slice(0, 6));
-
-        setGeneralPosts(articles.slice(3, 7));
-        setChuQuyenPosts(articles.slice(11, 16));
-
-        setTamTinhPosts(tamTinh || []);
-        setLichSuPosts(lichSu || []);
-
+        // Cập nhật cache cho lần vào trang sau
         try {
-          const command = parseJsonSetting<CommandData>(commandRaw, DEFAULT_COMMAND_DATA);
-          const peopleArr = Array.isArray(command?.people) ? command.people : DEFAULT_COMMAND_DATA.people;
-          const sortedCommanders = [...peopleArr]
-            .filter(p => p.group === 'navy')
-            .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
-          setCommanders(sortedCommanders);
-        } catch (e) {
-          console.warn('[HomePage] command parse failed', e);
-          setCommanders([]);
-        }
-
-        setMediaPosts((media || []).slice(0, 4));
-        setPodcastPosts((podcasts || []).slice(0, 4));
-        setVideoPosts((media || []).slice(0, 3));
-        setShortVideos((shorts || []).slice(0, 5));
-        setLatestBaoIn((baoIn || [])[0] || null);
-        setAds(settings || {});
-        console.log('[HomePage] state set, articles=', articles.length);
+          localStorage.setItem(_HQ_CACHE_KEY, JSON.stringify({
+            ts: Date.now(),
+            d: { all, media, shorts, podcasts, baoIn, tamTinh, lichSu, settings, commandRaw },
+          }));
+        } catch { /* storage full — bỏ qua */ }
       } catch (e) {
-        console.error('[HomePage] load() crashed', e);
+        console.error('[HomePage] load failed', e);
       } finally {
         setLoading(false);
-        console.log('[HomePage] loading=false');
       }
     }
     load();
