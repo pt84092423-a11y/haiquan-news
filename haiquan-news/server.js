@@ -79,13 +79,53 @@ function normalizeUrl(value, fallback = DEFAULT_IMG) {
   return fallback;
 }
 
-function buildOgHtml(post, slug) {
+function getRequestHost(req) {
+  const fwdHost = req.headers['x-forwarded-host'];
+  const fwdProto = req.headers['x-forwarded-proto'] || 'https';
+  const host = fwdHost || req.headers['host'] || 'baohaiquansrov.xo.je';
+  return `${fwdProto}://${host}`;
+}
+
+function isBot(req) {
+  const ua = String(req.headers['user-agent'] || '');
+  return /facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|googlebot|bingbot|yandexbot|applebot|iframely|prerender|crawler|spider|bot\b/i.test(ua);
+}
+
+function buildDefaultOgBlock(host) {
+  const url = escapeHtml(`${host}/`);
+  const img = escapeHtml(DEFAULT_IMG);
+  const title = escapeHtml(SITE_NAME);
+  const desc = escapeHtml(DEFAULT_DESC);
+  return `
+    <title>${title}</title>
+    <meta name="description" content="${desc}" />
+    <meta property="og:site_name" content="${escapeHtml(OG_SITE_NAME)}" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${desc}" />
+    <meta property="og:image" content="${img}" />
+    <meta property="og:image:secure_url" content="${img}" />
+    <meta property="og:image:width" content="1080" />
+    <meta property="og:image:height" content="360" />
+    <meta property="og:image:alt" content="${title}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${url}" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@SROVNavy36" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${desc}" />
+    <meta name="twitter:image" content="${img}" />
+    <link rel="canonical" href="${url}" />`;
+}
+
+function buildOgHtml(post, slug, host) {
+  const baseUrl = host || PUBLIC_SITE_URL;
   const ogPayload = parseOgPayload(post.og_image);
   const title = escapeHtml(stripHtml(ogPayload.title || post.meta_title || post.title || SITE_NAME));
   const pageTitle = `${title} | ${SITE_NAME}`;
   const description = escapeHtml(truncate(post.meta_description || post.excerpt || post.content || DEFAULT_DESC));
   const image = escapeHtml(normalizeUrl(ogPayload.image || post.thumbnail || DEFAULT_IMG));
-  const url = `${PUBLIC_SITE_URL}/bai-viet/${encodeURIComponent(slug)}`;
+  const url = `${baseUrl}/bai-viet/${encodeURIComponent(slug)}`;
   const published = post.published_at || post.created_at || '';
   const modified = post.updated_at || published;
   const author = escapeHtml(post.author || SITE_NAME);
@@ -693,11 +733,11 @@ app.get('/bai-viet/:slug', async (req, res) => {
   if (!indexHtml) {
     return res.status(503).send('App not built yet');
   }
-
+  const host = getRequestHost(req);
   try {
     const post = await fetchPost(slug);
     if (post) {
-      const injected = injectOgIntoHtml(indexHtml, buildOgHtml(post, slug));
+      const injected = injectOgIntoHtml(indexHtml, buildOgHtml(post, slug, host));
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       return res.send(injected);
@@ -708,7 +748,7 @@ app.get('/bai-viet/:slug', async (req, res) => {
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-  res.send(injectOgIntoHtml(indexHtml, buildOgHtml({ title: SITE_NAME, excerpt: DEFAULT_DESC, thumbnail: DEFAULT_IMG }, slug)));
+  res.send(injectOgIntoHtml(indexHtml, buildOgHtml({ title: SITE_NAME, excerpt: DEFAULT_DESC, thumbnail: DEFAULT_IMG }, slug, host)));
 });
 
 // Static SEO content injected into homepage HTML before React mounts.
@@ -756,7 +796,16 @@ app.get(/.*/, (req, res) => {
     return res.status(503).send('App not built yet');
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  // Inject static SEO section before </body> for homepage only
+
+  // Bots get dynamic OG with the correct request host
+  if (isBot(req)) {
+    const host = getRequestHost(req);
+    const injected = injectOgIntoHtml(indexHtml, buildDefaultOgBlock(host));
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.send(injected);
+  }
+
+  // Regular visitors — inject static SEO section on homepage only
   const isHomepage = req.path === '/' || req.path === '';
   const html = isHomepage
     ? indexHtml.replace('</body>', `${HOMEPAGE_STATIC_HTML}\n</body>`)

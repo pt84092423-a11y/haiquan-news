@@ -23,17 +23,59 @@ function ogInjectionPlugin() {
     return DEFAULT_IMG;
   }
 
+  function getHost(req: any): string {
+    const fwd = req.headers['x-forwarded-host'] || req.headers['host'] || 'localhost:5000';
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    return `${proto}://${fwd}`;
+  }
+
+  function buildDefaultOgHtml(host: string): string {
+    const pageUrl = esc(host + '/');
+    return `<!DOCTYPE html><html lang="vi"><head>
+<meta charset="UTF-8"/>
+<title>${esc(SITE)}</title>
+<meta name="description" content="${esc(DEFAULT_DESC)}"/>
+<meta property="og:site_name" content="${esc(SITE)}"/>
+<meta property="og:title" content="${esc(SITE)}"/>
+<meta property="og:description" content="${esc(DEFAULT_DESC)}"/>
+<meta property="og:image" content="${esc(DEFAULT_IMG)}"/>
+<meta property="og:image:secure_url" content="${esc(DEFAULT_IMG)}"/>
+<meta property="og:image:width" content="1080"/>
+<meta property="og:image:height" content="360"/>
+<meta property="og:image:alt" content="${esc(SITE)}"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="${pageUrl}"/>
+<meta property="og:locale" content="vi_VN"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:site" content="@SROVNavy36"/>
+<meta name="twitter:title" content="${esc(SITE)}"/>
+<meta name="twitter:description" content="${esc(DEFAULT_DESC)}"/>
+<meta name="twitter:image" content="${esc(DEFAULT_IMG)}"/>
+<link rel="canonical" href="${pageUrl}"/>
+</head><body></body></html>`;
+  }
+
   return {
     name: 'og-injection',
     configureServer(server: any) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
-        const url = req.url || '';
-        const match = url.match(/^\/bai-viet\/([^/?#]+)/);
-        if (!match) return next();
         const ua = String(req.headers['user-agent'] || '');
         const isBot = /facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|googlebot|bingbot|yandexbot|applebot|iframely|prerender|crawler|spider|bot\b/i.test(ua);
         if (!isBot) return next();
-        const slug = decodeURIComponent(match[1]);
+
+        const url = req.url || '';
+        const host = getHost(req);
+        const articleMatch = url.match(/^\/bai-viet\/([^/?#]+)/);
+
+        // Non-article bot request → serve default OG immediately
+        if (!articleMatch) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=300');
+          return res.end(buildDefaultOgHtml(host));
+        }
+
+        // Article bot request → fetch from Supabase
+        const slug = decodeURIComponent(articleMatch[1]);
         try {
           const r = await fetch(
             `${SUPA_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=title,excerpt,thumbnail,og_image,meta_title,meta_description,author,published_at&limit=1`,
@@ -50,7 +92,7 @@ function ogInjectionPlugin() {
           if (og && !og.startsWith('[')) rawImg = og;
           else rawImg = post.thumbnail || '';
           const img = esc(normalImg(rawImg));
-          const pageUrl = esc(`https://baohaiquansrov.xo.je/bai-viet/${encodeURIComponent(slug)}`);
+          const pageUrl = esc(`${host}/bai-viet/${encodeURIComponent(slug)}`);
           const html = `<!DOCTYPE html><html lang="vi"><head>
 <meta charset="UTF-8"/>
 <title>${title} | ${esc(SITE)}</title>
@@ -59,6 +101,7 @@ function ogInjectionPlugin() {
 <meta property="og:title" content="${title}"/>
 <meta property="og:description" content="${desc}"/>
 <meta property="og:image" content="${img}"/>
+<meta property="og:image:secure_url" content="${img}"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
 <meta property="og:image:alt" content="${title}"/>
@@ -66,6 +109,7 @@ function ogInjectionPlugin() {
 <meta property="og:url" content="${pageUrl}"/>
 <meta property="og:locale" content="vi_VN"/>
 <meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:site" content="@SROVNavy36"/>
 <meta name="twitter:title" content="${title}"/>
 <meta name="twitter:description" content="${desc}"/>
 <meta name="twitter:image" content="${img}"/>
@@ -75,7 +119,7 @@ function ogInjectionPlugin() {
           res.setHeader('Cache-Control', 'public, max-age=60');
           return res.end(html);
         } catch {
-          return next();
+          return res.end(buildDefaultOgHtml(host));
         }
       });
     },
