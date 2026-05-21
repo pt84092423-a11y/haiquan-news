@@ -19,7 +19,7 @@ const ZONES = [
     desc: 'Bảo vệ vùng biển miền Trung từ Quảng Bình đến Bình Định.',
   },
   {
-    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 332, cy: 362,
+    id: 3, name: 'Vùng 4 Hải quân', hq: 'Cam Ranh', cx: 332, cy: 362,
     color: '#43a047',
     cover: 'Vùng biển Nam Trung Bộ và Trường Sa',
     ships: 'Tàu tên lửa, tàu ngầm, tàu đặc công nước',
