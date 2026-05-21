@@ -19,11 +19,11 @@ const ZONES = [
     desc: 'Bảo vệ vùng biển miền Trung từ Quảng Bình đến Bình Định.',
   },
   {
-    id: 3, name: 'Vùng 4 Hải quân', hq: 'Cam Ranh', cx: 332, cy: 362,
+    id: 3, name: 'Vùng 3 Hải quân', hq: 'TP HCM', cx: 332, cy: 362,
     color: '#43a047',
-    cover: 'Vùng biển Nam Trung Bộ và Trường Sa',
-    ships: 'Tàu tên lửa, tàu ngầm, tàu đặc công nước',
-    desc: 'Phụ trách vùng biển Nam Trung Bộ và quần đảo Trường Sa.',
+    cover: 'quản lý và bảo vệ vùng biển giữa miền Trung, từ Quảng Trị đến Gia Lai gồm các tỉnh là Quảng Trị, Thành phố Huế, Đà Nẵng, Quảng Ngãi, Gia Lai ảo Cồn Cỏ, Lý Sơn, Quần đảo Hoàng Sa, v.v',
+    ships: 'Tàu tên lửa, Tàu tuần tra',
+    desc: 'quản lý, bảo vệ chủ quyền biển đảo, thềm lục địa miền Trung và vùng duyên hải Bắc Bộ.',
   },
   {
     id: 4, name: 'Vùng 4 Hải quân', hq: 'Quân Cảng Cam Ranh', cx: 248, cy: 478,
