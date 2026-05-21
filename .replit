@@ -40,8 +40,8 @@ externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["node", "./dist/index.cjs"]
+build = ["sh", "-c", "cd haiquan-news && npm install && npm run build"]
+run = ["sh", "-c", "cd haiquan-news && node server.js"]
 
 [userenv]
 
