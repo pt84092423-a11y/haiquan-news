@@ -26,11 +26,11 @@ const ZONES = [
     desc: 'Bộ Tư lệnh Vùng 4 Hải quân là lực lượng tác chiến độc lập thuộc Quân chủng Hải quân, có nhiệm vụ nòng cốt quản lý và bảo vệ vững chắc chủ quyền biển, đảo, thềm lục địa thiêng liêng của Tổ quốc, trọng tâm là Quần đảo Trường Sa và vùng biển phía Nam miền Trung.',
   },
   {
-    id: 4, name: 'Vùng 4 Hải quân', hq: 'Quân Cảng Cam Ranh', cx: 248, cy: 478,
+    id: 2, name: 'Vùng 2 Hải quân', hq: 'TP HCM', cx: 248, cy: 478,
     color: '#fb8c00',
-    cover: 'Trường Sa, Cam Ranh và khu vực lân cận.',
+    cover: 'rực thuộc Quân chủng Hải quân là Bộ Tư lệnh tác chiến hải quân độc lập quản lý và bảo vệ vùng biển từ Nam Lâm Đồng đến Cà Mau và thềm lục địa phía Nam, trong đó có khu vực trọng điểm là vùng biển có các cụm kinh tế - khoa học - dịch vụ (gọi tắt là DK1) thuộc thềm lục địa phía Nam, gồm có các tỉnh thành: phía Nam của Lâm Đồng, thành phố Hồ Chí Minh, Đồng Tháp, Vĩnh Long, Cần Thơ và vùng biển phía Đông Nam của tỉnh Cà Mau (bao gồm cả nhà giàn DK1/10 ở bãi ngầm Cà Mau).',
     ships: 'Tàu tuần tra, tàu pháo, tàu đặc nhiệm',
-    desc: 'Trường Sa, Cam Ranh...',
+    desc: 'Bộ Tư lệnh Vùng 2 Hải quân (trực thuộc Quân chủng Hải quân Việt Nam) chịu trách nhiệm quản lý và bảo vệ chủ quyền vùng biển từ Nam Lâm Đồng đến Cà Mau và thềm lục địa phía Nam',
   },
   {
     id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 157, cy: 500,
