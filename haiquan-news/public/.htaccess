@@ -1,5 +1,12 @@
 RewriteEngine On
 RewriteBase /
+
+# Route social media bots to PHP OG injector for article pages
+RewriteCond %{HTTP_USER_AGENT} "(facebookexternalhit|Facebot|Twitterbot|discordbot|TelegramBot|LinkedInBot|WhatsApp|Slackbot|vkShare|Pinterest)" [NC]
+RewriteCond %{REQUEST_URI} ^/bai-viet/
+RewriteRule ^bai-viet/(.*)$ og.php [L,QSA]
+
+# Standard SPA fallback — serve index.html for all non-file routes
 RewriteRule ^index\.html$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

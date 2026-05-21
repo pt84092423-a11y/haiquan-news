@@ -33,7 +33,7 @@ const ZONES = [
     desc: 'Quản lý vùng biển phía Đông Nam và các cửa sông vùng Đồng bằng sông Cửu Long.',
   },
   {
-    id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 120, cy: 558,
+    id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 157, cy: 500,
     color: '#8e24aa',
     cover: 'Vịnh Thái Lan, vùng biển Tây Nam',
     ships: 'Tàu tên lửa, tàu tuần tra duyên hải, tàu ngầm',
