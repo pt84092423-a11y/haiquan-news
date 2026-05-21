@@ -106,10 +106,15 @@ function fetch_url($url, $headers = []) {
 // ── Extract slug from REQUEST_URI ──────────────────────────────────────────
 
 $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+$proto_early = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host_early  = $_SERVER['HTTP_HOST'] ?? 'baohaiquansrov.xo.je';
+$base_early  = $proto_early . '://' . $host_early;
+
 if (preg_match('#/bai-viet/([^/?#]+)#', $uri, $m)) {
     $slug = rawurldecode($m[1]);
 } else {
-    serve_index();
+    // Non-article page — serve default OG with navy banner
+    serve_default_og($base_early);
     exit;
 }
 
@@ -131,13 +136,13 @@ $api_headers = [
 $body = fetch_url($api_url, $api_headers);
 
 if (!$body) {
-    serve_index();
+    serve_default_og($proto . '://' . $host);
     exit;
 }
 
 $rows = json_decode($body, true);
 if (!is_array($rows) || count($rows) === 0) {
-    serve_index();
+    serve_default_og($proto . '://' . $host);
     exit;
 }
 
@@ -151,7 +156,7 @@ $title_raw  = $og_parsed['title']
            ?: strip_tags_custom($post['title']        ?? '');
 
 if (!$title_raw) {
-    serve_index();
+    serve_default_og($proto . '://' . $host);
     exit;
 }
 
@@ -248,6 +253,41 @@ $html = str_replace('</head>', $og_block . "  </head>", $html);
 header('Content-Type: text/html; charset=UTF-8');
 header('Cache-Control: public, max-age=300');
 echo $html;
+
+// ── Fallback: serve minimal OG page with navy banner ──────────────────────
+
+function serve_default_og($base_url = 'https://baohaiquansrov.xo.je') {
+    global $site_name, $og_site_name, $default_desc, $default_img;
+    $url  = htmlspecialchars($base_url . '/', ENT_QUOTES, 'UTF-8');
+    $t    = htmlspecialchars($site_name,  ENT_QUOTES, 'UTF-8');
+    $d    = htmlspecialchars($default_desc, ENT_QUOTES, 'UTF-8');
+    $i    = htmlspecialchars($default_img,  ENT_QUOTES, 'UTF-8');
+    $osn  = htmlspecialchars($og_site_name, ENT_QUOTES, 'UTF-8');
+    header('Content-Type: text/html; charset=UTF-8');
+    header('Cache-Control: public, max-age=300');
+    echo "<!DOCTYPE html><html lang=\"vi\"><head>
+<meta charset=\"UTF-8\"/>
+<title>{$t}</title>
+<meta name=\"description\" content=\"{$d}\"/>
+<meta property=\"og:site_name\" content=\"{$osn}\"/>
+<meta property=\"og:title\" content=\"{$t}\"/>
+<meta property=\"og:description\" content=\"{$d}\"/>
+<meta property=\"og:image\" content=\"{$i}\"/>
+<meta property=\"og:image:secure_url\" content=\"{$i}\"/>
+<meta property=\"og:image:width\" content=\"1080\"/>
+<meta property=\"og:image:height\" content=\"360\"/>
+<meta property=\"og:image:alt\" content=\"{$t}\"/>
+<meta property=\"og:type\" content=\"website\"/>
+<meta property=\"og:url\" content=\"{$url}\"/>
+<meta property=\"og:locale\" content=\"vi_VN\"/>
+<meta name=\"twitter:card\" content=\"summary_large_image\"/>
+<meta name=\"twitter:site\" content=\"@SROVNavy36\"/>
+<meta name=\"twitter:title\" content=\"{$t}\"/>
+<meta name=\"twitter:description\" content=\"{$d}\"/>
+<meta name=\"twitter:image\" content=\"{$i}\"/>
+<link rel=\"canonical\" href=\"{$url}\"/>
+</head><body></body></html>";
+}
 
 // ── Fallback: serve plain index.html ──────────────────────────────────────
 
