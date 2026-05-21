@@ -657,7 +657,7 @@ export default function PostEditor() {
               {/* Editor area */}
               {editorType === 'tiny' ? (
                 <Editor
-                  apiKey=""
+                  tinymceScriptSrc="/tinymce/tinymce.min.js"
                   onInit={(_evt, editor) => {
                     editorRef.current = editor;
                     setEditorInited(true);
