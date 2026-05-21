@@ -5,8 +5,8 @@
  * Regular visitors are served index.html directly by .htaccess.
  */
 
-$supabase_url = 'https://gqxrptccptfbzfdmaoyl.supabase.co';
-$supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHJwdGNjcHRmYnpmZG1hb3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjIyNzAsImV4cCI6MjA5MDA5ODI3MH0.7lyAtlXFyRBHd3oFAhhxxdqs1rn2GhHdGOuMgEuk-SE';
+$supabase_url  = 'https://gqxrptccptfbzfdmaoyl.supabase.co';
+$supabase_key  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHJwdGNjcHRmYnpmZG1hb3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjIyNzAsImV4cCI6MjA5MDA5ODI3MH0.7lyAtlXFyRBHd3oFAhhxxdqs1rn2GhHdGOuMgEuk-SE';
 $site_name     = 'Báo Hải Quân Việt Nam - SROV';
 $og_site_name  = 'Cổng Thông Tin SROV';
 $default_desc  = 'Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam';
@@ -61,6 +61,48 @@ function parse_og_field($value) {
     return ['image' => $v, 'title' => null];
 }
 
+/**
+ * Fetch a URL using cURL first, then file_get_contents as fallback.
+ * Returns the response body string or false on failure.
+ */
+function fetch_url($url, $headers = []) {
+    // Method 1: cURL
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 6,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTPHEADER     => $headers,
+        ]);
+        $body = curl_exec($ch);
+        $errno = curl_errno($ch);
+        curl_close($ch);
+        if (!$errno && $body !== false && strlen($body) > 2) {
+            return $body;
+        }
+    }
+
+    // Method 2: file_get_contents with stream context
+    if (ini_get('allow_url_fopen')) {
+        $context_opts = ['http' => [
+            'method'  => 'GET',
+            'timeout' => 6,
+            'header'  => implode("\r\n", $headers),
+            'ignore_errors' => true,
+        ]];
+        $ctx  = stream_context_create($context_opts);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body !== false && strlen($body) > 2) {
+            return $body;
+        }
+    }
+
+    return false;
+}
+
 // ── Extract slug from REQUEST_URI ──────────────────────────────────────────
 
 $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
@@ -73,29 +115,22 @@ if (preg_match('#/bai-viet/([^/?#]+)#', $uri, $m)) {
 
 // ── Fetch post from Supabase REST API ──────────────────────────────────────
 
-$fields = 'title,content,excerpt,thumbnail,og_image,meta_title,meta_description,author,published_at,updated_at,slug';
-$api    = $supabase_url . '/rest/v1/posts'
-        . '?slug=eq.'   . rawurlencode($slug)
-        . '&status=eq.published'
-        . '&select='    . $fields
-        . '&limit=1';
+$fields  = 'title,content,excerpt,thumbnail,og_image,meta_title,meta_description,author,published_at,updated_at,slug';
+$api_url = $supabase_url . '/rest/v1/posts'
+         . '?slug=eq.'   . rawurlencode($slug)
+         . '&status=eq.published'
+         . '&select='    . $fields
+         . '&limit=1';
 
-$ch = curl_init($api);
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT        => 6,
-    CURLOPT_SSL_VERIFYPEER => true,
-    CURLOPT_HTTPHEADER     => [
-        'apikey: '        . $supabase_key,
-        'Authorization: Bearer ' . $supabase_key,
-        'Accept: application/json',
-    ],
-]);
-$body = curl_exec($ch);
-$err  = curl_error($ch);
-curl_close($ch);
+$api_headers = [
+    'apikey: '               . $supabase_key,
+    'Authorization: Bearer ' . $supabase_key,
+    'Accept: application/json',
+];
 
-if ($err || !$body) {
+$body = fetch_url($api_url, $api_headers);
+
+if (!$body) {
     serve_index();
     exit;
 }
@@ -181,9 +216,20 @@ $og_block .= "    <link rel=\"canonical\" href=\"{$u}\" />\n";
 
 // ── Load index.html, strip old meta tags, inject OG block ─────────────────
 
-$html = @file_get_contents(__DIR__ . '/index.html');
+// Try same dir first (dist deployment), then parent dir (source deployment)
+$index_paths = [
+    __DIR__ . '/index.html',
+    dirname(__DIR__) . '/index.html',
+];
+$html = false;
+foreach ($index_paths as $path) {
+    $html = @file_get_contents($path);
+    if ($html) break;
+}
+
 if (!$html) {
-    serve_index();
+    // Last resort: return a minimal OG-only HTML page
+    echo "<!DOCTYPE html><html lang=\"vi\"><head>\n<meta charset=\"UTF-8\"/>\n" . $og_block . "</head><body></body></html>";
     exit;
 }
 
@@ -206,12 +252,18 @@ echo $html;
 // ── Fallback: serve plain index.html ──────────────────────────────────────
 
 function serve_index() {
-    $html = @file_get_contents(__DIR__ . '/index.html');
-    if ($html) {
-        header('Content-Type: text/html; charset=UTF-8');
-        echo $html;
-    } else {
-        http_response_code(404);
-        echo '404 Not Found';
+    $index_paths = [
+        __DIR__ . '/index.html',
+        dirname(__DIR__) . '/index.html',
+    ];
+    foreach ($index_paths as $path) {
+        $html = @file_get_contents($path);
+        if ($html) {
+            header('Content-Type: text/html; charset=UTF-8');
+            echo $html;
+            return;
+        }
     }
+    http_response_code(404);
+    echo '<!DOCTYPE html><html><body>404 Not Found</body></html>';
 }
