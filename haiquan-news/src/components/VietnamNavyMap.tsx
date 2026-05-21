@@ -26,11 +26,11 @@ const ZONES = [
     desc: 'Phụ trách vùng biển Nam Trung Bộ và quần đảo Trường Sa.',
   },
   {
-    id: 4, name: 'Vùng 4 Hải quân', hq: 'TP. Hồ Chí Minh', cx: 248, cy: 478,
+    id: 4, name: 'Vùng 4 Hải quân', hq: 'Quân Cảng Cam Ranh', cx: 248, cy: 478,
     color: '#fb8c00',
-    cover: 'Vùng biển Đông Nam, cửa sông Mekong',
+    cover: 'Trường Sa, Cam Ranh và khu vực lân cận.',
     ships: 'Tàu tuần tra, tàu pháo, tàu đặc nhiệm',
-    desc: 'Quản lý vùng biển phía Đông Nam và các cửa sông vùng Đồng bằng sông Cửu Long.',
+    desc: 'Trường Sa, Cam Ranh...',
   },
   {
     id: 5, name: 'Vùng 5 Hải quân', hq: 'Phú Quốc', cx: 157, cy: 500,
