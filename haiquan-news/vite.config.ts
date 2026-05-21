@@ -9,7 +9,7 @@ function ogInjectionPlugin() {
   const SUPA_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHJwdGNjcHRmYnpmZG1hb3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjIyNzAsImV4cCI6MjA5MDA5ODI3MH0.7lyAtlXFyRBHd3oFAhhxxdqs1rn2GhHdGOuMgEuk-SE';
   const SITE = 'Báo Hải Quân Việt Nam - SROV';
   const DEFAULT_DESC = 'Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam';
-  const DEFAULT_IMG = 'https://baohaiquansrov.xo.je/opengraph.jpg'; // navy banner (image 3)
+  const DEFAULT_IMG = 'https://i.ibb.co/TqhNB46m/haiquan-srov-opengraph.png';
 
   function esc(s: string) {
     return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

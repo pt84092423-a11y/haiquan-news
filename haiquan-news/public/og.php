@@ -10,7 +10,7 @@ $supabase_key  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 $site_name     = 'Báo Hải Quân Việt Nam - SROV';
 $og_site_name  = 'Cổng Thông Tin SROV';
 $default_desc  = 'Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam';
-$default_img   = 'https://baohaiquansrov.xo.je/opengraph.jpg';
+$default_img   = 'https://i.ibb.co/TqhNB46m/haiquan-srov-opengraph.png';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

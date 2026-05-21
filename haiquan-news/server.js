@@ -14,7 +14,7 @@ const SITE_NAME = 'Báo Hải Quân Việt Nam - SROV';
 const OG_SITE_NAME = 'Cổng Thông Tin SROV';
 const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || process.env.SITE_URL || 'https://baohaiquansrov.xo.je').replace(/\/$/, '');
 const DEFAULT_DESC = 'Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam';
-const DEFAULT_IMG = `${PUBLIC_SITE_URL}/opengraph.jpg`; // navy banner (image 3)
+const DEFAULT_IMG = 'https://i.ibb.co/TqhNB46m/haiquan-srov-opengraph.png';
 
 const DIST_DIR = join(__dirname, 'dist');
 
