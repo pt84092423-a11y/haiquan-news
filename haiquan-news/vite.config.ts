@@ -4,6 +4,84 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+function ogInjectionPlugin() {
+  const SUPA_URL = process.env.VITE_SUPABASE_URL || 'https://gqxrptccptfbzfdmaoyl.supabase.co';
+  const SUPA_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxeHJwdGNjcHRmYnpmZG1hb3lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MjIyNzAsImV4cCI6MjA5MDA5ODI3MH0.7lyAtlXFyRBHd3oFAhhxxdqs1rn2GhHdGOuMgEuk-SE';
+  const SITE = 'Báo Hải Quân Việt Nam - SROV';
+  const DEFAULT_DESC = 'Cơ quan ngôn luận của Quân chủng Hải quân Nhân dân Việt Nam';
+  const DEFAULT_IMG = 'https://baohaiquansrov.xo.je/opengraph.jpg';
+
+  function esc(s: string) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function strip(s: string) { return String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function trunc(s: string, n = 200) { const c = strip(s); return c.length > n ? c.slice(0, n - 1).trim() + '…' : c; }
+  function normalImg(v: string) {
+    if (!v) return DEFAULT_IMG;
+    const t = v.trim();
+    if (/^https?:\/\//i.test(t)) return t;
+    return DEFAULT_IMG;
+  }
+
+  return {
+    name: 'og-injection',
+    configureServer(server: any) {
+      server.middlewares.use(async (req: any, res: any, next: any) => {
+        const url = req.url || '';
+        const match = url.match(/^\/bai-viet\/([^/?#]+)/);
+        if (!match) return next();
+        const ua = String(req.headers['user-agent'] || '');
+        const isBot = /facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|googlebot|bingbot|yandexbot|applebot|iframely|prerender|crawler|spider|bot\b/i.test(ua);
+        if (!isBot) return next();
+        const slug = decodeURIComponent(match[1]);
+        try {
+          const r = await fetch(
+            `${SUPA_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=title,excerpt,thumbnail,og_image,meta_title,meta_description,author,published_at&limit=1`,
+            { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` } }
+          );
+          if (!r.ok) return next();
+          const data = await r.json();
+          const post = data?.[0];
+          if (!post) return next();
+          const title = esc(strip(post.meta_title || post.title || SITE));
+          const desc = esc(trunc(post.meta_description || post.excerpt || DEFAULT_DESC));
+          let rawImg = '';
+          const og = post.og_image || '';
+          if (og && !og.startsWith('[')) rawImg = og;
+          else rawImg = post.thumbnail || '';
+          const img = esc(normalImg(rawImg));
+          const pageUrl = esc(`https://baohaiquansrov.xo.je/bai-viet/${encodeURIComponent(slug)}`);
+          const html = `<!DOCTYPE html><html lang="vi"><head>
+<meta charset="UTF-8"/>
+<title>${title} | ${esc(SITE)}</title>
+<meta name="description" content="${desc}"/>
+<meta property="og:site_name" content="${esc(SITE)}"/>
+<meta property="og:title" content="${title}"/>
+<meta property="og:description" content="${desc}"/>
+<meta property="og:image" content="${img}"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="${title}"/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="${pageUrl}"/>
+<meta property="og:locale" content="vi_VN"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="${title}"/>
+<meta name="twitter:description" content="${desc}"/>
+<meta name="twitter:image" content="${img}"/>
+<link rel="canonical" href="${pageUrl}"/>
+</head><body></body></html>`;
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=60');
+          return res.end(html);
+        } catch {
+          return next();
+        }
+      });
+    },
+  };
+}
+
 function discordBotApiPlugin() {
   return {
     name: 'discord-bot-api',
@@ -349,6 +427,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    ogInjectionPlugin(),
     discordBotApiPlugin(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined

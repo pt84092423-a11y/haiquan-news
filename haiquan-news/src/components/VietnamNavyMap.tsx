@@ -5,28 +5,28 @@ import { useState } from 'react';
 // Coordinates below are calibrated directly against the image pixels.
 const ZONES = [
   {
-    id: 1, name: 'Vùng 1 Hải quân', hq: 'Hải Phòng', cx: 308, cy: 100,
+    id: 1, name: 'Vùng 1 Hải quân', hq: 'Hải Phòng', cx: 275, cy: 95,
     color: '#e53935',
     cover: 'Vịnh Bắc Bộ, vùng biển Đông Bắc',
     ships: 'Tàu tên lửa, tàu pháo, tàu ngầm',
     desc: 'Quản lý vùng biển miền Bắc, Vịnh Bắc Bộ và các đảo phía Bắc.',
   },
   {
-    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 315, cy: 252,
+    id: 2, name: 'Vùng 2 Hải quân', hq: 'Đà Nẵng', cx: 268, cy: 252,
     color: '#1e88e5',
     cover: 'Biển miền Trung, bờ biển miền Trung Việt Nam',
     ships: 'Tàu hộ vệ, tàu tuần tra, tàu đổ bộ',
     desc: 'Bảo vệ vùng biển miền Trung từ Quảng Bình đến Bình Định.',
   },
   {
-    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 322, cy: 362,
+    id: 3, name: 'Vùng 3 Hải quân', hq: 'Cam Ranh', cx: 332, cy: 362,
     color: '#43a047',
     cover: 'Vùng biển Nam Trung Bộ và Trường Sa',
     ships: 'Tàu tên lửa, tàu ngầm, tàu đặc công nước',
     desc: 'Phụ trách vùng biển Nam Trung Bộ và quần đảo Trường Sa.',
   },
   {
-    id: 4, name: 'Vùng 4 Hải quân', hq: 'TP. Hồ Chí Minh', cx: 282, cy: 478,
+    id: 4, name: 'Vùng 4 Hải quân', hq: 'TP. Hồ Chí Minh', cx: 248, cy: 478,
     color: '#fb8c00',
     cover: 'Vùng biển Đông Nam, cửa sông Mekong',
     ships: 'Tàu tuần tra, tàu pháo, tàu đặc nhiệm',
