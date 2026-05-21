@@ -23,6 +23,24 @@ function ogInjectionPlugin() {
     return DEFAULT_IMG;
   }
 
+  function parseOgField(value: string | null | undefined): { image?: string; title?: string } {
+    if (!value) return {};
+    const v = value.trim();
+    if (v.startsWith('[OG:')) {
+      try {
+        const payload = JSON.parse(v.replace('[OG:', '').replace(/\]$/, ''));
+        return { ...payload, image: payload.image || payload.gallery?.[0] };
+      } catch { return {}; }
+    }
+    if (v.startsWith('[GALLERY:')) {
+      try {
+        const gallery = JSON.parse(v.replace('[GALLERY:', '').replace(/\]$/, ''));
+        return { image: gallery?.[0] };
+      } catch { return {}; }
+    }
+    return { image: v };
+  }
+
   function getHost(req: any): string {
     const fwd = req.headers['x-forwarded-host'] || req.headers['host'] || 'localhost:5000';
     const proto = req.headers['x-forwarded-proto'] || 'https';
@@ -81,16 +99,14 @@ function ogInjectionPlugin() {
             `${SUPA_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=title,excerpt,thumbnail,og_image,meta_title,meta_description,author,published_at&limit=1`,
             { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` } }
           );
-          if (!r.ok) return next();
+          if (!r.ok) return res.end(buildDefaultOgHtml(host));
           const data = await r.json();
           const post = data?.[0];
-          if (!post) return next();
-          const title = esc(strip(post.meta_title || post.title || SITE));
+          if (!post) return res.end(buildDefaultOgHtml(host));
+          const ogParsed = parseOgField(post.og_image);
+          const title = esc(strip(ogParsed.title || post.meta_title || post.title || SITE));
           const desc = esc(trunc(post.meta_description || post.excerpt || DEFAULT_DESC));
-          let rawImg = '';
-          const og = post.og_image || '';
-          if (og && !og.startsWith('[')) rawImg = og;
-          else rawImg = post.thumbnail || '';
+          const rawImg = ogParsed.image || post.thumbnail || '';
           const img = esc(normalImg(rawImg));
           const pageUrl = esc(`${host}/bai-viet/${encodeURIComponent(slug)}`);
           const html = `<!DOCTYPE html><html lang="vi"><head>
